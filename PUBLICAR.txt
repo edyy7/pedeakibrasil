@@ -1,0 +1,120 @@
+PEDEAÍ BRASIL — PUBLICAR EM 6 PASSOS (tudo já está configurado neste pacote)
+Projeto Firebase: delivery-67d14 | Endereço previsto: https://meudelivery-six.vercel.app/
+
+1) FIREBASE > Authentication > Método de login: ative "Anônimo", "Google" e "E-mail/senha".
+2) FIREBASE > Firestore Database: crie o banco (região southamerica-east1, modo produção).
+   Aba "Regras": apague tudo, cole o conteúdo do arquivo firestore.rules deste pacote e toque em Publicar.
+3) VERCEL: crie um projeto novo e envie TODOS os arquivos desta pasta (arrastar a pasta já serve).
+   Se o endereço sair diferente de meudelivery-six.vercel.app, avise para trocar o endereço dentro do app.
+4) FIREBASE > Authentication > Configurações > Domínios autorizados: adicione o domínio da Vercel
+   (sem https:// e sem barra). Sem isso o login com Google não funciona.
+5) PRIMEIRO ACESSO (você, antes de divulgar qualquer link): abra o endereço do app (ele abre sempre na administração), entre com o seu Google
+   ou e-mail e toque em "Ativar esta conta como dona". Quem ativar primeiro vira a administração.
+6) Na administração, copie o "link do lojista" e envie ao lojista. O lojista envia o link do cardápio ao
+   cliente e o link do motoboy ao entregador (o motoboy baixa o app e faz o cadastro com 3 fotos).
+
+COMO O APP FUNCIONA (um só app, tudo parte da administração):
+ - Quem abre o endereço do app (ou baixa o APK) vê só a ADMINISTRAÇÃO.
+ - A administração copia o "link do lojista" e envia ao lojista.
+ - O lojista envia o link do cardápio ao cliente (pede direto pelo link, sem instalar; pode instalar se quiser)
+   e o link do motoboy ao entregador (o motoboy baixa o app e se cadastra com 3 fotos).
+ - Cada pessoa vê só a sua parte.
+
+DEPOIS (para o botão "Baixar e instalar" baixar o APK):
+ - Gere 1 APK no PWABuilder (pwabuilder.com) com o endereço /index.html e Package ID br.com.pedeai.app.
+   Renomeie para PedeAi.apk, coloque em downloads/ e publique de novo.
+ - Guarde a chave de assinatura do APK: sem ela não dá para atualizar o app depois.
+ - Sem o arquivo, o botão instala pelo navegador.
+ - Painel do Arquiteto: endereço/criador.html, só com o Gmail edinaldooliveiradesouza@gmail.com.
+
+A cada nova publicação do app, troque o número em CACHE_VERSION no arquivo sw.js.
+
+ATUALIZAÇÃO (versão 82):
+ - As REGRAS DO FIRESTORE mudaram: publique de novo o conteúdo de firestore.rules (passo 2).
+ - Painel do criador (criador.html): os botões "Motoboys globais" e "Marketplace" começam OFF.
+ - Troque o arquivo criador.html também no seu projeto de painel, se ele estiver em outro lugar.
+
+ATUALIZAÇÃO (versão 94):
+ - Páginas politica-privacidade.html e termos-de-uso.html (modelos: revise antes de divulgar). Use os endereços no PWABuilder.
+ - assetlinks-MODELO.json: veja o passo a passo em downloads/LEIA-ME-APK.txt.
+ - Login Google: se a janela for bloqueada (APK/navegador), o app continua por redirecionamento.
+ - Firebase: além do Google, ative também E-mail/senha e Anônimo (o cliente precisa entrar com Google ou e-mail para pedir).
+ - Convite do motoboy (versão 95): ao abrir o link no Android, o app baixa o APK do entregador automaticamente (uma vez) quando
+   o arquivo PedeAi.apk existe em downloads/; se o download não começar, há o botão "Baixar e instalar". O Android sempre
+   pede para você tocar no arquivo baixado e permitir "fontes desconhecidas". Sem o APK publicado, o botão instala pelo navegador.
+ - Versão 96: no app do entregador (e dos outros perfis instalados), o botão "Sair" do menu agora sai da conta e recarrega o app
+   (antes não fazia nada). Auditoria do app do entregador: todos os botões testados (aceitar, recusar, retirada, entrega, chat, grupo, diárias, carteira, indicações, tema).
+
+ATUALIZAÇÃO (versão 97 — listagem de 25/10/2026):
+ - Publique de novo o firestore.rules (limite agora é 15/dia POR LOJA; o criador libera/trava cada loja em criador.html).
+ - Comanda em PDF (WhatsApp com anexo) e impressão em bobina 58/80mm no cartão do pedido do lojista.
+ - Pedido pronto: enviar para todos os motoboys, um motoboy específico ou retirada no local.
+ - Aba "Aprovações" removida da administração; lojas e motoboys entram sem aprovação.
+
+ATUALIZAÇÃO (versão 98 — Atualização 17, perfil ENTREGADOR):
+ - Avisos de corrida a cada 2 min com tom escalonado, valor (entrega + gorjeta), faixa, selos e badge. Veja o item 8 do dossiê (o que falta).
+ - sw.js novo (ações Aceitar/Recusar na notificação): publique também.
+
+ATUALIZAÇÃO (versão 99 — Atualização 17, perfil LOJISTA):
+ - Publique de novo o firestore.rules (motoboy registra recusa em "rcs") e o sw.js.
+ - Lojista vê motoboys online, fila do pedido pronto, recusas e recebe alarme de pedido parado.
+
+ATUALIZAÇÃO (versão 100 — Atualização 17, perfil ADM):
+ - Nova aba "Corridas paradas" na administração (reenviar para todos, retirada no local, cancelar sem entregador) e alarme do ADM.
+ - Publique o sw.js (troca de versão do cache).
+
+ATUALIZAÇÃO (versão 101 — Atualização 17, painel do CRIADOR):
+ - Publique o firestore.rules (criador lê pedidos e motoboys; motoboy grava a hora do aceite), o sw.js e o criador.html.
+
+ATUALIZAÇÃO (versão 102 — Atualização 17, relatório do contador): nova seção "Operação das corridas" no relatório geral. Publique o sw.js.
+
+ATUALIZAÇÃO (versão 103 — estratégia única):
+ - Removidas as páginas e os APKs por perfil (adm.html, lojista.html, entregador.html, cliente.html e os 4 manifestos). Fica só index.html + 1 APK (PedeAi.apk).
+ - Troque o sw.js e o vercel.json; apague do projeto na Vercel os arquivos removidos.
+
+ATUALIZAÇÃO (versão 104 — varredura de erros):
+ - Publique de novo o firestore.rules (o cliente agora pode confirmar "Recebi meu pedido") e o sw.js.
+ - Corrigido o link "Já instalou? Abrir o app" do convite do motoboy (apontava para entregador.html, que não existe mais).
+ - A trava de 15/dia e a assinatura dos dados agora viram o dia juntas (00:01, horário do celular).
+ - Textos de aviso não citam mais o arquivo firebase-config.js (a configuração está no index.html).
+
+ATUALIZAÇÃO (versão 100 — segurança e operação da loja):
+ - PUBLIQUE DE NOVO o firestore.rules ANTES de publicar o app (passo 2). Sem isso o entregador não consegue confirmar retirada/entrega.
+ - Códigos de retirada e entrega: agora ficam num documento separado (/seg), que o entregador não consegue ler. A conferência é feita
+   pelo servidor (regras do Firestore): se o código estiver errado, a gravação é recusada. Pedidos antigos continuam funcionando.
+ - Correção: ao confirmar a retirada, o pedido sumia da tela do entregador (o carimbo de horário usava o mesmo campo "rt" da
+   retirada no local). Agora usa "rtm".
+ - Loja: horário de funcionamento, botão "Fechar a loja agora" e raio de entrega em km (aba Produtos > Horário e área de entrega).
+   O raio usa o GPS da loja e o GPS do cliente (o cliente toca em Entregar em > Usar minha localização atual).
+ - Produto esgotado: botão em cada produto (aba Produtos).
+ - Troco: o cliente informa "troco para quanto" ao pagar em dinheiro; aparece no cartão do pedido e na comanda.
+ - Excluir conta: botão no cadastro do cliente, nas configurações do entregador e no fim do painel do lojista.
+ - AINDA NÃO FEITO (precisa de servidor/Cloud Functions): cobrança e repasse (Asaas/split), push com o app fechado, cupom de desconto.
+
+ - Painel do lojista: botões de compartilhar cardápio, link do motoboy, backup e restauração ficam só na aba "Compartilhar & Motoboys"
+   (removidos da aba Produtos, da aba Diárias e do cartão do pedido pronto).
+
+ATUALIZAÇÃO (versão 107 — Pix):
+ - Administração > aba "Pix": cadastre chave, nome do recebedor e cidade. O cliente que escolher Pix vê a chave, o valor e o "copia e cola"
+   depois de fazer o pedido. Não precisa mudar o firestore.rules por causa disto. O app não confirma o pagamento (confira no banco).
+
+ATUALIZAÇÃO (versão 109 — Perfil 1 Motoboy):
+ - As REGRAS DO FIRESTORE mudaram de novo: publique firestore.rules (passo 2) ANTES de subir o app.
+ - Troque o cache do sw.js (já está em pedeai-v109).
+ - Motoboy: o app instalado abre direto na área do entregador; Sair limpa a sessão.
+
+ATUALIZAÇÃO (versão 110 — Perfil 2 Lojista iniciado):
+ - As REGRAS DO FIRESTORE mudaram: publique firestore.rules ANTES de subir o app (nova coleção "corridas").
+ - O motoboy passa a ver só o cartão da corrida (sem endereço/telefone do cliente) até aceitar.
+ - sw.js = pedeai-v110.
+
+ATUALIZAÇÃO (versão 118.6 — trava no servidor, dados antigos, Loja Teste e abas que não voltam ao início):
+ - ORDEM: 1) FIREBASE > Firestore > Regras: cole o firestore.rules deste pacote e toque em Publicar (ANTES do app).
+          2) VERCEL: suba TODOS os arquivos desta pasta por cima da versão atual (sw.js = pedeai-v118-6).
+          3) Abra o app como ADM (entre com a conta dona) e deixe aberto cerca de 1 minuto: ele grava a loja nos códigos e conversas antigos.
+          4) Em cada aparelho de teste: limpe o cache/dados do site (ou desinstale e reinstale o app) antes de testar.
+ - Os lojistas já existentes ficam em "Aguardando liberação" até o ADM autorizar na aba Acessos.
+ - Confira no ar que https://SEU-ENDERECO/sw.js abre com texto (não pode estar vazio) e mostra pedeai-v118-6.
+ - Roteiro de teste em aparelho: seção 21 do DOSSIE-PedeAi.html.
+ - v118.4: na administração > Lojas há "Criar Loja Teste" (cardápio completo) e a opção "Começar com o cardápio modelo" ao criar qualquer loja. Para desativar: "Suspender loja". As regras NÃO mudaram em relação à 118.3.
+ - v118.6: corrigido o login com Google que voltava a pedir login (conta Google já existente). Se ainda repetir, copie a mensagem que aparece embaixo do botão (ex.: auth/...) e envie.

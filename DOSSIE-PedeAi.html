@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dossiê PedeAí Brasil — v118.6 (Perfil 1 Motoboy em teste · Perfil 2 Lojista iniciado)</title>
+<style>
+:root{--bg:#ffffff;--tx:#1b1b22;--mu:#5d5d6a;--ac:#d4141c;--cd:#f6f6f8;--br:#e3e3e8}
+@media (prefers-color-scheme:dark){:root{--bg:#14141a;--tx:#f1f1f5;--mu:#a9a9b6;--cd:#1e1e27;--br:#32323e}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);padding:env(safe-area-inset-top,0) 0 40px}
+main{max-width:820px;margin:0 auto;padding:20px 16px}
+h1{font-size:26px;margin:0 0 4px;color:var(--ac)}h2{font-size:19px;margin:30px 0 8px;border-bottom:2px solid var(--ac);padding-bottom:4px}
+.sub{color:var(--mu);margin:0 0 16px}.card{background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:12px 14px;margin:10px 0}
+table{width:100%;border-collapse:collapse;font-size:14.5px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--br);vertical-align:top}th{color:var(--mu);font-weight:600}
+code{background:var(--cd);border:1px solid var(--br);border-radius:6px;padding:1px 5px;font-size:13.5px;word-break:break-all}
+.tbl{overflow-x:auto}ul,ol{padding-left:22px}li{margin:4px 0}.ok{color:#0d7a3e;font-weight:700}.pend{color:#b26a00;font-weight:700}
+.tw{overflow-x:auto}.tw table{width:100%;border-collapse:collapse}.tw td,.tw th{border:1px solid var(--br);padding:8px;text-align:left;vertical-align:top}</style></head><body><main>
+<h1>PedeAí Brasil — Dossiê da versão base</h1>
+<p class="sub">Versão do pacote: v118.6 (cache <code>pedeai-v118-6</code>) · 25/10/2026 · Dono/desenvolvedor: Edinaldo, Vitória/ES · WhatsApp comercial: 27 99287-2238</p>
+
+<div class="card"><b class="ok">✔ Base aprovada pelo dono.</b> Instalação testada no celular: ADM, lojista, entregador e cliente foram instalados e removidos um a um, e cada um instalou corretamente. A v89 corrigiu os links de compartilhar, a v91 fixou que o link do app abre sempre a administração e a v92 deixou um só botão de instalar por perfil. Daqui para frente, mudanças devem ser feitas por partes, mantendo todo o restante fiel a esta versão.</div>
+
+<div class="card"><b>ATUALIZAÇÃO v118.6 (26/10/2026):</b> corrigido o login com Google que voltava a pedir login (seção 27).</div>
+<div class="card"><b>ATUALIZAÇÃO v118.5 (26/10/2026):</b> abas que voltavam ao início agora ficam na aba aberta (ADM, lojista e atalhos do cardápio). Ver <b>seção 25</b>.</div>
+<div class="card"><b>TESTES AUTOMÁTICOS (26/10/2026):</b> rodados em navegador real (modo teste local): 40 verificações passaram; 2 defeitos encontrados e corrigidos (seção 24). Testes em aparelho continuam 0 de 13.</div>
+<div class="card"><b>ATUALIZAÇÃO v118.4 (26/10/2026):</b> Loja Teste completa e cardápio modelo para novas lojas (seção 22).</div>
+<div class="card"><b>ATUALIZAÇÃO v118.3 (26/10/2026):</b> o ADM grava a loja nos códigos e mensagens antigos (seção 20); o lojista volta a vê-los.</div>
+<div class="card"><b>ATUALIZAÇÃO v118.2 (26/10/2026):</b> fechados os pendentes da trava no servidor (seg, msgs e escrita do lojista). Ver <b>seção 19</b>.</div>
+<div class="card"><b>ATUALIZAÇÃO v118.1 (25/10/2026):</b> aplicada a análise da v118 — trava de leitura no servidor, regra de verificação antes de toda entrega e prioridades da v119. Ver <b>seção 18</b>. Continua <span class="pend">sem teste em aparelho; nada liberado</span>.</div>
+<div class="card"><b>ONDE ESTAMOS (v118 · 25/10/2026 · responsável: Claude, a pedido de Edinaldo)</b><br>Perfil 1 (Motoboy): código pronto desde a v109, <span class="pend">aguardando seu teste em aparelho</span>. Perfil 2 (Lojista): <b>iniciado nesta versão</b> com a coleção de corridas e 1 correção de regra; o restante do menu do lojista (seção 14) ainda <span class="pend">não foi feito</span>. Perfis 3 a 6 não iniciados. Nada está "Liberado".</div>
+<h2>1. Um só app: tudo parte do ADM</h2>
+<ul>
+<li><b>Fluxo oficial:</b> o ADM envia o link ao lojista; o lojista envia o link do cardápio ao cliente e o link do motoboy ao entregador. Cada pessoa vê só a sua parte.</li>
+<li>Quem abre o endereço do app ou baixa o APK vê só a Administração (o link sem perfil abre sempre a administração).</li>
+<li>Links: <code>index.html#lojista</code> (link do lojista), <code>#cardapio-&lt;idLoja&gt;</code> (cliente: pede direto pelo link, sem instalar; pode instalar se quiser) e <code>#convite=m-&lt;idLoja&gt;</code> (motoboy: baixa e instala o app, cadastro com 3 fotos).</li>
+<li><b>Um único APK:</b> <code>downloads/PedeAi.apk</code> (Package ID <code>br.com.pedeai.app</code>), que já traz todos os perfis. Um só botão "Baixar e instalar"; sem o APK publicado, o botão instala pelo navegador.</li>
+<li><b>Removido na v103:</b> as páginas <code>adm.html</code>, <code>lojista.html</code>, <code>entregador.html</code>, <code>cliente.html</code>, os 4 manifestos por perfil, os ícones por perfil e os 4 APKs.</li>
+</ul>
+
+<h2>2. Conteúdo do pacote PedeAi-PRONTO-PARA-PUBLICAR.zip</h2>
+<ul>
+<li><code>index.html</code> — o aplicativo (único)</li>
+<li><code>criador.html</code> — painel do Arquiteto (só com o Gmail do dono)</li>
+<li><code>sw.js</code> — service worker (rede primeiro, cópia offline); a cada publicação, trocar <code>CACHE_VERSION</code></li>
+<li><code>manifest.webmanifest</code>, pasta <code>icons/</code> (ícone 192 e 512)</li>
+<li><code>firestore.rules</code> — regras de segurança do banco</li>
+<li><code>vercel.json</code> — cabeçalhos do APK único e do <code>sw.js</code></li>
+<li><code>politica-privacidade.html</code>, <code>termos-de-uso.html</code> (modelos para revisar) e <code>assetlinks-MODELO.json</code></li>
+<li><code>downloads/LEIA-ME-APK.txt</code> e <code>PUBLICAR.txt</code> — instruções</li>
+</ul>
+
+<h2>3. Como publicar</h2>
+<p>Firebase: projeto <code>delivery-67d14</code> · endereço previsto: <code>https://meudelivery-six.vercel.app/</code></p>
+<ol>
+<li>Firebase › Authentication: ativar "Anônimo", "Google" e "E-mail/senha".</li>
+<li>Firebase › Firestore: criar o banco (southamerica-east1, modo produção) e colar o conteúdo de <code>firestore.rules</code> na aba Regras. Se as regras mudarem, publicar de novo.</li>
+<li>Vercel: criar projeto e enviar TODOS os arquivos do pacote.</li>
+<li>Firebase › Authentication › Domínios autorizados: adicionar o domínio da Vercel (sem https:// e sem barra).</li>
+<li>Primeiro acesso: antes de divulgar qualquer link, abrir o endereço do app (abre na administração), entrar com seu Google ou e-mail e tocar em "Ativar esta conta como dona". Quem ativar primeiro vira a administração.</li>
+<li>Na administração, copiar o "link do lojista" e enviar ao lojista; ele envia o link do cardápio ao cliente e o link do motoboy ao entregador.</li>
+</ol>
+<div class="card"><b>Gerar 1 APK (PWABuilder › Android):</b> use o endereço <code>/index.html</code> e Package ID <code>br.com.pedeai.app</code>. Renomeie o arquivo para <code>PedeAi.apk</code>, coloque em <code>downloads/</code> e publique de novo. Guarde a chave de assinatura: sem ela não dá para atualizar o app depois.</div>
+
+<h2>4. Regras definidas pelo dono</h2>
+<p class="sub">Registradas a partir das suas instruções. Conferir no app a cada nova versão.</p>
+<ul>
+<li><b>Modelo de valores:</b> só existem o valor que o cliente paga, o valor do lojista e o valor do entregador. Sem os termos "cooperativa" e "app" nos textos.</li>
+<li><b>Limite de teste:</b> 15 vendas/entregas por dia, por loja (cliente, lojista e entregador da loja travam juntos; o criador libera cada loja). Libera às 00:01. No bloqueio, só aparece o botão "Quero ser dono do meu app".</li>
+<li><b>Botão fixo no rodapé:</b> "Quero ser dono de um aplicativo" abre o WhatsApp comercial com a mensagem "Quero meu próprio APP".</li>
+<li><b>Individualidade:</b> cada app baixado é de uma empresa diferente, sem misturar dados; cliente não vê outro cliente; lojista só vê o próprio negócio; login e regras de segurança no banco.</li>
+<li><b>Código do cliente (3 formas):</b> digitar o telefone, envio automático na saída do entregador e exportar para WhatsApp.</li>
+<li><b>Garçom virtual por voz "Lariquinha"</b> no app do cliente.</li>
+<li><b>Entregador:</b> menu, carteira, entrega de área, configuração e cadastro completo (endereço, telefone, e-mail etc.), todos os botões funcionando; cadastro com 3 fotos.</li>
+<li><b>Visual:</b> claro e branco, com cores que despertam desejo e necessidade de pedir.</li>
+<li><b>Método de trabalho:</b> mexer por partes, mantendo todo o restante inalterado.</li>
+</ul>
+
+<h2>5. Regra de entrega (toda resposta)</h2>
+<p>Sempre devolver os 4 arquivos atualizados: <code>PedeAi-PRONTO-PARA-PUBLICAR.zip</code> (pacote), <code>PedeAi.html</code> (idêntico ao <code>index.html</code> do pacote), <code>DOSSIE-PedeAi.html</code> (este) e <code>criador.html</code>. Nunca enviar só 1, 2 ou 3.</p>
+
+<h2>6. Histórico recente</h2>
+<div class="tbl"><table>
+<tr><th>Versão</th><th>O que mudou</th></tr>
+<tr><td>v86</td><td>Pacote recebido: só o ADM instalava; botões de instalar do lojista e do entregador apontavam para um APK inexistente.</td></tr>
+<tr><td>v87</td><td>Instalação pelo navegador como plano B em todos os perfis; manifestos por perfil no cache offline.</td></tr>
+<tr><td>v88</td><td>Um APK por perfil; páginas de entrada por perfil com manifesto e escopo próprios; <code>vercel.json</code> e instruções atualizados. <span class="ok">Testado pelo dono: instala e remove cada perfil sem problema.</span></td></tr>
+<tr><td>v89</td><td>Corrigido: os links de compartilhar (lojista, convite do motoboy, cardápio do cliente, indicações) agora sempre apontam para <code>index.html</code>, que escolhe o perfil certo pelo link. Antes, o link gerado dentro de um app herdava a página desse app e abria/instalava o perfil errado.</td></tr>
+<tr><td>v91</td><td>Regra do dono: tudo começa pela administração. Abrir o link do app (sem perfil no endereço) abre SEMPRE a administração, mesmo que o aparelho tenha aberto lojista, entregador ou cliente antes. Links com <code>#lojista</code>, <code>#convite=m-...</code> ou <code>#cardapio-...</code> abrem o perfil do link. Recarregar a página mantém o perfil em uso. (A v90, que mostrava "Quem é você?", foi desfeita.)</td></tr>
+<tr><td>v92</td><td>Um único botão "Baixar e instalar" por perfil (administração, lojista, entregador e cliente), no fim da página, sem cobrir as informações; no convite do motoboy o botão aparece direto no convite. Removidos os cartões, o menu "Baixar o app por perfil" e os botões repetidos (incluindo o "Instalar agora neste aparelho"). Cada botão baixa o APK do próprio perfil; sem o APK publicado, instala pelo navegador. Compartilhar continua como estava.</td></tr>
+<tr><td>v93</td><td>Preparação para publicar: modelos de política de privacidade e termos de uso; modelo do <code>assetlinks.json</code>; login Google com redirecionamento de reserva; texto "cooperados" removido dos manifestos; instruções de Package ID e checklist do Firebase.</td></tr>
+<tr><td>v94</td><td>Conferência geral: o cache do app deixou de guardar os APKs e respostas parciais; abrir outro link do PedeAí na mesma aba troca para o perfil do link; título de cada página por perfil; texto do convite do motoboy ajustado. Testado em navegador de teste (sem Firebase): as 5 páginas abrem sem erros e os cliques nas telas de cada perfil não geraram erro.</td></tr>
+<tr><td>v95</td><td>Convite do motoboy: no Android, abrir o link baixa automaticamente (uma vez) o APK do entregador, se ele estiver em <code>downloads/</code>; continua o botão "Baixar e instalar" e o link "Já instalou? Abrir o app", que leva ao app do entregador com o convite. O cadastro continua pelo convite guardado no aparelho.</td></tr>
+<tr><td>v96</td><td>Auditoria do app do entregador: testado o fluxo completo (ficar online, aceitar, recusar, cheguei na loja, código de retirada, cheguei no cliente, foto + código, ganhos, carteira, chat com lojista, grupo, diárias, indicações, tema, editar cadastro). Corrigido o botão "Sair" do menu, que não fazia nada nos apps por perfil: agora sai da conta e recarrega. Conferido que tudo o que o entregador grava (aceitar, retirada, chegada, entrega, posição, mensagens, diárias) está dentro do que o <code>firestore.rules</code> permite. Limitação conhecida: os códigos de retirada e de entrega são conferidos no aparelho e ficam legíveis no pedido; protegê-los de verdade exige uma função no servidor.</td></tr>
+<tr><td>v103</td><td>Estratégia única definida pelo dono: tudo parte do ADM (ADM → lojista → cliente e motoboy). Removidas as páginas, manifestos, ícones e APKs por perfil; fica um app (<code>index.html</code>) e um APK (<code>PedeAi.apk</code>). Corrigiu também o problema de os apps por perfil abrirem a administração.</td></tr>
+<tr><td>v104</td><td>Varredura de erros (seção 11): corrigido o botão "Recebi meu pedido" do cliente (regras do Firestore), o link "Já instalou? Abrir o app" do convite do motoboy, a virada do dia da trava de 15 e textos que citavam um arquivo inexistente. Precisa publicar de novo o firestore.rules e o sw.js.</td></tr>
+</table></div>
+
+<h2>7. Pontos em aberto</h2>
+<ul>
+<li><span class="pend">Instalação obrigatória do entregador:</span> decidir se o bloqueio já fica ativo ou só quando o APK único estiver publicado (ativo antes disso, nenhum entregador conseguiria entrar).</li>
+<li><span class="pend">Gerar e publicar o APK único</span> no PWABuilder, guardar as chaves de assinatura e montar o <code>.well-known/assetlinks.json</code> (modelo no pacote).</li>
+<li><span class="pend">Firebase:</span> ativar Google, E-mail/senha e Anônimo; criar o Firestore e publicar o <code>firestore.rules</code>; autorizar o domínio da Vercel.</li>
+<li><span class="pend">Testar o login Google dentro do APK</span> (há redirecionamento de reserva, mas só o teste real confirma).</li>
+<li><span class="pend">Revisar a política de privacidade e os termos</span> com um advogado.</li>
+<li><span class="pend">Revisão completa das regras acima</span> (limite de 15/dia, individualidade de dados, regras do Firestore) em teste real, publicando as <code>firestore.rules</code> atuais.</li>
+</ul>
+
+<h2>8. Atualização 17 — Alarme também incomoda o motoboy (andamento)</h2>
+<p><b>Método combinado:</b> aplicar por perfil, gerar os 4 arquivos prontos, registrar aqui o que foi feito e o que falta, e só passar ao próximo perfil com autorização.</p>
+<p><b>Parei em:</b> perfis <b>ENTREGADOR</b>, <b>LOJISTA</b>, <b>ADM</b>, <b>CRIADOR</b> e <b>RELATÓRIO DO CONTADOR</b> concluídos. <b>A Atualização 17 está aplicada por completo</b>, com as limitações abaixo.</p>
+<div class="tw"><table>
+<tr><th>Item</th><th>Situação</th></tr>
+<tr><td>1.1 Aviso inicial "NOVA CORRIDA" com entrega, gorjeta e VOCÊ RECEBE</td><td>Feito (som, vibração, notificação sobreposta; só motoboy online, e só o específico quando o pedido é direcionado)</td></tr>
+<tr><td>1.2 / 1.3 Cutucadas a cada 2 min com tom escalonado (normal, lembrete 3 min, urgência 5 min, crítico 8 min e repete)</td><td>Feito. Intervalo configurável no aparelho (<code>pedeai-cutuca-min</code>, padrão 2); falta a tela para configurar</td></tr>
+<tr><td>2.1 Notificação sobreposta com ações Aceitar / Recusar</td><td>Feito (service worker v98). Funciona com o app aberto ou em segundo plano</td></tr>
+<tr><td>2.2 Badge no ícone com a contagem de corridas</td><td>Feito onde o navegador/APK aceita (setAppBadge)</td></tr>
+<tr><td>2.3 Faixa no topo ("N corridas disponíveis. A mais antiga está parada há X min"), clicável</td><td>Feito</td></tr>
+<tr><td>2.4 Selo vermelho "Parada há X min", selo "Com gorjeta", mais antigas no topo</td><td>Feito</td></tr>
+<tr><td>2.5 Aviso não silenciável pelo motoboy</td><td>Feito (nenhuma configuração do app desliga o aviso). O silencioso do celular não é controlável pelo app</td></tr>
+<tr><td>3 / 4.1 / 4.2 Avisos param ao aceitar, outro aceitar, retirada, cancelamento, ficar offline; offline não recebe; volta a receber ao ficar online</td><td>Feito</td></tr>
+<tr><td>4.3 Envio a um motoboy específico: só ele é incomodado</td><td>Feito</td></tr>
+<tr><td>4.4 Recusa explícita: para só aquela corrida</td><td>Feito no aparelho do motoboy. Recusa também gravada no pedido (campo <code>rcs</code>) para o lojista ver; exige publicar o <code>firestore.rules</code> novo</td></tr>
+<tr><td>4.5 Valor sempre no aviso</td><td>Feito</td></tr>
+<tr><td>Lojista 5.1/5.2 Alarme do lojista (aviso com som/vibração aos 5 min sem entregador; reforçado aos 8; a cada 2 min a partir dos 10)</td><td>Feito. A Atualização 16 não foi enviada, então segui só a tabela da 17</td></tr>
+<tr><td>Lojista 6.1 "N motoboys online — nenhum aceitou ainda" / sem motoboy online sugere retirada no local</td><td>Feito (presença do motoboy gravada no cadastro dele: online + último sinal; vale como online até 3 min sem sinal)</td></tr>
+<tr><td>Lojista 6.2 Lista de motoboys online com tempo online; 6.3 quem recusou a corrida (sem motivo)</td><td>Feito</td></tr>
+<tr><td>Lojista 4.3 Se o motoboy escolhido não aceita (3 min), aviso para reenviar a todos</td><td>Feito (o botão "Enviar para todos os motoboys" já existia)</td></tr>
+<tr><td>Lojista 5.3 Um resolve, todos param (aceitou, retirada, cancelou)</td><td>Feito para lojista e motoboy; ADM também (resolver pela aba Corridas paradas faz todos os alarmes pararem)</td></tr>
+<tr><td>ADM 5.2 Alarme do ADM (aviso aos 8 min "lojista não resolveu"; a cada 2 min a partir dos 10)</td><td>Feito (som, vibração, notificação; grava a hora em que o ADM foi acionado no pedido, campo <code>admAc</code>)</td></tr>
+<tr><td>ADM 5.3 ADM resolve: reenviar para todos, mudar para retirada ou cancelar</td><td>Feito na nova aba <b>Corridas paradas</b> (mostra tempo parado, motoboys online, recusas). Cancelamento grava "Cancelado — sem entregador"</td></tr>
+<tr><td>Criador 7.1 Por loja: corridas paradas agora, há quanto tempo a mais antiga, motoboys online, ADM acionado</td><td>Feito (dentro da lista "Lojas do sistema" do <code>criador.html</code>)</td></tr>
+<tr><td>Criador 7.2 Por motoboy: taxa de aceite, tempo médio de aceite, recusas; alerta "nunca aceita"</td><td>Feito (novo quadro "Motoboys", últimos 30 dias). O app agora grava a hora do aceite (<code>aat</code>); pedidos antigos não têm esse dado</td></tr>
+<tr><td>Observação de privacidade do criador</td><td>Para ler pedidos e motoboys, o <code>firestore.rules</code> passou a permitir que a conta do criador leia essas coleções. O painel só exibe contagens, lojas e nomes de motoboys, mas a permissão de leitura é ampla</td></tr>
+<tr><td>Contador 8.1 / 8.2 Seção "Operação das corridas" no relatório geral da administração: cancelados — sem entregador (quantidade, valor e lista), tempo médio de aceite, corridas paradas, retiradas no local</td><td>Feito. Na lista, pagamento online aparece como "Verificar reembolso"; só vira "Reembolsado" quando o pedido tiver o marcador <code>reemb</code>. <span class="pend">O app ainda não confirma pagamento online nem registra o reembolso</span></td></tr>
+<tr><td>8.1 "Reembolsado" quando o pagamento já foi confirmado</td><td><span class="pend">Pendente</span>: o app ainda não tem confirmação de pagamento online (ver linha do contador)</td></tr>
+</table></div>
+<p><b>Limitações conhecidas:</b> (1) com o app totalmente fechado, o aviso a cada 2 minutos exige notificação push do servidor (FCM / função no servidor), que ainda não existe no projeto; hoje funciona com o app aberto ou em segundo plano. (2) A gorjeta hoje só é dada pelo cliente depois da entrega; antes disso o campo vale R$ 0,00 e o aviso mostra só o valor da entrega. (3) Não há filtro por região no app; todos os motoboys online da loja (ou de todas, se a opção global estiver ligada) recebem. (4) A presença "online" do motoboy só atualiza com o app dele aberto ou em segundo plano. (5) Testado só na checagem de sintaxe e na lógica; falta teste em aparelho real.</p>
+<p><b>Antes dessa atualização (listagem de 25/10):</b> comanda PDF/impressão, limite 15/dia por loja com liberação pelo criador, aba Aprovações removida, três destinos do pedido pronto, notificação de pedido novo, letras grandes. Pendentes dessa listagem: cadastro do ADM (nome, e-mail, WhatsApp) e cadastro de loja pelo painel do criador.</p>
+
+<h2>9. Verificação do pacote (25/10/2026)</h2>
+<p>Conferência feita só por leitura dos arquivos (sem celular e sem Firebase real). Nada foi alterado no app. Se um item já está como <span class="ok">OK</span> aqui, não precisa conferir de novo.</p>
+<div class="tw"><table>
+<tr><th>Item</th><th>Resultado</th></tr>
+<tr><td>PedeAi.html, criador.html e DOSSIE-PedeAi.html avulsos x os do ZIP</td><td><span class="ok">OK</span> idênticos (conferido por hash)</td></tr>
+<tr><td>JavaScript do index.html, criador.html e sw.js</td><td><span class="ok">OK</span> sem erro de sintaxe</td></tr>
+<tr><td>manifest.webmanifest, vercel.json, assetlinks-MODELO.json</td><td><span class="ok">OK</span> JSON válido</td></tr>
+<tr><td>firestore.rules</td><td><span class="ok">OK</span> chaves e parênteses fecham; a sintaxe completa só o Firebase confirma ao publicar</td></tr>
+<tr><td>Firebase delivery-67d14, código da empresa e endereço da Vercel no app</td><td><span class="ok">OK</span> embutidos</td></tr>
+<tr><td>Limite de 15 por dia, por loja, virando às 00:01 pelo relógio do celular</td><td><span class="ok">OK</span> conforme o código</td></tr>
+<tr><td>Link "Já instalou? Abrir o app" do convite do motoboy</td><td><span class="ok">CORRIGIDO v104</span> agora abre index.html com o convite (testado no navegador de teste)</td></tr>
+<tr><td>Cabeçalho do dossiê</td><td><span class="ok">CORRIGIDO v104</span> v104 / cache pedeai-v104</td></tr>
+<tr><td>Numeração do dossiê</td><td><span class="ok">CORRIGIDO v104</span> seções em ordem; linha duplicada removida</td></tr>
+<tr><td>Limite de 15: "sistema inteiro" (dossiê, seção 4) x "por loja" (PUBLICAR.txt v97 e código)</td><td><span class="ok">CORRIGIDO v104</span> texto agora diz por loja, como o código e o PUBLICAR.txt</td></tr>
+<tr><td>Nome do dono no dossiê ("Ednaldo")</td><td><span class="ok">CORRIGIDO v104</span> Edinaldo</td></tr>
+<tr><td>Aviso "Preencha o firebase-config.js"</td><td><span class="ok">CORRIGIDO v104</span> os avisos apontam para o início do index.html</td></tr>
+<tr><td>Login padrão ADM / ADM no código</td><td><span class="ok">OK</span> o login ADM/ADM só vale no modo teste (sem Firebase); com Firebase o login é por e-mail e senha</td></tr>
+<tr><td>downloads/PedeAi.apk e .well-known/assetlinks.json</td><td><span class="pend">Ausentes</span> só existem as instruções e o modelo</td></tr>
+</table></div>
+<p><b>Conclusão estimada:</b> pacote cerca de 90%. <b>Testes:</b> cerca de 35% (por leitura do código; falta aparelho real, login Google no APK, Firebase com as regras publicadas e notificação com o app fechado).</p>
+
+<h2>10. Análise de sincronia e comunicação entre os perfis (25/10/2026)</h2>
+<p>Feita por leitura do <code>index.html</code> e do <code>firestore.rules</code>, sem aparelho e sem Firebase real. Nada foi alterado no app.</p>
+<h3>Como os perfis conversam</h3>
+<p>Todos usam o mesmo banco (<code>empresas/&lt;código&gt;/</code> no Firestore) com atualização em tempo real. Não há ligação direta entre aparelhos: um perfil grava, os outros recebem pelo banco. Cada perfil só assina o que as regras permitem:</p>
+<div class="tw"><table>
+<tr><th>Perfil</th><th>Recebe (tempo real)</th><th>Grava</th></tr>
+<tr><td>Cliente</td><td>seus pedidos, lojas, mensagens do pedido, contador do dia</td><td>pedido novo; cancelar (até o entregador aceitar); gorjeta e avaliação; mensagens</td></tr>
+<tr><td>Lojista</td><td>pedidos da sua loja, diárias, motoboys convidados por ele, mensagens</td><td>preparo, pronto, cancelado; destino do pedido (todos, motoboy específico, retirada); diárias; aprovar motoboy</td></tr>
+<tr><td>Entregador</td><td>seus pedidos e os pedidos "pronto" (se aprovado), diárias, grupo, indicações</td><td>aceitar, recusar (rcs), retirada, rota, entrega (foto + código), posição, mensagens</td></tr>
+<tr><td>ADM</td><td>tudo da empresa</td><td>corridas paradas, cancelamento sem entregador, lojas, configurações</td></tr>
+<tr><td>Criador</td><td>lojas, pedidos e motoboys (só leitura), liberar loja travada</td><td>só o campo de liberação da loja</td></tr>
+</table></div>
+<h3>Ciclo do pedido (conferido contra as regras)</h3>
+<p>novo (cliente) → preparo → pronto (lojista) → aceito (entregador) → rota → entregue (entregador). Cancelado: cliente até o entregador aceitar; lojista e ADM a qualquer momento. As transições que o app grava batem com as que as regras permitem, exceto o item A abaixo.</p>
+<h3>Resultado</h3>
+<div class="tw"><table>
+<tr><th>Item</th><th>Resultado</th></tr>
+<tr><td>Criar pedido, preparo, pronto, aceitar, rota, entrega, cancelar (cliente e lojista), recusa do entregador (rcs), gorjeta e avaliação, diárias, limite diário gravado pelo servidor</td><td><span class="ok">OK</span> coerentes com as regras (11 de 12 fluxos)</td></tr>
+<tr><td>Chat cliente, lojista e entregador (canais cl, lj e grupo gp)</td><td><span class="ok">OK</span> a regra exige que o pedido tenha o mesmo cliente, lojista e entregador. O entregador só vê as mensagens criadas depois de aceitar a corrida</td></tr>
+<tr><td><b>A.</b> Botão "Recebi meu pedido" do cliente</td><td><span class="ok">CORRIGIDO v104</span> as regras agora deixam o cliente confirmar quando a corrida está em rota ou entregue. Precisa publicar o firestore.rules novo</td></tr>
+<tr><td><b>B.</b> Privacidade do entregador aprovado</td><td><span class="pend">Atenção</span> as regras deixam o entregador aprovado ler todos os cadastros de entregadores (com fotos de CNH e selfie e telefone) e os pedidos "pronto" de todas as lojas por inteiro. Esconder o valor do pedido hoje é só na tela; o dado chega ao aparelho</td></tr>
+<tr><td><b>C.</b> Virada do dia com o app aberto</td><td><span class="ok">CORRIGIDO v104</span> a assinatura dos dados agora vira o dia junto com a trava (00:01)</td></tr>
+<tr><td>Avisos de corrida, alarme do lojista e do ADM</td><td><span class="pend">Limite conhecido</span> funcionam com o app aberto ou em segundo plano; com o app fechado falta push do servidor (já registrado na seção 8)</td></tr>
+<tr><td>Link "Já instalou? Abrir o app" do convite</td><td><span class="ok">CORRIGIDO v104</span> ver seção 9</td></tr>
+<tr><td>Sincronia entre 2 ou mais aparelhos reais</td><td><span class="pend">Não testada</span> precisa das regras publicadas e de um pedido completo do cliente até a entrega</td></tr>
+</table></div>
+<p><b>Conclusão estimada:</b> sincronia pronta por código, cerca de 90% (falta A, B e C). Testada em aparelhos: 0%. O restante do app segue como na seção 9 (pacote cerca de 90%, testes cerca de 35%).</p>
+
+<h2>11. Varredura e correções (v104, 25/10/2026)</h2>
+<p>Corrigido só o que estava errado ou incoerente; o restante do app, o design e as regras de negócio ficaram como estavam.</p>
+<div class="tw"><table>
+<tr><th>O que mudou</th><th>Onde</th></tr>
+<tr><td>Cliente confirma "Recebi meu pedido" (antes o servidor negava)</td><td><code>firestore.rules</code>: nova permissão do cliente para gravar <code>cr</code>, <code>st</code> e <code>dt</code> só quando a corrida está em rota ou entregue e o resultado é "entregue"</td></tr>
+<tr><td>Link "Já instalou? Abrir o app" do convite do motoboy</td><td><code>index.html</code>: de entregador.html para index.html</td></tr>
+<tr><td>Virada do dia: assinatura dos dados e trava de 15 passam a virar juntas às 00:01</td><td><code>index.html</code>: chave de data da assinatura</td></tr>
+<tr><td>Avisos que citavam o firebase-config.js</td><td><code>index.html</code>: dois textos</td></tr>
+<tr><td>Cache do app</td><td><code>sw.js</code>: pedeai-v104; <code>PUBLICAR.txt</code>: nota da v104</td></tr>
+<tr><td>Dossiê</td><td>versão no topo, nome do dono, limite por loja, linha duplicada, ordem das seções, histórico, seções 9 e 10</td></tr>
+</table></div>
+<h3>Teste feito (navegador de teste, modo local, sem Firebase)</h3>
+<ul>
+<li><span class="ok">OK</span> as telas da administração, do lojista, do cardápio do cliente, do convite do motoboy e o criador.html abrem sem erro de JavaScript, e os cliques nos botões visíveis não geraram erro.</li>
+<li><span class="ok">OK</span> sintaxe de todo o JavaScript e do sw.js.</li>
+<li>O único recurso que não carrega é o <code>downloads/PedeAi.apk</code>, que ainda não existe (pendente da seção 7). Fontes e Firebase não carregaram só porque o ambiente de teste não tem internet.</li>
+</ul>
+<h3>Ainda aberto</h3>
+<ul>
+<li><span class="pend">B. Privacidade:</span> o entregador aprovado lê todos os cadastros de entregadores (com fotos de CNH e selfie) e os pedidos "pronto" por inteiro. Mexer nisso muda regras e telas, por isso não foi alterado nesta varredura.</li>
+<li><span class="pend">Publicar de novo</span> o <code>firestore.rules</code> e o <code>sw.js</code> para as correções valerem.</li>
+<li><span class="pend">Teste em aparelhos reais</span> com o Firebase (cliente até entrega, 2 ou mais aparelhos) e o APK.</li>
+</ul>
+<p><b>Conclusão estimada:</b> pacote cerca de 92%; sincronia pronta por código cerca de 95% (falta o item B); testes cerca de 40% (carregamento e cliques conferidos; faltam aparelhos reais e Firebase).</p>
+
+<h2>12. Atualização v105–v107 (25/10/2026): segurança, loja, Pix e limpeza do painel</h2>
+<p>Feito por partes, mantendo o resto do app. Conferido só por leitura e checagem de sintaxe; falta teste em aparelho e com o Firebase.</p>
+<div class="tw"><table>
+<tr><th>Item</th><th>Situação</th></tr>
+<tr><td>Códigos de retirada e entrega conferidos no servidor</td><td><span class="ok">FEITO</span> os códigos ficam em <code>seg/&lt;pedido&gt;</code>, que o entregador não lê; as regras do Firestore recusam a retirada/entrega com código errado. Pedidos antigos continuam valendo. Limite: código de 4 dígitos pode ser tentado várias vezes (só função no servidor impede).</td></tr>
+<tr><td>Correção: pedido sumia do entregador após confirmar a retirada</td><td><span class="ok">CORRIGIDO</span> o horário de saída usava o campo <code>rt</code> (retirada no local); agora usa <code>rtm</code>.</td></tr>
+<tr><td>Horário de funcionamento e loja aberta/fechada</td><td><span class="ok">FEITO</span> aba Produtos › Horário e área de entrega; botão "Fechar a loja agora". Conferido só no aparelho do cliente.</td></tr>
+<tr><td>Raio de entrega em km</td><td><span class="ok">FEITO</span> usa o GPS da loja e o GPS do cliente (Entregar em › Usar minha localização atual). Conferido só no aparelho do cliente.</td></tr>
+<tr><td>Produto esgotado</td><td><span class="ok">FEITO</span> botão em cada produto; o cliente vê "Esgotado".</td></tr>
+<tr><td>Troco para pagamento em dinheiro</td><td><span class="ok">FEITO</span> o cliente informa o valor; aparece no cartão do pedido do lojista e na comanda.</td></tr>
+<tr><td>Excluir conta (LGPD / Play Store)</td><td><span class="ok">FEITO</span> botão no cadastro do cliente, nas configurações do entregador e no fim do painel do lojista. Apaga cadastro, fotos de documentos e lojas do lojista; os pedidos ficam no histórico.</td></tr>
+<tr><td>Compartilhar/convite/backup/restauração em um só lugar</td><td><span class="ok">FEITO</span> ficam só na aba "Compartilhar &amp; Motoboys" do lojista; removidos das abas Produtos, Diárias e do cartão do pedido pronto.</td></tr>
+<tr><td>Pix da administração</td><td><span class="ok">FEITO</span> aba "Pix" do ADM: chave, nome do recebedor e cidade (uma só para todas as lojas, gravada no documento da empresa). O cliente que escolhe Pix vê, depois de pedir, a chave, o valor e o "copia e cola" (código Pix padrão do Banco Central, com valor do pedido). Sem QR code. O app NÃO confirma o pagamento: a conferência é no banco.</td></tr>
+</table></div>
+<h3>Ainda não feito</h3>
+<ul>
+<li><span class="pend">Cobrança e repasse automáticos</span> (Asaas/split: 7% lojista, 92% entregador) e confirmação de pagamento online/reembolso — precisam de servidor.</li>
+<li><span class="pend">Push com o app fechado</span> (FCM) para a corrida do motoboy — precisa de função no servidor.</li>
+<li><span class="pend">Cupom de desconto</span>.</li>
+<li><span class="pend">QR code do Pix</span> e baixa automática do pedido pago.</li>
+<li><span class="pend">Pendentes da seção 8:</span> cadastro do ADM (nome, e-mail, WhatsApp), cadastro de loja pelo painel do criador, tela para configurar o intervalo de aviso do motoboy, filtro de corrida por região, gorjeta antes da entrega.</li>
+<li><span class="pend">B. Privacidade do entregador</span> (seção 10), APK, política de privacidade revisada por advogado e teste em 2 ou 3 aparelhos reais.</li>
+<li><span class="pend">Publicar de novo</span> o <code>firestore.rules</code> (antes do app) e o <code>sw.js</code> (v107).</li>
+</ul>
+<h2>13. Perfil 1 — MOTOBOY (v109, início e conclusão do código: 25/10/2026)</h2>
+<p class="sub">Responsável: Claude (desenvolvimento) · Dono: Edinaldo. Status: <span class="pend">NÃO LIBERADO</span> — código pronto, checklist em aparelho ainda não executado. Histórico anterior preservado.</p>
+<h3>Falhas encontradas e correções</h3>
+<div class="tw"><table>
+<tr><th>Item</th><th>Status</th><th>O que foi feito</th></tr>
+<tr><td>ADM aparecendo no app do motoboy</td><td><span class="ok">✅ CORRIGIDO no código</span></td><td>Causa: ao abrir o app (navegação nova) sem perfil no link, o app sempre caía na administração e apagava o perfil salvo; e o botão "Sair" do menu não encerrava a sessão. Agora: o app INSTALADO em aparelho marcado como motoboy abre direto na área do entregador; no navegador sem perfil continua abrindo a administração (regra v91 mantida). Conta de ADM (dona) que abrir a área do entregador vê só "Conta da administração" + Sair. Conta sem cadastro de entregador vê "Sem cadastro de entregador" + campo para colar o convite + Sair. O entregador não tem mais o botão "Trocar perfil".</td></tr>
+<tr><td>Sessão/cache no login e logout</td><td><span class="ok">✅ FEITO</span></td><td>Sair (menu e barra) agora: encerra o login, fecha o banco local do aparelho, apaga a cópia offline do Firestore, o cache do app, o sessionStorage, o perfil/convite/recusas salvas e o contador (badge); depois recarrega. No login, resíduos de sessão anterior são limpos.</td></tr>
+<tr><td>Privacidade: entregador lia o cadastro de todos os entregadores (CNH/selfie)</td><td><span class="ok">✅ CORRIGIDO</span></td><td><code>firestore.rules</code>: aprovado não lê mais <code>ent</code> de outros; o app assina só o próprio cadastro. Efeito colateral: contagens de "colegas" no grupo podem aparecer menores.</td></tr>
+<tr><td>Privacidade: entregador lê pedidos "pronto" inteiros</td><td><span class="pend">🟡 NÃO CORRIGIDO</span></td><td>O Firestore não esconde campos de um documento. Solução correta: coleção separada "corridas" só com valor/bairros (endereço completo só após aceitar), gravada pelo lojista ao marcar pronto. Mexe no fluxo do lojista; proposta: fazer junto do Perfil 2, com sua autorização.</td></tr>
+<tr><td>Códigos de 4 dígitos com tentativas ilimitadas</td><td><span class="pend">🟡 PARCIAL</span></td><td>Feito: trava no aparelho (5 erros = espera de 5 min, contador de tentativas, para retirada e entrega). Limite: quem ignora o app e chama o servidor direto não é barrado. Limite real no servidor exige Cloud Function (ou código de 6 dígitos + função).</td></tr>
+<tr><td>Tela de intervalo da cutucada</td><td><span class="ok">✅ FEITO</span></td><td>Menu › Configurações: 1, 2, 3 ou 5 min (chave <code>pedeai-cutuca-min</code>, padrão 2).</td></tr>
+<tr><td>Filtro de corrida por região</td><td><span class="ok">✅ FEITO</span></td><td>Menu › Configurações: bairros separados por vírgula; vale na lista e nos avisos; corrida enviada direto ao motoboy aparece sempre; vazio = todas.</td></tr>
+<tr><td>Gorjeta antes da entrega</td><td><span class="pend">🔴 FALTA</span></td><td>Pedido de esclarecimento: o motoboy já vê "Com gorjeta" e o valor antes de aceitar. Se a ideia é o cliente poder dar gorjeta antes da entrega, isso é do Perfil 4 (Cliente).</td></tr>
+<tr><td>Push com app fechado (FCM)</td><td><span class="pend">🔴 FALTA</span></td><td>Depende de servidor (Cloud Function + chave FCM).</td></tr>
+<tr><td>Backend bloqueia motoboy em rotas de ADM/loja/cliente</td><td><span class="ok">✅ já valia</span></td><td>As regras já exigem dono/lojista/cliente do próprio documento; conferir no teste de aparelho.</td></tr>
+</table></div>
+<h3>Testes executados nesta sessão</h3>
+<ul>
+<li><span class="ok">OK</span> Sintaxe dos 9 blocos de script do <code>index.html</code>.</li>
+<li><span class="ok">OK</span> Lógica da trava de tentativas (5 erros bloqueia, libera após 5 min, zera ao acertar) e do filtro de região (acentos, bairro da loja/cliente, corrida direcionada): 15 de 15 verificações.</li>
+<li><span class="pend">PENDENTE</span> Todo o checklist do motoboy em aparelho real (APK limpo, convite, login, logout, online/offline, aviso com som, aceitar/recusar, códigos, foto, carteira, chat, grupo, diárias, indicações, excluir conta). Nada disso foi executado por mim; não marco como testado.</li>
+</ul>
+<h3>Antes de testar (ordem)</h3>
+<ol><li>Publicar <code>firestore.rules</code> no Firebase (mudou).</li><li>Subir o pacote no Vercel (sw.js = pedeai-v109).</li><li>Para testar o app instalado como motoboy: abrir o convite, instalar, concluir o cadastro; a partir daí o app instalado abre na área do entregador.</li></ol>
+<h3>Onde paramos / o que falta / próximo passo</h3>
+<ul>
+<li>Paramos no Perfil 1 (Motoboy), código aplicado, teste em aparelho pendente.</li>
+<li>Falta no Perfil 1: executar o checklist; decidir sobre "gorjeta antes da entrega"; coleção "corridas" (privacidade dos pedidos); limite de tentativas no servidor; FCM.</li>
+<li>Perfis não iniciados: 2 Lojista, 3 ADM, 4 Cliente, 5 Criador, 6 Consolidação.</li>
+<li><b>Próximo passo:</b> você testa o Perfil 1 e responde: (a) liberado ou ajustes; (b) o que significa "gorjeta antes da entrega"; (c) se faço a coleção "corridas" junto do Perfil 2. Só depois passo ao Perfil 2.</li>
+</ul>
+<h2>14. Perfil 2 — LOJISTA (v118, iniciado em 25/10/2026) — EM ANDAMENTO</h2>
+<p class="sub">Responsável: Claude · Dono: Edinaldo. Pedido do dono: entregar sempre o app inteiro (alterado + não alterado) com o dossiê dizendo o que falta; a próxima etapa lê este dossiê e continua. Status: <span class="pend">NÃO LIBERADO</span>.</p>
+<h3>Feito na v118</h3>
+<div class="tw"><table>
+<tr><th>Item</th><th>Status</th><th>O que foi feito</th></tr>
+<tr><td>Coleção de corridas (privacidade do cliente para o motoboy)</td><td><span class="ok">✅ FEITO no código</span></td><td>Ao marcar o pedido como pronto, o lojista (ou a administração) grava um cartão em <code>corridas/&lt;id&gt;</code> com loja, valor, gorjeta, itens e <b>só o bairro</b> do cliente. O entregador aprovado lê só esses cartões; endereço, telefone, nome, GPS, observação, foto e códigos ficam só no pedido, que ele só lê depois de aceitar. Aceitar agora grava pedido + cartão num lote (quem chegar depois recebe "já foi aceita por outro"). O lojista reconcilia sozinho os cartões (inclusive pedidos prontos antigos). <code>firestore.rules</code> tem a regra nova de <code>corridas</code> e o entregador não lê mais pedidos "pronto".</td></tr>
+<tr><td>Lojista não conseguia "retirada no local" (regra)</td><td><span class="ok">✅ CORRIGIDO</span></td><td>A regra do lojista não permitia gravar o campo <code>rt</code>; incluído.</td></tr>
+<tr><td>Botões duplicados "Compartilhar link com o entregador" (aba Diárias)</td><td><span class="ok">✅ FEITO</span></td><td>Os dois blocos não eram mais exibidos desde a v104; o código morto foi removido. O compartilhar fica só em "Compartilhar &amp; Motoboys".</td></tr>
+</table></div>
+<h3>Decisão pendente sua</h3>
+<ul><li><span class="pend">Remover "Criar loja" do lojista</span>: hoje o lojista se cadastra e cria a própria loja (fica pendente até a administração aprovar). Se eu tirar agora, ninguém consegue abrir loja, porque a criação pela administração só existe no Perfil 3. Proposta: manter como "solicitação" até o Perfil 3 e então remover. Responda "manter" ou "remover agora".</li></ul>
+<h3>Testes executados nesta sessão</h3>
+<ul>
+<li><span class="ok">OK</span> Sintaxe dos 9 blocos de script e equilíbrio das chaves do <code>firestore.rules</code> (as regras NÃO foram testadas no emulador do Firebase).</li>
+<li><span class="ok">OK</span> Lógica do cartão da corrida: 8 de 8 verificações (sem dados do cliente no cartão, criação para pedido pronto, sem escrita repetida, histórico não cria cartão, direcionar atualiza, mescla sem duplicar).</li>
+<li><span class="pend">PENDENTE</span> Teste real com 3 aparelhos (cliente, lojista, motoboy): pedido → pronto → motoboy vê cartão → aceita → vê endereço.</li>
+</ul>
+<h3>O que ainda falta no Perfil 2 (nenhum destes foi feito)</h3>
+<div class="tw"><table>
+<tr><th>Bloco</th><th>Status</th></tr>
+<tr><td>Placar (6 cards), gráfico 7 dias, sino de alertas, Pausar pedidos / Fechar a loja agora</td><td><span class="pend">🔴 FALTA</span></td></tr>
+<tr><td>📋 Pedidos: fila, histórico, cancelamentos/reembolsos registrados (parte já existe: aceitar/pronto/cancelar, destino, comanda, chat, alarmes)</td><td><span class="pend">🟡 PARCIAL — conferir e completar</span></td></tr>
+<tr><td>🍔 Produtos: preço/desconto registrados ao ADM, combos, destaque, horário normal/especial, raio, rótulo Cardápio/Catálogo</td><td><span class="pend">🟡 PARCIAL</span></td></tr>
+<tr><td>📦 Estoque (quantidade, baixa automática, previsão, alerta ao ADM)</td><td><span class="pend">🔴 FALTA</span></td></tr>
+<tr><td>💵 Caixa (abertura, sangria, suprimento, fechamento, contas a pagar/pagas, resumo do dia)</td><td><span class="pend">🔴 FALTA</span></td></tr>
+<tr><td>👥 Equipe (funcionários pendentes → só ADM autoriza; motoboys vinculados; diárias/indicações/grupo)</td><td><span class="pend">🟡 PARCIAL (motoboys, diárias e indicações existem)</span></td></tr>
+<tr><td>🎟️ Promoções · 💬 Avaliações · 📄 Relatórios em PDF · ⚙️ Configurações completas</td><td><span class="pend">🔴 FALTA</span></td></tr>
+<tr><td>Avisos de vencimento do plano (3d/2d/1d/hoje/vencido/10 entregas/3h) com OK de ADM ou gerente</td><td><span class="pend">🔴 FALTA</span></td></tr>
+<tr><td>Isolamento: confirmar que lojista não acessa ADM/motoboy/cliente e que a sessão limpa no logout (o logout limpo só foi aplicado ao motoboy)</td><td><span class="pend">🟡 conferir/aplicar</span></td></tr>
+</table></div>
+<h3>Antes de testar</h3>
+<ol><li>Publicar <code>firestore.rules</code> (mudou) ANTES de subir o app.</li><li>Subir o pacote no Vercel (cache <code>pedeai-v118</code>).</li><li>Teste: cliente faz pedido → lojista aceita e marca pronto → motoboy online vê a corrida (sem endereço) → aceita → vê o endereço.</li></ol>
+<h3>Próximo passo</h3>
+<p>Você testa (Perfil 1 + o fluxo acima) e responde: liberado ou ajustes; "criar loja": manter ou remover agora; e quais blocos da lista acima quer primeiro no Lojista (sugestão: Pedidos/Pausar-Fechar → Produtos → Caixa/Estoque). Eu continuo daqui, lendo este dossiê.</p>
+</main><h2>14-A. Perfil 2 — LOJISTA (v118, 25/10/2026): Placar e Pausar pedidos</h2><p>Feito por partes; o restante do app ficou como estava. Na aba Pedidos do lojista: <b>Placar de hoje</b> (Novos, Preparando, Prontos, Em entrega, Entregues hoje, Faturamento hoje), aviso de pedidos novos aguardando e botão <b>Pausar pedidos / Reabrir a loja</b> (usa o mesmo recurso "Fechar a loja agora", sem mudar regras do Firestore; só publicar app + sw.js). Conferido só por leitura e sintaxe; falta teste em aparelho. Ainda faltam no Perfil 2: gráfico dos 7 dias, sino de alertas, Pedidos (histórico/reembolsos), Produtos (combos, destaque), Estoque, Caixa, Equipe, Promoções, Avaliações, Relatórios em PDF, Configurações, avisos de vencimento do plano e logout limpo do lojista. "Criar loja": mantido como solicitação até o Perfil 3 (assumido; responda "remover agora" se preferir).</p><h2>14-B. Perfil 2 — LOJISTA (v118): Destaque de produto</h2><p>Em Produtos, cada item tem o botão Destacar / Tirar destaque; o cliente vê o selo "⭐ Destaque" ao lado do nome. Grava só o campo dq na loja (as regras atuais já permitem; não precisa publicar firestore.rules, só app + sw.js). Conferido por leitura e sintaxe; falta teste em aparelho. Falta em Produtos: combos, desconto registrado ao ADM, horário especial, rótulo Cardápio/Catálogo.</p><h2>14-C. Perfil 2 — LOJISTA (v118): Caixa</h2><p>Nova aba "Caixa": abertura com fundo inicial, suprimento, sangria (não passa do dinheiro esperado), fechamento com valor contado e diferença, vendas entregues desde a abertura (total e em dinheiro), dinheiro esperado na gaveta e últimos 15 lançamentos. Grava só o campo cx na loja (últimos 300 lançamentos); as regras atuais já permitem, sem publicar firestore.rules. Conferido por leitura e sintaxe; falta teste em aparelho. O troco não é descontado do dinheiro esperado. Falta: contas a pagar/pagas e resumo do dia em PDF.</p><h2>14-D. Perfil 2 — LOJISTA (v118): conclusão do que cabe sem servidor</h2><p><b>Feito:</b> gráfico dos últimos 7 dias (Pedidos e Gestão); aba <b>Gestão</b> com Estoque (quantidade por produto, baixa automática ao aceitar o pedido, esgotado automático em 0, alerta de estoque baixo ≤3), Contas a pagar (lançar, marcar paga, vencida, excluir), Avaliações (média e últimas 10, dos pedidos) e Resumo do dia para imprimir/salvar em PDF; "Sair" do lojista agora limpa sessão e cache como o motoboy. Tudo grava só campos da própria loja (eq, es, cp): <b>sem mudar firestore.rules</b>; publicar app + sw.js (pedeai-v118). Conferido por leitura e sintaxe; <b>falta teste em aparelho</b>. A baixa de estoque casa o nome do produto no pedido; produto renomeado depois não baixa. Pedidos recusados/cancelados depois de aceitos não devolvem estoque.</p><p><b>Não feito (dependem de servidor ou de definição sua):</b> alerta de estoque ao ADM; avisos de vencimento do plano (3d/2d/1d/hoje/vencido/10 entregas/3h) com OK de ADM/gerente, pois não há cadastro de plano; Equipe com funcionários e autorização só do ADM (Perfil 3); sino de alertas; cupons e promoções; combos, desconto registrado ao ADM, horário especial e rótulo Cardápio/Catálogo; contas pagas com comprovante; isolamento confirmado em aparelho. Perfil 2 NÃO LIBERADO: aguarda seu teste. Próximo: Perfil 3 (ADM).</p><h2>15. Perfil 3 — ADM (v118, 25/10/2026) — EM ANDAMENTO</h2><p><b>Feito:</b> aba <b>Cadastro</b> (nome, e-mail e WhatsApp da administração, gravados em empresas/&lt;código&gt;.adm; pendência da listagem de 25/10) e aba <b>Lojas</b> (lista com produtos, entregas e total; Suspender / Reativar loja pelo campo ap, que o aviso "loja suspensa" do lojista já entende). Sem mudar firestore.rules (o dono da empresa já pode gravar esses campos); publicar app + sw.js (pedeai-v118). Conferido por leitura e sintaxe; falta teste em aparelho. Já existiam no ADM: Painel, Corridas paradas, Pedidos, Financeiro, Pix, Backup.</p><p><b>Falta no Perfil 3:</b> criar loja pela administração e então remover "Criar loja" do lojista (decisão sua pendente: manter/remover); Equipe do lojista com autorização só do ADM; avisos de vencimento do plano (precisa definir planos); alerta de estoque ao ADM; push com app fechado. Perfil 3 NÃO LIBERADO. Perfis 4 (Cliente), 5 (Criador) e 6 (Consolidação) não iniciados.</p><h2>15-A. Perfil 3 — ADM (v118): criar loja pela administração</h2><p>Na aba Lojas, formulário "Criar loja pela administração" (nome, categoria, endereço, bairro). A loja nasce ativa e <b>sem dono</b>; o primeiro lojista que entrar pelo link assume a loja (regra que o app já tinha). Para evitar troca de dono, só se cria outra loja depois que a anterior for assumida. O botão "Criar loja" do lojista <b>foi mantido</b> (você ainda não decidiu); posso remover quando responder "remover agora". Sem mudar firestore.rules; publicar app + sw.js (pedeai-v118). Conferido por leitura e sintaxe; falta teste em aparelho. Limite: sem e-mail do lojista no cadastro, a ligação loja↔lojista é por quem entra primeiro.</p><h2>16. v118 — decisões do Arquiteto aplicadas (25/10/2026)</h2>
+<p><b>PUBLICAR NESTA ORDEM:</b> 1) firestore.rules (mudou: equipe, claim da loja, plano protegido, criar loja só ADM); 2) pacote na Vercel (sw.js pedeai-v118).</p>
+<table><tr><th>Item</th><th>Situação</th></tr>
+<tr><td>Botão "Criar loja" do lojista</td><td>REMOVIDO do app e das regras (create de loja só pela administração). Lojista sem loja vê aviso explicando.</td></tr>
+<tr><td>Correção da v116</td><td>Eu havia dito que "o primeiro lojista que entra assume a loja", mas com Firebase isso NÃO funcionava (o app só deixava assumir no modo local e as regras negavam). Agora existe o assumir de verdade: regra nova permite assumir loja sem dono; se o ADM preencheu o e-mail do lojista, só a conta Google verificada com esse e-mail assume.</td></tr>
+<tr><td>E-mail do lojista (opcional) ao criar loja</td><td>FEITO. O lojista não consegue alterar esse campo depois.</td></tr>
+<tr><td>Equipe — lojista</td><td>FEITO: aba Equipe cadastra (Caixa ou Gerente, com e-mail Google, WhatsApp); cai como PENDENTE; vê o status e a auditoria; não autoriza nem revoga.</td></tr>
+<tr><td>Equipe — ADM</td><td>FEITO: aba Equipe do ADM autoriza, revoga e autoriza de novo; grava quem, quando (auditoria visível no ADM e para o lojista). Só o ADM altera (regra do Firestore).</td></tr>
+<tr><td>Funcionário com login próprio</td><td><b>NÃO FEITO</b>: hoje existe o cadastro e a autorização, mas ainda NÃO existe a tela de uso do funcionário (caixa/gerente entrando com o Google, vendo só pedidos e recebimento, sem financeiro e sem outros perfis). Isso exige tela nova e regras de leitura de pedidos por funcionário; falta sua confirmação do que cada função (Caixa x Gerente) pode fazer. O cadastro cai pendente e hoje o funcionário não entra em nada.</td></tr>
+<tr><td>Planos por loja</td><td>FEITO no ADM (aba Lojas): Mensal R$ 200 / Anual R$ 1.000 / Personalizado (WhatsApp 27 99287-2238); 20% de desconto a partir de 3 lojas do mesmo dono (R$ 160 / R$ 800), calculado pelas lojas com o mesmo dono. O lojista não altera o plano nem o vencimento (regra).</td></tr>
+<tr><td>Avisos de vencimento</td><td>FEITO: 3, 2, 1 dia antes, no dia (repete a cada 3 h), vencido (repete a cada 3 h) e a cada 10 entregas; ADM e lojista recebem juntos; som e vibração; insiste a cada 1 min até alguém tocar em OK; um OK de qualquer um vale; auditoria (quem, quando, qual aviso) aparece na loja no ADM. Vencido mostra Pix da administração, valores dos planos e WhatsApp.</td></tr>
+<tr><td>Bloqueio ao vencer</td><td>FEITO: a partir do dia seguinte ao vencimento a loja não recebe pedidos (cliente vê "Loja indisponível no momento").</td></tr>
+</table>
+<p><b>Limites:</b> os avisos só tocam com o app aberto (sem push do servidor); o registro de OK do lojista fica na própria loja e o lojista consegue editá-lo (a regra protege plano e e-mail, não o registro de OK); "pagamento confirmado" não existe: depois de pagar, o ADM muda o vencimento na aba Lojas. Conferido por leitura e sintaxe; <b>nenhum teste em aparelho; nada liberado</b>.</p><h2>17. v118 — hierarquia, acessos e cargos (25/10/2026)</h2>
+<p><b>PUBLICAR NESTA ORDEM:</b> 1) firestore.rules (mudou: acessos, oks, equipe com cargo, loja só edita com acesso autorizado); 2) pacote na Vercel (sw.js pedeai-v118); 3) os 4 arquivos juntos. Firebase: login Google ativo e domínio da Vercel autorizado.</p>
+<p><b>Hierarquia:</b> Criador → ADM → Lojista (= Gerente) → Funcionários; Motoboy e Cliente à parte. <b>Regra única:</b> só o ADM autoriza, revoga e reautoriza (lojista e funcionário); o lojista cadastra funcionário mas não autoriza.</p>
+<table><tr><th>Item</th><th>Situação</th></tr>
+<tr><td>Lojista: acesso liberado pelo ADM</td><td>FEITO no código: ao entrar com Google o lojista cria o pedido de acesso e cai em "Aguardando liberação"; só opera depois de autorizado; se revogado vê "Acesso revogado" na hora (a tela acompanha o banco em tempo real). <b>Atenção:</b> lojistas já existentes também caem em pendente até o ADM autorizar na aba Acessos.</td></tr>
+<tr><td>ADM: aba Acessos</td><td>FEITO: lista lojistas e funcionários com loja, cargo e status; filtros por loja, status e cargo; Autorizar, Revogar e Reautorizar; auditoria (quem, quando, histórico das últimas ações).</td></tr>
+<tr><td>Cargos</td><td>FEITO: modelos Caixa, Cozinha, Atendimento, Estoquista; o lojista cria cargos próprios marcando permissão por permissão (a lista não contém Pix, plano, autorização, outras lojas, salário, criar loja, criar cargo: não dá para liberar). O funcionário é cadastrado com o cargo escolhido e cai pendente.</td></tr>
+<tr><td>Prova de ciência dos avisos (OK)</td><td>FEITO: agora gravada na coleção separada <i>oks</i>: só cria, ninguém edita nem exclui (regra). O OK de qualquer um (ADM ou lojista) vale.</td></tr>
+<tr><td>Lojista não vê a chave Pix</td><td>FEITO no aviso de vencimento: o lojista só tem o botão "Copiar Pix"; a chave aparece escrita só para o ADM.</td></tr>
+</table>
+<p><b>Diferenças em relação à especificação (por limite do app):</b> (1) as coleções são planas dentro da empresa: <i>acessos/&lt;loja&gt;_&lt;uid&gt;</i> e <i>oks/&lt;loja&gt;_&lt;aviso&gt;</i>, e não aninhadas sob cada loja; (2) o acesso do funcionário continua na coleção <i>equipe</i> (id gerado, chave pelo e-mail informado) e não em <i>acessos/&lt;uid&gt;</i>, porque o uid do funcionário só existe depois que ele entra pela primeira vez; (3) <i>[CORRIGIDO na v118.1, ver seção 18]</i> a trava no servidor valia só para editar a loja e cadastrar funcionário; a leitura de pedidos e as demais telas do lojista são travadas só na tela do app (quem revogar derruba a tela, mas as regras de pedidos não conferem o acesso); (4) o campo "cargo" do lojista é fixo "lojista".</p>
+<p><b>Status estimado:</b> pacote (código) ~93%; Criador ~40%; ADM ~55%; Lojista ~55%; Funcionário ~30% (cadastro, cargos e autorização prontos; <b>telas de uso do funcionário NÃO feitas</b>: Caixa, Cozinha, Atendimento, Estoquista); Cliente ~70%; Motoboy ~85%; testes em aparelho ~0%.</p>
+<p><b>Não feito nesta versão (registrado):</b> telas de uso do funcionário e login dele; "ver quem está usando agora"; auditoria de toda ação do funcionário; estoque completo (ficha técnica, custo, validade, previsão); preço e desconto registrados ao ADM; combos; rótulo Cardápio/Catálogo; horário especial/feriados; Pix por loja; relatórios contábil e NF/recibo; resposta a avaliações; impressora térmica dedicada; push com app fechado (FCM); confirmação automática de pagamento (Pix/Asaas); split 7%/92%; QR do Pix; proteção de código de 4 dígitos no servidor; restringir ainda mais a privacidade do motoboy.</p>
+<p><b>Checklist 9.1 a 9.6 da especificação:</b> nenhum item foi executado em aparelho. <b>v118 pronta. Nada liberado. Sintaxe conferida, sem teste em aparelho. Falta testar em aparelho real.</b></p><h2>18. v118.1 — análise da v118 aplicada (25/10/2026)</h2>
+<p><b>PUBLICAR NESTA ORDEM:</b> 1) <code>firestore.rules</code> (mudou) no Firebase; 2) pacote na Vercel (<code>sw.js</code> com <code>pedeai-v118-1</code>); 3) avisar o dono para republicar e limpar o cache dos navegadores de teste; 4) testar em aparelho. <b>Não publicar o app sem publicar as regras:</b> as consultas novas do lojista só são aceitas pelas regras novas e as regras novas só aceitam as consultas novas.</p>
+
+<h3>18.1 Verificação feita antes desta entrega (registro)</h3>
+<table><tr><th>Item</th><th>Resultado</th></tr>
+<tr><td>sw.js do ZIP v118</td><td>ABERTO E LIDO (não só o tamanho): 1741 bytes, conteúdo válido (install, activate, fetch com rede primeiro, notificationclick com Aceitar/Recusar do motoboy), <code>CACHE_VERSION = "pedeai-v118"</code>. Nenhuma versão vazia no pacote recebido. Se a Vercel ainda serve um sw.js vazio das v113–v117, a publicação por cima corrige.</td></tr>
+<tr><td>ZIP recebido</td><td>Aberto e listado: 14 arquivos (index.html, sw.js, firestore.rules, vercel.json, manifest.webmanifest, criador.html, DOSSIE-PedeAi.html, politica-privacidade.html, termos-de-uso.html, assetlinks-MODELO.json, PUBLICAR.txt, downloads/LEIA-ME-APK.txt, icons/icon-192.png, icons/icon-512.png). Sem arquivo vazio.</td></tr>
+<tr><td>criador.html e DOSSIE</td><td>Os avulsos enviados são idênticos (hash MD5) aos de dentro do ZIP v118. criador.html: 18909 bytes, com conteúdo.</td></tr>
+<tr><td>PedeAi.html x index.html</td><td>O pacote não tem arquivo PedeAi.html: o aplicativo é o <code>index.html</code> (352718 bytes na v118). O "PedeAi.html" avulso é a cópia do index.html feita na entrega.</td></tr>
+<tr><td>Sintaxe</td><td>Os 9 blocos de script do index.html foram conferidos (node --check) depois da mudança: sem erro.</td></tr>
+</table>
+
+<h3>18.2 Regra nova: verificação obrigatória antes de TODA entrega</h3>
+<p>Se qualquer item falhar, <b>não entrega</b>: (1) <code>sw.js</code> com tamanho maior que 0, aberto e lido, com <code>CACHE_VERSION</code> da versão; (2) <code>PedeAi.html</code> avulso idêntico (hash) ao <code>index.html</code> do pacote; (3) <code>criador.html</code> presente e com conteúdo; (4) ZIP íntegro (abrir e listar os arquivos); (5) o que foi verificado fica registrado neste dossiê. Se nada mudou em um arquivo, a verificação dele é pulada.</p>
+
+<h3>18.3 Histórico do erro do sw.js (v113 a v117)</h3>
+<p><b>Erro:</b> o relatório da v118 apontou que o sw.js esteve vazio nas v113 a v117. <b>Impacto enquanto vazio:</b> sem cache offline; sem os botões Aceitar/Recusar da notificação do motoboy; sem notificações sobrepostas; motoboy com o app fechado não recebe corrida. <b>Correção:</b> sw.js válido na v118 (conferido em 18.1) e nova versão de cache na v118.1. <b>Pendente:</b> confirmar no ar (Vercel) que o sw.js publicado não está vazio.</p>
+
+<h3>18.4 Correção obrigatória 3.3 — trava de leitura no servidor (APLICADA)</h3>
+<p>Antes, as regras de leitura conferiam só o <code>ld</code> (dono da loja). Agora, para o lojista, a leitura exige <b>acesso <i>autorizado</i> na loja do documento</b> (<code>acessos/&lt;loja&gt;_&lt;uid&gt;</code> com status autorizado). Revogou ou voltou a pendente: a leitura é negada na hora, não só a tela.</p>
+<table><tr><th>Coleção</th><th>Leitura do lojista agora exige</th></tr>
+<tr><td>pedidos</td><td>acesso autorizado na loja do pedido (<code>rid</code>)</td></tr>
+<tr><td>corridas</td><td>idem</td></tr>
+<tr><td>diarias</td><td>idem</td></tr>
+<tr><td>equipe (funcionários)</td><td>idem</td></tr>
+<tr><td>oks</td><td>idem</td></tr>
+<tr><td>ent (motoboys da loja)</td><td>acesso autorizado na loja do convite (<code>lojaConvite</code>)</td></tr>
+</table>
+<p><b>Mudança no app (só o necessário):</b> as consultas do lojista agora informam a loja (<code>rid</code>/<code>lojaConvite</code>), uma consulta por loja que ele possui, porque as regras do Firestore só aceitam uma consulta se ela prova que cada documento atende à regra. O app refaz as consultas sozinho quando a lista de lojas do lojista muda. Cliente, entregador, ADM e criador não mudaram.</p>
+<p><b>Já estava certo e foi mantido:</b> ADM (dono) lê tudo da empresa; funcionário/lojista só o dele; entregador só os pedidos dele e os cartões "pronto"; cliente só os pedidos dele; OKs só criam, nunca editam nem excluem.</p>
+<p><b>Defeito encontrado e corrigido na regra de <i>acessos</i>:</b> a regra de leitura olhava o campo <code>uid</code>, mas a consulta do app filtra por <code>ld</code>; o Firestore recusa esse tipo de consulta, então o lojista podia não enxergar o próprio status ("Aguardando liberação"). A regra agora confere <code>ld</code> (que é igual ao uid na criação). <b>Não testado: só o teste em aparelho confirma.</b></p>
+
+<h3>18.5 O que a trava ainda NÃO cobria na v118.1 <i>[seg, msgs e escrita do lojista: RESOLVIDOS na v118.2, seção 19]</i></h3>
+<ul>
+<li><b>seg</b> (códigos de retirada/entrega) e <b>msgs</b> (conversas): os documentos não têm o campo da loja, então não dá para conferir o acesso na leitura sem gravar a loja neles. Entra na v119 junto com o campo novo.</li>
+<li><b>Escrita</b> de pedidos/corridas pelo lojista revogado: esta rodada tratou só a leitura, como pedido. Para travar também a escrita, é uma regra a mais por coleção (v119).</li>
+<li><b>lojas</b> (cardápio, produtos): continua legível por quem está logado porque o cliente precisa ver o cardápio. Estoque e contas ficam dentro do cadastro da loja; separá-los em coleção própria é trabalho da v119.</li>
+<li><b>Funcionário</b>: ele ainda não tem telas nem login próprio; a regra por cargo no Firestore entra com as telas (v119).</li>
+</ul>
+
+<h3>18.6 Confirmações do relatório (itens 3.1 e 3.2)</h3>
+<p><b>3.1 Coleções planas com a loja:</b> acessos e oks já são planos e trazem o campo da loja, que no código se chama <code>rid</code> (equivale ao "lojaId"); oks também guarda <code>k</code> (qual aviso) e <code>por</code> (quem deu OK). Leitura: ADM tudo; lojista só da loja dele com acesso autorizado (acessos: o dele). Nada foi renomeado.</p>
+<p><b>3.2 Vínculo do funcionário por e-mail no primeiro login:</b> <span class="pend">NÃO implementado</span>, depende das telas e do login do funcionário. Requisito registrado para a v119: ao primeiro login Google, vincular o uid ao cadastro da equipe pelo e-mail; sem cadastro → "Aguardando cadastro pelo Lojista"; com cadastro → "Aguardando liberação do ADM"; liberado → entra no cargo. Campos da equipe a ter: cargo, status, loja, uid, e-mail, autorizadoPor, autorizadoEm (hoje: id, rid, ld, nome, em, wa, fn, pm, st, ts).</p>
+
+<h3>18.7 Prioridades (do relatório)</h3>
+<p><b>v119 (alta):</b> trava no servidor do que sobrou (18.5); telas de uso do funcionário (Caixa, Cozinha, Atendimento, Estoquista) e login dele; itens que faltaram do Lojista (estoque completo, combos, desconto registrado ao ADM, relatório contábil); confirmar sw.js no ar. <b>v120 (média, depende de servidor):</b> push com app fechado (FCM), confirmação automática de pagamento (Pix/Asaas), split 7%/92%, QR do Pix. <b>Depois (baixa):</b> proteção contra tentativa repetida do código de 4 dígitos (servidor), filtro por região no motoboy, gorjeta antes da entrega.</p>
+
+<h3>18.8 Próximos passos, em ordem</h3>
+<p>1) Publicar <code>firestore.rules</code> v118.1 no Firebase; 2) publicar o pacote v118.1 na Vercel; 3) avisar o dono para republicar e limpar o cache de teste; 4) testar em aparelho: login do lojista, autorização, <b>revogação (a tela de pedidos deve parar de carregar na hora)</b>, avisos, OK, bloqueio; 5) se passar: liberar v118.1 como "entregue e testada" e iniciar a v119; se falhar: corrigir, retestar, reentregar (não avança).</p>
+
+<h3>18.9 Porcentagens (estimativa, sem teste em aparelho)</h3>
+<table><tr><th>Parte</th><th>Conclusão</th><th>Testes em aparelho</th></tr>
+<tr><td>Pacote (código)</td><td>~94%</td><td>0%</td></tr>
+<tr><td>Trava de leitura no servidor (lojista)</td><td>~75% (faltam seg, msgs, escrita)</td><td>0%</td></tr>
+<tr><td>Criador / ADM / Lojista</td><td>~40% / ~55% / ~58%</td><td>0%</td></tr>
+<tr><td>Funcionário</td><td>~30% (telas e login não feitos)</td><td>0%</td></tr>
+<tr><td>Cliente / Motoboy</td><td>~70% / ~85%</td><td>Motoboy: aguardando seu teste</td></tr>
+</table>
+<p><b>v118.1 entregue, não liberada. Sintaxe conferida, sem teste em aparelho. Falta testar em aparelho real.</b></p>
+<h2>19. v118.2 — trava no servidor: seg, msgs e escrita do lojista (26/10/2026)</h2>
+<p><b>PUBLICAR NESTA ORDEM:</b> 1) <code>firestore.rules</code> no Firebase; 2) pacote na Vercel (<code>sw.js</code> com <code>pedeai-v118-2</code>); 3) limpar o cache dos navegadores de teste; 4) testar em aparelho. Regras e app mudaram juntos: não publicar um sem o outro.</p>
+<h3>19.1 Leitura (o que faltava)</h3>
+<table><tr><th>Coleção</th><th>Mudança</th></tr>
+<tr><td>seg (códigos de retirada e entrega)</td><td>o documento passa a gravar o campo <code>rid</code> (loja) ao criar o pedido; o lojista só lê com acesso autorizado na loja. A regra confere que o <code>rid</code> do código é o mesmo do pedido.</td></tr>
+<tr><td>msgs (conversas)</td><td>a mensagem passa a gravar <code>rid</code>; o lojista só lê as da loja com acesso autorizado; a regra confere que o <code>rid</code> é o do pedido. O grupo dos entregadores e as mensagens de configuração não mudaram.</td></tr>
+</table>
+<h3>19.2 Escrita do lojista (agora exige acesso autorizado na loja)</h3>
+<p>Criar e alterar <b>pedidos</b> (balcão/WhatsApp e andamento); criar, alterar e excluir <b>corridas</b>; criar, alterar o status e excluir <b>diárias</b>; escrever em <b>conversas</b> como lojista. Lojista revogado ou pendente não consegue mais gravar nada disso, só o ADM. Cliente, entregador, ADM e criador não mudaram.</p>
+<h3>19.3 Mudança no app (só o necessário)</h3>
+<p>As consultas do lojista a <code>seg</code> e <code>msgs</code> agora informam a loja (como já faziam pedidos, corridas, diárias, equipe, OKs e motoboys); a criação do pedido grava <code>rid</code> no código; a mensagem herda o <code>rid</code> do pedido.</p>
+<h3>19.4 Atenção: dados antigos</h3>
+<p><b>Códigos (seg) e mensagens criados antes da v118.2 não têm <code>rid</code></b> e deixam de aparecer para o lojista (as regras exigem a loja). Isso só afeta pedidos e conversas antigos; pedidos novos funcionam normalmente. Mensagens restauradas de backup pelo lojista também voltam sem <code>rid</code>. Se o lojista precisar dos antigos, o ADM ainda os lê, ou gravamos o <code>rid</code> neles em uma rodada à parte.</p>
+<h3>19.5 Verificação desta entrega (registro)</h3>
+<table><tr><th>Item</th><th>Resultado</th></tr>
+<tr><td>sw.js</td><td>aberto e lido; <code>CACHE_VERSION = "pedeai-v118-2"</code>; tamanho maior que 0</td></tr>
+<tr><td>Sintaxe do app</td><td>os 9 blocos de script do index.html conferidos (node --check): sem erro</td></tr>
+<tr><td>firestore.rules</td><td>chaves e parênteses balanceados; <b>regras não rodaram no emulador do Firebase</b> (sem rede aqui): a prova é publicar e testar em aparelho</td></tr>
+<tr><td>ZIP, PedeAi.html, criador.html</td><td>ZIP aberto e listado; PedeAi.html idêntico (hash) ao index.html do pacote; criador.html presente e sem alteração</td></tr>
+</table>
+<h3>19.6 Ainda pendente</h3>
+<p>Regra por cargo do funcionário e vínculo por e-mail no primeiro login (dependem das telas do funcionário, v119); separar estoque e contas da coleção <i>lojas</i> (o cardápio precisa ficar público); itens da v119 e v120 da seção 18.7.</p>
+<h3>19.7 Porcentagens (estimativa, sem teste em aparelho)</h3>
+<table><tr><th>Parte</th><th>Conclusão</th><th>Testes em aparelho</th></tr>
+<tr><td>Pacote (código)</td><td>~94%</td><td>0%</td></tr>
+<tr><td>Trava no servidor (lojista)</td><td>~95% (falta estoque/contas separados)</td><td>0%</td></tr>
+<tr><td>Funcionário</td><td>~30%</td><td>0%</td></tr>
+</table>
+<p><b>v118.2 entregue, não liberada. Sintaxe conferida, sem teste em aparelho. Falta testar em aparelho real.</b></p>
+<h2>20. v118.3 — dados antigos (seg e msgs) recuperados pelo ADM (26/10/2026)</h2>
+<p><b>PUBLICAR NESTA ORDEM:</b> 1) <code>firestore.rules</code> (mudou: só o ADM pode acrescentar <code>rid</code> em <i>seg</i>); 2) pacote na Vercel (<code>pedeai-v118-3</code>); 3) <b>abrir o app como ADM</b> (cooperativa) uma vez e deixá-lo aberto cerca de 1 minuto; 4) limpar o cache de teste.</p>
+<p><b>O que faz:</b> resolve o aviso 19.4. Quando o ADM está com o app aberto, ele grava a loja (<code>rid</code>) nos códigos (seg) e nas conversas (msgs) antigos, copiando do pedido correspondente. Só preenche o que está vazio, nunca troca valor existente, tenta no máximo 3 vezes por sessão e não mexe em mais nada. Depois disso o lojista autorizado volta a ver os códigos e conversas antigos.</p>
+<table><tr><th>Verificação</th><th>Resultado</th></tr>
+<tr><td>sw.js</td><td>aberto e lido; <code>pedeai-v118-3</code>; tamanho maior que 0</td></tr>
+<tr><td>Sintaxe do app</td><td>blocos de script conferidos (node --check): sem erro</td></tr>
+<tr><td>Regras</td><td>balanceadas; <b>não rodaram no emulador</b>: provar publicando e testando</td></tr>
+<tr><td>ZIP, PedeAi.html, criador.html</td><td>ZIP aberto e listado; PedeAi.html idêntico (hash) ao index.html; criador.html sem alteração</td></tr>
+</table>
+<p><b>Não feito (grandes demais para fechar sem teste em aparelho; v119):</b> telas e login do funcionário (Caixa, Cozinha, Atendimento, Estoquista), vínculo por e-mail no primeiro login e regra por cargo; estoque completo, combos, desconto registrado ao ADM, relatório contábil; v120 (FCM, Pix/Asaas, split, QR).</p>
+<p><b>Porcentagens:</b> pacote (código) ~94%; trava no servidor do lojista ~96%; funcionário ~30%; testes em aparelho 0%.</p>
+<p><b>v118.3 entregue, não liberada. Sintaxe conferida, sem teste em aparelho. Falta testar em aparelho real.</b></p>
+<h2>21. Roteiro de publicação e teste em aparelho — v118.4 (26/10/2026)</h2>
+<p>(Atualizado na v118.6: sw.js = <code>pedeai-v118-6</code>; as regras são as da v118.3.) Marque cada item ao fazer. Se algum falhar, <b>não avança</b>: me envie o que apareceu na tela (foto ou texto) e o passo.</p>
+<h3>21.1 Publicar (nesta ordem)</h3>
+<ol>
+<li>Firebase › Firestore › Regras: colar <code>firestore.rules</code> e Publicar.</li>
+<li>Vercel: subir todos os arquivos do pacote por cima da versão atual.</li>
+<li>Abrir <code>/sw.js</code> no endereço publicado: precisa mostrar texto e <code>pedeai-v118-6</code> (se vier vazio ou outra versão, republicar).</li>
+<li>Abrir o app como ADM, deixar ~1 minuto aberto (recupera códigos e conversas antigos).</li>
+<li>Limpar o cache (ou reinstalar o app) em cada aparelho de teste.</li>
+</ol>
+<h3>21.2 Testes em aparelho</h3>
+<table><tr><th>#</th><th>Teste</th><th>Esperado</th></tr>
+<tr><td>1</td><td>Lojista novo entra com Google</td><td>Cai em "Aguardando liberação"; não vê pedidos</td></tr>
+<tr><td>2</td><td>ADM autoriza na aba Acessos</td><td>Lojista passa a operar (pedidos, produtos, equipe, diárias)</td></tr>
+<tr><td>3</td><td>Cliente faz um pedido pelo link</td><td>Aparece para o lojista autorizado, com o código de retirada</td></tr>
+<tr><td>4</td><td>Conversa lojista ↔ entregador e cliente ↔ entregador</td><td>Mensagens chegam e aparecem nos dois lados</td></tr>
+<tr><td>5</td><td>ADM <b>revoga</b> o lojista</td><td>Tela cai em "Acesso revogado"; pedidos, códigos, conversas, diárias e motoboys somem na hora; não consegue alterar pedido</td></tr>
+<tr><td>6</td><td>ADM reautoriza</td><td>Lojista volta a ver e operar tudo</td></tr>
+<tr><td>7</td><td>Avisos do plano: dar OK</td><td>OK gravado; não dá para editar nem excluir</td></tr>
+<tr><td>8</td><td>Lojista não vê a chave Pix</td><td>Só o botão "Copiar Pix"; chave escrita só para o ADM</td></tr>
+<tr><td>9</td><td>Pedido antigo (de antes da v118.2) para o lojista autorizado</td><td>Código e conversa antigos aparecem depois do passo 4 de 21.1</td></tr>
+<tr><td>10</td><td>Motoboy: aceitar, retirar com código, entregar com foto e código</td><td>Fluxo completo; entregador não vê valor do pedido</td></tr>
+<tr><td>11</td><td>Notificação do motoboy com app fechado/minimizado</td><td>Botões Aceitar/Recusar funcionam (depende do sw.js correto)</td></tr>
+<tr><td>12</td><td>Cliente confirma recebimento e avalia</td><td>Pedido encerra; gorjeta/avaliação gravadas</td></tr>
+<tr><td>13</td><td>ADM cria a Loja Teste (aba Lojas)</td><td>Aparece "🧪 Loja Teste" com 42 produtos, bebidas e doces; cardápio por link abre completo; "Suspender loja" tira dos clientes e "Reativar loja" devolve</td></tr>
+</table>
+<p><b>Resultado dos testes:</b> nenhum executado ainda (0 de 13). Quando você testar, me diga os números que passaram e os que falharam, e eu registro aqui e corrijo.</p>
+<p><b>Verificação desta entrega:</b> sw.js aberto e lido (<code>pedeai-v118-6</code>); PUBLICAR.txt atualizado; ZIP aberto e listado; PedeAi.html idêntico (hash) ao index.html; criador.html sem alteração; app e regras sem mudança de código nesta rodada.</p>
+<h2>22. v118.4 — Loja Teste e cardápio modelo (26/10/2026)</h2>
+<p><b>Publicar:</b> só o pacote na Vercel (<code>pedeai-v118-4</code>). <b>As regras do Firestore não mudaram</b> em relação à v118.3.</p>
+<ul>
+<li><b>Onde:</b> administração › Lojas › <b>🧪 Loja Teste (modelo completo)</b> › botão “Criar Loja Teste”.</li>
+<li><b>O que cria:</b> a loja “🧪 Loja Teste”, categoria Lanches, <b>ativa e sem dono</b>, com o cardápio completo: <b>42 produtos</b> com adicionais, <b>bebidas</b> e <b>doces</b> (a mesma lista da loja de demonstração, que já usa a ordem Lanches → Extras → Bebidas → Doces). Endereço padrão “Rua da Loja Teste, 100 — Centro”; se você preencher endereço, bairro ou e-mail do lojista no formulário acima, esses valores valem para ela.</li>
+<li><b>Como o lojista de teste assume:</b> igual a qualquer loja criada pela administração: entra pelo link do lojista (com o e-mail informado, se houver), fica em “Aguardando liberação” e o ADM autoriza na aba Acessos. Registrar a geolocalização da loja continua sendo feito pelo lojista (necessário para o fluxo de mapas do motoboy).</li>
+<li><b>Desativar / reativar:</b> botão “Suspender loja” / “Reativar loja” na lista de lojas (já existia): suspensa, deixa de receber pedidos; os dados não são apagados.</li>
+<li><b>Padrão para qualquer loja nova:</b> no formulário “Criar loja pela administração” há a opção <b>“Começar com o cardápio modelo”</b>: a loja nasce com os mesmos 42 produtos, bebidas e doces e o lojista só altera nomes, preços e fotos em Produtos, em vez de preencher do zero.</li>
+<li><b>Ponto a observar no teste 13:</b> o cardápio é gravado no mesmo formato do cadastro de produto do lojista (lista de produtos com listas dentro). Se aparecer “Não foi possível salvar (invalid-argument)”, é o banco recusando listas dentro de listas, e o cadastro de produto do lojista falharia igual; me avise, o ajuste é de formato e vale para os dois.</li>
+<li><b>Limite que continua:</b> só uma loja sem dono por vez (a Loja Teste conta). Espere o lojista assumir antes de criar outra.</li>
+</ul>
+<table><tr><th>Verificação</th><th>Resultado</th></tr>
+<tr><td>sw.js</td><td>aberto e lido; <code>pedeai-v118-4</code>; tamanho maior que 0</td></tr>
+<tr><td>Sintaxe do app</td><td>blocos de script conferidos (node --check): sem erro</td></tr>
+<tr><td>Modelo</td><td>reutiliza a lista já existente (SEED), sem dados novos; estrutura igual à de lojas criadas pelo lojista (m, bb, dc)</td></tr>
+<tr><td>ZIP, PedeAi.html, criador.html</td><td>ZIP aberto e listado; PedeAi.html idêntico (hash) ao index.html; criador.html sem alteração</td></tr>
+</table>
+<p><b>Porcentagens:</b> pacote (código) ~95%; Loja Teste 100% no código; testes em aparelho 0% (0 de 13).</p>
+<p><b>v118.4 entregue, não liberada. Sintaxe conferida, sem teste em aparelho. Falta testar em aparelho real.</b></p>
+<h2>23. Conferência de botões, campos de texto e telas — v118.4 (26/10/2026)</h2>
+<p>Conferido no código do pacote (sem teste em aparelho). Tudo que foi verificado está registrado aqui.</p>
+<table><tr><th>Item</th><th>Resultado</th></tr>
+<tr><td>Botão “Criar loja”</td><td>OK: tratado no clique da administração; exige nome (mín. 2 letras) e bloqueia se já houver loja sem dono.</td></tr>
+<tr><td>Botão “Criar Loja Teste” (novo)</td><td>OK: incluído na lista de botões da administração; usa o nome fixo “🧪 Loja Teste”; aceita endereço, bairro e e-mail preenchidos no formulário.</td></tr>
+<tr><td>Botões “Suspender loja” / “Reativar loja”</td><td>OK: já existentes e ligados; pedem confirmação ao suspender.</td></tr>
+<tr><td>Campos de texto do formulário (nome, endereço, bairro, e-mail) e categoria</td><td>OK: ids únicos (aln, alc, ala, alb, ale), limites de tamanho (60 / 80 / 40 / 80) e e-mail gravado em minúsculas; sem área de texto longa neste formulário.</td></tr>
+<tr><td>Caixa “Começar com o cardápio modelo” (novo)</td><td>CORRIGIDO: o estilo geral dos campos (largura total e margem interna) poderia deformar a caixa de marcar; agora tem tamanho próprio de 22 px, sem margem interna. Leitura do valor OK.</td></tr>
+<tr><td>Estrutura da tela (abre/fecha das caixas e rótulo)</td><td>OK: balanceada.</td></tr>
+<tr><td>Todo o app: botões com atributo data-*</td><td>160 atributos conferidos; todos têm tratador de clique/alteração (os de uma única ocorrência — menu de download, telefone, envio automático, suspender motoboy, fotos, indicação, modo — são lidos por dataset no tratador). Nenhum botão órfão encontrado.</td></tr>
+<tr><td>Todo o app: ids repetidos na tela fixa</td><td>Nenhum.</td></tr>
+<tr><td>Todo o app: áreas de texto longas (textarea)</td><td>O app não usa textarea; os campos de texto são de linha única.</td></tr>
+<tr><td>Sintaxe dos scripts</td><td>OK (node --check).</td></tr>
+</table>
+<p><b>Limite da conferência:</b> foi feita lendo o código. Aparência real, toque no celular e teclado só se confirmam no aparelho (teste 13 do roteiro).</p>
+<p><b>Correção feita dentro da v118.4, que ainda não foi publicada (mesmo cache <code>pedeai-v118-4</code>).</b> Conclusão: pacote ~95%; testes em aparelho 0 de 13.</p>
+<h2>24. Testes executados em navegador (modo teste local) — v118.4 (26/10/2026)</h2>
+<p>O pacote foi aberto em um navegador de verdade (Chromium, tela de celular 390×844) no <b>modo teste sem servidor</b> (usuário ADM, senha ADM), clicando nos botões e preenchendo os campos. Não substitui o teste em aparelho.</p>
+<h3>24.1 Defeitos encontrados e corrigidos</h3>
+<table><tr><th>#</th><th>Defeito</th><th>Correção</th></tr>
+<tr><td>1</td><td><b>Modo teste local quebrava ao abrir</b> (erro de script “undefined push”). Vinha da v118: o banco local não conhecia as coleções novas <i>acessos</i>, <i>oks</i> e <i>equipe</i>. Não afeta o app com servidor.</td><td>As três coleções foram incluídas no banco local. Erro de script: nenhum depois da correção.</td></tr>
+<tr><td>2</td><td><b>Edições do lojista iam para a loja errada.</b> A tela mostrava a loja do lojista, mas os botões de edição (cadastrar produto, ativar/desativar, excluir, taxas, horário, logo etc.) usavam a primeira loja da lista. Com servidor, o lojista de uma loja que não é a primeira receberia “Sem permissão” ao editar, ou, no modo local, alteraria a loja de outro. Defeito antigo, descoberto pelo teste da Loja Teste.</td><td>A tela do lojista passa a gravar qual loja está aberta; os botões editam essa loja. Conferido: a outra loja ficou intacta.</td></tr>
+</table>
+<h3>24.2 Resultado — administração (17 de 17 passaram)</h3>
+<p>Painel Lojas com formulário, caixa do cardápio modelo (22 px, desmarcada) e botão da Loja Teste; nome vazio recusado; Loja Teste criada (ativa, sem dono, 42 produtos, 13 bebidas, 6 doces, endereço padrão, e-mail em minúsculas, 🧪 Lanches); ids de produto únicos e preços maiores que zero; segunda loja sem dono bloqueada; suspender com confirmação e reativar mantendo os 42 produtos; loja normal com o cardápio modelo (42/13/6) e sem ele (vazia); endereço, bairro e categoria respeitados; nenhum erro de script.</p>
+<h3>24.3 Resultado — fluxo completo (23 de 23 passaram)</h3>
+<p>App abre sem erro; senha errada da administração recusada; ADM entra; Loja Teste criada; <b>cliente</b> abre o link do cardápio e vê todas as categorias (Hambúrgueres a Sobremesas, Bebidas, Doces) com 61 botões de adicionar; produto com adicionais abre a tela de complementos e soma certo (24,90 + 5 + 3 = 32,90); sacola com itens, subtotal, entrega grátis e total R$ 47,80; pedido sem cadastro barrado com aviso; depois do cadastro o pedido grava na Loja Teste; cliente vê “Acompanhar pedido”; <b>lojista</b> vê a loja, o pedido novo e os 42 produtos, aceita o pedido (preparo), cadastra produto novo, desativa item e exclui item (a loja 1 não foi tocada); <b>ADM suspende</b> a Loja Teste (cliente deixa de poder pedir) e reativa; todas as abas do ADM abrem sem erro.</p>
+<h3>24.4 O que estes testes NÃO cobrem (só no aparelho/servidor)</h3>
+<p>Regras do Firestore (revogação, leitura/escrita travadas), login Google, notificações e botões Aceitar/Recusar do motoboy, GPS e mapas, fotos, push, instalação do app e o service worker (foi bloqueado de propósito no teste). Por isso o roteiro da seção 21 continua valendo: <b>0 de 13 testes em aparelho.</b></p>
+<h3>24.5 Observação (não alterada)</h3>
+<p>O rodapé do app ainda mostra “PedeAí · versão 82”. Não foi mexido porque não foi pedido; diga se quer atualizar para a versão atual.</p>
+<p><b>v118.4 entregue, não liberada. Testes automáticos 40/40 em navegador; sem teste em aparelho. Pacote ~96%.</b></p>
+<h2>25. v118.5 — abas não voltam mais ao início (26/10/2026)</h2>
+<p><b>Problema (visto no ADM):</b> ao clicar numa aba do fim da barra (Pix, Backup, Cadastro...), a aba abria, mas a barra de abas voltava para o começo (Painel) e a aba aberta ficava escondida. Era o redesenho da tela a cada clique que zerava a rolagem lateral da barra.</p>
+<p><b>Correção:</b> a rolagem das barras é guardada antes de redesenhar e restaurada depois; se a aba ativa ficar fora da tela, a barra rola até ela. Vale para todas as barras que rolam para o lado.</p>
+<table><tr><th>Onde</th><th>Antes (v118)</th><th>Agora (v118.5)</th></tr>
+<tr><td>Administração (Painel, Acessos, Corridas paradas, Pedidos, Financeiro, Lojas, Cadastro, Pix, Backup)</td><td>Pix, Backup, Cadastro e Financeiro abriam com a aba escondida</td><td>Aba aberta sempre à vista (testado: Pix, Backup, Cadastro, Financeiro, Painel)</td></tr>
+<tr><td>Lojista (Pedidos, Produtos, Diárias, Histórico, Caixa, Gestão, Compartilhar &amp; Motoboys, Equipe)</td><td>Mesmo defeito em Compartilhar, Equipe e Gestão</td><td>Aba aberta sempre à vista (testado: Compartilhar, Equipe, Gestão, Pedidos)</td></tr>
+<tr><td>Cliente: atalhos do cardápio (12 categorias) e filtros</td><td>—</td><td>Rolagem mantida ao tocar numa categoria (testado)</td></tr>
+<tr><td>Entregador (Disponíveis / Em Andamento)</td><td>Só 2 abas, cabem na tela</td><td>Sem mudança necessária; coberto pela mesma correção</td></tr>
+</table>
+<p><b>Testes feitos:</b> navegador real, tela de celular, modo teste local: o defeito foi reproduzido na v118 original e confirmado corrigido; regressão completa depois da mudança (ver 25.1).</p>
+<p><b>Limite:</b> medido em navegador de computador simulando celular; o toque real e a rolagem com o dedo só se confirmam no aparelho (acrescentar ao teste 13 do roteiro: abrir Pix e conferir que a aba continua à vista).</p>
+<h3>25.1 Verificação desta entrega (registro)</h3>
+<table><tr><th>Item</th><th>Resultado</th></tr>
+<tr><td>Regressão em navegador</td><td>40 de 40 verificações continuam passando (administração 17/17, fluxo completo 23/23); nenhum erro de script</td></tr>
+<tr><td>Sintaxe dos scripts</td><td>OK (node --check)</td></tr>
+<tr><td>sw.js</td><td>aberto e lido; <code>pedeai-v118-5</code>; tamanho maior que 0</td></tr>
+<tr><td>ZIP, PedeAi.html, criador.html, regras</td><td>ZIP aberto e listado; PedeAi.html idêntico (hash) ao index.html; criador.html e firestore.rules sem alteração</td></tr>
+<tr><td>PUBLICAR.txt</td><td>atualizado para a v118.5</td></tr>
+</table>
+<p><b>Publicar:</b> só o pacote na Vercel (regras iguais às da v118.3). <b>v118.5 entregue, não liberada. Sem teste em aparelho (0 de 13). Pacote ~96%.</b></p>
+<h2>26. Varredura de erros e incoerências (26/10/2026) — nada foi alterado, aguarda sua decisão</h2>
+<p>Conferido: código do app, regras do Firestore contra o que o app grava, dossiê, PUBLICAR.txt e arquivos do pacote. Só foi registrado; <b>nenhum arquivo do app ou das regras foi mudado nesta rodada</b> (versão continua v118.5).</p>
+<h3>26.1 Encontrado</h3>
+<table><tr><th>#</th><th>Onde</th><th>Problema</th><th>Gravidade</th><th>Como corrigir (proposta)</th></tr>
+<tr><td>E1</td><td>Regras › lojas</td><td>O lojista pode gravar o campo <code>lib</code> na própria loja. As regras protegem dono, aprovação, plano e e-mail, mas não o <code>lib</code>; e o <code>lib</code> é o que libera a loja do limite de 15 pedidos por dia (só o criador devia mudar).</td><td>Média (regra de negócio burlável)</td><td>Acrescentar na regra do lojista a condição de não mudar <code>lib</code> (uma linha).</td></tr>
+<tr><td>E2</td><td>Regras › pedidos</td><td>Loja suspensa só some e bloqueia na <b>tela</b>. A regra que cria pedido não confere se a loja está suspensa; alguém que fale direto com o banco ainda cria pedido. O texto da administração promete “impede a loja de receber pedidos”.</td><td>Média</td><td>A regra de criar pedido do cliente conferir que a loja não está suspensa (<code>ap</code> diferente de −1).</td></tr>
+<tr><td>E3</td><td>Regras › oks</td><td>A trava de escrita da v118.2 deixou uma lacuna: o lojista revogado ou pendente ainda consegue gravar o “OK” de aviso (a criação não exige acesso autorizado).</td><td>Baixa</td><td>Exigir acesso autorizado na criação do OK, mantendo a administração livre.</td></tr>
+<tr><td>E4</td><td>App › rodapé do painel</td><td>Mostra “PedeAí · versão 82”; o pacote é v118.5.</td><td>Baixa (visual)</td><td>Atualizar o texto (ou ler da versão do cache).</td></tr>
+<tr><td>E5</td><td>App › lojista</td><td>Código morto: formulário “Cadastrar minha loja” e o botão que cria loja “para aprovação” continuam no código, mas não aparecem; desde a v117 só a administração cria loja e as regras negam. Texto fala em “aprovação da administração”, que não existe mais para lojas.</td><td>Baixa</td><td>Remover o formulário e o tratador, ou deixar como está (inofensivo).</td></tr>
+<tr><td>E6</td><td>PUBLICAR.txt</td><td>Histórico fora de ordem: a “versão 104” aparece antes da segunda “versão 100”, e há duas “versão 100” (Atualização 17 e segurança). A nota da v97 diz “lojas e motoboys entram sem aprovação”, o que contradiz as v109, v110 e v117 (motoboy aprovado pelo lojista; loja criada pela administração).</td><td>Baixa (documentação)</td><td>Reordenar e marcar a nota da v97 como superada.</td></tr>
+<tr><td>E7</td><td>Dossiê</td><td>Cartão “ONDE ESTAMOS (v118 · 25/10)” está velho (diz que o Lojista foi só “iniciado”). Porcentagens do pacote variam entre seções (90, 92, 93, 94, 95, 96%) e o Lojista aparece com 55% e 58%. Seções antigas dizem “testes ~35–40%” (carregamento e cliques) enquanto as novas dizem “testes em aparelho 0%”. Cabeçalho ainda com data 25/10.</td><td>Baixa (documentação)</td><td>Unificar um quadro único de porcentagens, separando “testes em navegador” de “testes em aparelho”, e atualizar o cartão do topo.</td></tr>
+</table>
+<h3>26.2 Conferido e sem problema</h3>
+<table><tr><th>Item</th><th>Resultado</th></tr>
+<tr><td>Regras x campos que o app grava (pedidos, corridas, diárias, equipe, acessos, OKs, mensagens, códigos, entregadores, clientes)</td><td>Coerentes: cada campo gravado pelo app está liberado na regra do perfil certo (inclusive <code>rid</code> nos códigos e mensagens).</td></tr>
+<tr><td>Botões e ids</td><td>160 atributos de botão com tratador; nenhum id repetido na tela fixa; nenhuma função declarada duas vezes.</td></tr>
+<tr><td>Varredura de cliques em navegador (administração, lojista, entregador, cliente)</td><td>Cliques em todos os botões não destrutivos sem nenhum erro de script. Botões que excluem, saem, suspendem, restauram ou abrem GPS/compartilhamento foram pulados de propósito.</td></tr>
+<tr><td>sw.js, manifesto, vercel.json</td><td>sw.js (1743 bytes, <code>pedeai-v118-5</code>) lista só arquivos que existem no pacote; manifesto e cabeçalhos da Vercel (sw.js sem cache, APK com download) coerentes.</td></tr>
+<tr><td>criador.html</td><td>Sem alteração e sem referência a versão ou cache que possa ficar velha.</td></tr>
+</table>
+<h3>26.3 Pendências já conhecidas (repetidas aqui para não se perderem)</h3>
+<p>O cardápio é gravado em listas dentro de listas (mesmo formato do cadastro de produto do lojista); se o banco recusar, aparece “invalid-argument” no teste 13. Telas e login do funcionário, vínculo por e-mail e regra por cargo (v119). Estoque e contas separados do cadastro da loja (v119). Testes em aparelho: <b>0 de 13</b>.</p>
+<p><b>Resultado:</b> 7 itens (3 de regras, 2 do app, 2 de documentação), nenhum impede publicar a v118.5; E1 e E2 são os que eu corrigiria antes de divulgar. <b>Pacote ~96%; testes em aparelho 0%.</b></p>
+<h2>27. v118.6 — login com Google que voltava a pedir login (26/10/2026)</h2>
+<p><b>Sintoma (relatado no celular):</b> a pessoa toca em “Entrar com Google”, escolhe a conta, volta ao app e a tela pede o login de novo.</p>
+<p><b>Causa provável (reproduzida em simulação, ainda não confirmada em aparelho):</b> o app sempre abre com uma sessão anônima e, ao entrar com Google, tenta <i>vincular</i> a conta Google a ela. Se aquela conta Google já existe no projeto (por testes anteriores, ou depois de limpar o cache), o Firebase recusa o vínculo (<code>credential-already-in-use</code>). O código antigo então abria uma <b>segunda janela</b> do Google; o navegador do celular bloqueia essa janela (não veio de um toque) e o app caía no <b>redirecionamento</b>, que no celular perde o login na volta (o navegador isola o armazenamento do domínio do Firebase). Resultado: volta anônimo e a tela de login reaparece.</p>
+<h3>27.1 Correção</h3>
+<ul>
+<li>Quando a conta já existe, o app entra com a <b>credencial que o próprio erro devolve</b>, sem abrir segunda janela e sem redirecionar.</li>
+<li>O login passa a ser chamado <b>na hora do toque</b> (antes ficava um passo depois, o que alguns navegadores bloqueiam).</li>
+<li>O mesmo ajuste foi feito no botão de Google do cadastro do cliente.</li>
+<li>Mensagens: se a janela for bloqueada, aparece embaixo do botão “Não foi possível entrar (auth/popup-blocked)”; se a pessoa fechar a janela, “Login com Google cancelado”.</li>
+</ul>
+<h3>27.2 Verificação (simulação do Firebase em navegador)</h3>
+<table><tr><th>Cenário</th><th>v118 (antes)</th><th>v118.6 (agora)</th></tr>
+<tr><td>Conta Google já existe</td><td>vincular → 2ª janela bloqueada → redirecionamento (loop)</td><td>vincular → entra com a credencial → recarrega logado</td></tr>
+<tr><td>Conta nova</td><td>—</td><td>vincula e segue, sem chamadas extras</td></tr>
+<tr><td>Janela bloqueada ao vincular</td><td>—</td><td>mostra o código do erro na tela</td></tr>
+<tr><td>Usuário fecha a janela</td><td>—</td><td>mostra “Login com Google cancelado”</td></tr>
+<tr><td>Regressão (administração 17/17; fluxo completo 23/23; abas)</td><td>—</td><td>tudo passou; sem erro de script</td></tr>
+</table>
+<p><b>Não verificado:</b> o login real com o Google (a simulação não fala com o Firebase de verdade). Só o teste no celular confirma.</p>
+<h3>27.3 Se ainda repetir no celular</h3>
+<ol>
+<li>Conferir o domínio da Vercel em Firebase › Autenticação › Configurações › Domínios autorizados (sem https e sem barra).</li>
+<li>Limpar os dados do site e testar de novo, de preferência no Chrome (não dentro do navegador do WhatsApp ou Instagram).</li>
+<li>Copiar a mensagem que aparece embaixo do botão (por exemplo <code>auth/...</code>) e me enviar.</li>
+<li><b>Plano B</b> (se o erro for o isolamento de armazenamento): usar o próprio domínio da Vercel como domínio de login do Firebase (redirecionar <code>/__/auth/</code> para o Firebase na <code>vercel.json</code> e trocar o <code>authDomain</code>), e cadastrar o endereço <code>.../__/auth/handler</code> como URI de redirecionamento autorizado no Google Cloud. Só faço se for preciso.</li>
+</ol>
+<h3>27.4 Verificação desta entrega (registro)</h3>
+<table><tr><th>Item</th><th>Resultado</th></tr>
+<tr><td>sw.js</td><td>aberto e lido; <code>pedeai-v118-6</code>; tamanho maior que 0</td></tr>
+<tr><td>Configuração do Firebase no app</td><td>conferida: os 7 campos iguais aos do console (projeto delivery-67d14); nenhum vestígio do sufixo antigo</td></tr>
+<tr><td>Sintaxe dos scripts</td><td>OK (node --check)</td></tr>
+<tr><td>ZIP, PedeAi.html, criador.html, regras</td><td>ZIP aberto e listado; PedeAi.html idêntico (hash) ao index.html; criador.html e firestore.rules sem alteração</td></tr>
+</table>
+<p><b>Publicar:</b> só o pacote na Vercel (regras iguais às da v118.3); limpar o cache dos aparelhos. <b>v118.6 entregue, não liberada. Pacote ~96%; testes em aparelho 0 de 13.</b></p>
+</body></html>

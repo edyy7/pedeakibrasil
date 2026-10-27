@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; font-src data:; img-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://*.firebaseapp.com https://accounts.google.com;">
+<meta name="theme-color" content="#0b0b0f">
+<title>Painel do Criador · PedeAí</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0b0f;--card:#16161d;--br:#2a2a35;--tx:#f2f2f5;--mu:#9a9aa8;--ac:#e0202a;--ok:#2fbf71}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:720px;margin:0 auto;padding:24px 18px 60px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--mu);margin:0 0 22px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--br);border-radius:14px;padding:18px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.num{font-size:30px;font-weight:800;color:var(--tx)}
+.lbl{color:var(--mu);font-size:13px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--br)}
+.row:last-child{border-bottom:0}
+input{width:100%;background:#0f0f14;color:var(--tx);border:1px solid var(--br);border-radius:10px;padding:12px;font:inherit;margin:6px 0}
+button{width:100%;background:var(--ac);color:#fff;border:0;border-radius:10px;padding:13px;font:inherit;font-weight:700;cursor:pointer;margin-top:8px}
+button.sec{background:transparent;border:1px solid var(--br);color:var(--tx)}
+.err{color:#ff7b7b;min-height:20px;font-size:14px;margin-top:6px}
+.ok{color:var(--ok)}
+.hidden{display:none}
+.foot{color:var(--mu);font-size:12px;margin-top:18px}
+@media (max-width:480px){.grid{grid-template-columns:1fr}.num{font-size:26px}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Painel do Criador</h1>
+  <p class="sub">Monitoramento de uso do PedeAí. O painel mostra contagens, lojas e nomes de motoboys; não exibe telefones, endereços nem dados de clientes.</p>
+
+  <section id="semCfg" class="card hidden">
+    <b>Firebase não configurado.</b>
+    <p class="lbl">Preencha <code>PEDEAI_FIREBASE</code> e <code>PEDEAI_EMPRESA</code> neste arquivo para ver os números.</p>
+  </section>
+
+  <section id="login" class="card hidden">
+    <b>Entrar</b>
+    <p class="lbl">Use a conta do criador. Somente o e-mail configurado em <code>PEDEAI_CRIADOR</code>, com e-mail verificado, tem acesso.</p>
+    <input id="em" type="email" autocomplete="username" placeholder="E-mail" autocapitalize="none">
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Senha">
+    <button id="btnEntrar">Entrar</button>
+    <button id="btnGoogle" class="sec">Entrar com Google</button>
+    <button id="btnEsqueci" class="sec">Esqueci minha senha / trocar senha</button>
+    <div id="erroLogin" class="err"></div>
+  </section>
+
+  <section id="semAcesso" class="card hidden">
+    <b>Acesso negado.</b>
+    <p class="lbl">Esta conta não tem permissão para ver o painel, ou o e-mail ainda não foi verificado.</p>
+    <button id="btnSair" class="sec">Sair</button>
+  </section>
+
+  <section id="painel" class="hidden">
+    <section id="lojasSec" class="card" style="font-size:17px"><b style="font-size:20px">Lojas do sistema</b>
+      <div class="grid" style="margin-top:10px"><div><div class="num" id="lTot">0</div><div class="lbl">Total de lojas</div></div><div><div class="num" id="lLib">0</div><div class="lbl">Liberadas</div></div><div><div class="num" id="lTrv">0</div><div class="lbl">Travadas</div></div><div><div class="num" id="lPed">0</div><div class="lbl">Pedidos hoje (todas)</div></div></div>
+      <input id="lBusca" placeholder="Buscar loja por nome, responsável ou WhatsApp"><div id="lLista"></div><div class="err" id="lErro"></div></section>
+    <section class="card" style="font-size:17px"><b style="font-size:20px">Motoboys (últimos 30 dias)</b>
+      <div class="lbl">Taxa de aceite = aceitas ÷ (aceitas + recusadas). Tempo = do pedido pronto até o aceite.</div><div id="mLista"></div></section>
+    <div class="card">
+      <div class="grid">
+        <div><div class="num" id="nAparelhos">0</div><div class="lbl">Aparelhos que abriram o app</div></div>
+        <div><div class="num" id="nCadastros">0</div><div class="lbl">Cadastros concluídos</div></div>
+        <div><div class="num" id="nProdutos">0</div><div class="lbl">Lojas com produtos cadastrados</div></div>
+        <div><div class="num" id="nUsando">0</div><div class="lbl">Pessoas que já pediram ou entregaram</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <b>Por tipo de conta</b>
+      <div class="row"><span>Clientes</span><b id="pCliente">0</b></div>
+      <div class="row"><span>Lojistas</span><b id="pLojista">0</b></div>
+      <div class="row"><span>Entregadores</span><b id="pEntregador">0</b></div>
+    </div>
+    <div class="card">
+      <b>Atividade</b>
+      <div class="row"><span>Aberturas registradas (total)</span><b id="vTotal">0</b></div>
+      <div class="row"><span>Última atividade</span><b id="vUltimo">—</b></div>
+      <div class="row"><span>Primeiro registro</span><b id="vPrimeiro">—</b></div>
+    </div>
+    <div class="card">
+      <b>Cadastros concluídos por tipo</b>
+      <div class="row"><span>Clientes</span><b id="cCliente">0</b></div>
+      <div class="row"><span>Gerentes (lojistas)</span><b id="cLojista">0</b></div>
+      <div class="row"><span>Motoboys</span><b id="cEntregador">0</b></div>
+    </div>
+    <div class="card">
+      <b>Usuários ativos</b>
+      <div class="row"><span>Últimas 24 horas</span><b id="aDia">0</b></div>
+      <div class="row"><span>Últimos 7 dias</span><b id="aSemana">0</b></div>
+      <div class="row"><span>Últimos 30 dias</span><b id="aMes">0</b></div>
+    </div>
+    <div class="card">
+      <b>Catálogo dos gerentes</b>
+      <div class="row"><span>Produtos novos inseridos</span><b id="pNovos">0</b></div>
+      <div class="row"><span>Edições em produtos existentes</span><b id="pEdicoes">0</b></div>
+    </div>
+    <div class="card">
+      <b>Desempenho comercial</b>
+      <div class="row"><span>Lojas na meta hoje (15 vendas ou mais)</span><b id="lMetaHoje">0</b></div>
+      <div class="row"><span>Dias de meta batida (soma das lojas)</span><b id="lDiasMeta">0</b></div>
+      <div class="row"><span>Pedidos pelo link do cardápio</span><b id="oLink">0</b></div>
+      <div class="row"><span>Entregas avulsas (balcão/WhatsApp)</span><b id="oAvulso">0</b></div>
+    </div>
+    <div class="card">
+      <b>Controles do sistema</b>
+      <p class="lbl">Os dois botões começam desligados. Qualquer mudança vale na hora para todos os aparelhos.</p>
+      <div class="row"><div><b>1. Motoboys globais</b><div class="lbl">OFF: cada motoboy só vê pedidos da loja que o convidou. ON: todos os motoboys veem pedidos de todas as lojas.</div></div><button id="tMoto" class="sec" style="width:auto;margin:0;padding:10px 14px">OFF</button></div>
+      <div class="row"><div><b>2. Marketplace</b><div class="lbl">OFF: cliente vê só a loja do link que recebeu. ON: cliente vê todas as lojas aprovadas e escolhe qual usar (modelo iFood).</div></div><button id="tMkt" class="sec" style="width:auto;margin:0;padding:10px 14px">OFF</button></div>
+      <div class="err" id="erroCfg"></div>
+    </div>
+    <button id="btnSairPainel" class="sec">Sair</button>
+    <div class="foot" id="rodape"></div>
+  </section>
+</main>
+
+<script>
+/* PedeAí Brasil — configuração embutida (Firebase delivery-67d14) */
+window.PEDEAI_FIREBASE = {
+  apiKey: "AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",
+  authDomain: "delivery-67d14.firebaseapp.com",
+  projectId: "delivery-67d14",
+  storageBucket: "delivery-67d14.firebasestorage.app",
+  messagingSenderId: "684086028448",
+  appId: "1:684086028448:web:9e86061b8e29e947eac1c5",
+  measurementId: "G-KYQRSY9V5H"
+};
+
+window.PEDEAI_EMPRESA = "def6202e7456197c7da93c72e3b424e5";
+
+window.PEDEAI_URL = "https://meudelivery-six.vercel.app/";
+
+window.PEDEAI_CRIADOR = "edinaldooliveiradesouza@gmail.com";
+</script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const show=id=>{["semCfg","login","semAcesso","painel"].forEach(x=>$(x).classList.toggle("hidden",x!==id))};
+  const cfg=window.PEDEAI_FIREBASE, empresa=window.PEDEAI_EMPRESA, criador=String(window.PEDEAI_CRIADOR||"").trim().toLowerCase();
+  if(!cfg||!cfg.projectId||!empresa){show("semCfg");return}
+  const V="10.12.2",B="https://www.gstatic.com/firebasejs/"+V+"/";
+  const load=src=>new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("Falha ao carregar "+src));document.head.appendChild(s)});
+  const msgErro=e=>{const c=e&&e.code||"";const m={"auth/invalid-credential":"E-mail ou senha incorretos.","auth/wrong-password":"Senha incorreta.","auth/user-not-found":"Conta não encontrada.","auth/too-many-requests":"Muitas tentativas. Aguarde alguns minutos.","auth/popup-closed-by-user":"Login cancelado."};return m[c]||"Não foi possível entrar. Tente novamente."};
+  let unsub=null;
+  Promise.resolve().then(()=>load(B+"firebase-app-compat.js")).then(()=>load(B+"firebase-auth-compat.js")).then(()=>load(B+"firebase-firestore-compat.js")).then(()=>{
+    const app=firebase.apps.length?firebase.app():firebase.initializeApp(cfg);
+    const auth=firebase.auth(), db=firebase.firestore();
+    const ok=u=>!!(u&&!u.isAnonymous&&u.email&&u.email.toLowerCase()===criador&&u.emailVerified);
+    $("btnEntrar").onclick=()=>{$("erroLogin").textContent="";const em=$("em").value.trim(),pw=$("pw").value;if(!em||!pw){$("erroLogin").textContent="Informe e-mail e senha.";return}auth.signInWithEmailAndPassword(em,pw).catch(e=>$("erroLogin").textContent=msgErro(e))};
+    $("btnEsqueci").onclick=()=>{const em=$("em").value.trim();$("erroLogin").textContent="";if(!em){$("erroLogin").textContent="Digite seu e-mail acima e toque de novo.";return}auth.sendPasswordResetEmail(em).then(()=>{$("erroLogin").textContent="Se este e-mail tiver conta com senha, enviamos o link para criar uma nova senha. Confira a caixa de entrada e o spam."}).catch(e=>{$("erroLogin").textContent=(e&&e.code=="auth/invalid-email")?"E-mail inválido.":"Não foi possível enviar agora. Tente novamente."})};
+    $("btnGoogle").onclick=()=>{const P=new firebase.auth.GoogleAuthProvider();P.setCustomParameters({prompt:"select_account"});auth.signInWithPopup(P).catch(e=>$("erroLogin").textContent=msgErro(e))};
+    const sair=()=>auth.signOut();
+    $("btnSair").onclick=sair; $("btnSairPainel").onclick=sair;
+    const fmt=t=>t?new Date(t).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"—";
+    const cfgRef=db.collection("empresas").doc(empresa).collection("config").doc("app");
+    let cfgAtual={motoGlobal:false,marketplace:false}, unsubCfg=null;
+    const pintaCfg=()=>{$("tMoto").textContent=cfgAtual.motoGlobal?"ON":"OFF";$("tMkt").textContent=cfgAtual.marketplace?"ON":"OFF"};
+    const alterna=campo=>{$("erroCfg").textContent="";const novo=!cfgAtual[campo];cfgRef.set({[campo]:novo},{merge:true}).catch(()=>{$("erroCfg").textContent="Não foi possível salvar. Entre com a conta do criador e confira as regras do Firestore."})};
+    $("tMoto").onclick=()=>alterna("motoGlobal");$("tMkt").onclick=()=>alterna("marketplace");
+    const numero=(id,v)=>{$(id).textContent=String(v)};
+    function atualizar(docs){
+      const m=docs.map(d=>d.data());
+      numero("nAparelhos",m.length);
+      numero("nCadastros",m.filter(x=>x.cadastro).length);
+      numero("nProdutos",m.filter(x=>(x.produtos||0)>0).length);
+      numero("nUsando",m.filter(x=>(x.pedidos||0)>0).length);
+      numero("pCliente",m.filter(x=>x.papel==="cliente").length);
+      numero("pLojista",m.filter(x=>x.papel==="lojista").length);
+      numero("pEntregador",m.filter(x=>x.papel==="entregador").length);
+      numero("vTotal",m.reduce((t,x)=>t+(x.visitas||0),0));
+      numero("cCliente",m.filter(x=>x.cadastro&&x.papel==="cliente").length);
+      numero("cLojista",m.filter(x=>x.cadastro&&x.papel==="lojista").length);
+      numero("cEntregador",m.filter(x=>x.cadastro&&x.papel==="entregador").length);
+      const agora=Date.now(),ativos=ms=>m.filter(x=>(x.ultimo||0)>=agora-ms).length;
+      numero("aDia",ativos(864e5));numero("aSemana",ativos(7*864e5));numero("aMes",ativos(30*864e5));
+      const soma=k=>m.reduce((t,x)=>t+(x[k]||0),0);
+      numero("pNovos",soma("prodNovos"));numero("pEdicoes",soma("prodEdicoes"));
+      const d=new Date(),hoje=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+      numero("lMetaHoje",m.filter(x=>x.diaRef===hoje&&(x.vendasHoje||0)>=15).length);
+      numero("lDiasMeta",soma("diasMeta"));numero("oLink",soma("pedLink"));numero("oAvulso",soma("pedAvulso"));
+      const ult=Math.max(0,...m.map(x=>x.ultimo||0));const pri=m.length?Math.min(...m.map(x=>x.primeiro||Infinity)):0;
+      $("vUltimo").textContent=fmt(ult);$("vPrimeiro").textContent=fmt(pri===Infinity?0:pri);
+      $("rodape").textContent="Atualizado em "+new Date().toLocaleString("pt-BR");
+    }
+
+    let LJ=[],DI=[],PD=[],EN=[],unL=null,unD=null,unP=null,unE=null;
+    const dia=()=>{const d=new Date(Date.now()-60000);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+    const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    const nHoje=id=>{const d=DI.find(x=>x.id===dia()+"_"+id);return d&&d.n||0};
+    function pintaLojas(){const q=($("lBusca").value||"").toLowerCase();const L=LJ.filter(x=>!q||[x.n,x.resp,x.tel,x.wa].join(" ").toLowerCase().includes(q));numero("lTot",LJ.length);numero("lLib",LJ.filter(x=>x.lib).length);numero("lTrv",LJ.filter(x=>!x.lib).length);numero("lPed",LJ.reduce((t,x)=>t+nHoje(x.id),0));
+      $("lLista").innerHTML=L.map(x=>{const par=PD.filter(o=>String(o.rid)===String(x.id)&&o.st==="pronto"&&!o.en&&!o.rt),mais=par.length?Math.max(...par.map(o=>Math.floor((Date.now()-(o.pr||o.ct||Date.now()))/6e4))):0,onl=EN.filter(e=>e.ap===1&&e.on===true&&Date.now()-(e.ots||0)<18e4&&String(e.lojaConvite)===String(x.id)).length,adm=par.some(o=>o.admAc),n=nHoje(x.id),st=x.lib?"Liberada (sem limite)":n>=15?"Limite atingido":"Limitada (15/dia)",cor=x.lib?"var(--ok)":n>=15?"#ff7b7b":"var(--mu)";return `<div class="row" style="flex-wrap:wrap;align-items:center"><div style="flex:1 1 200px"><b style="font-size:18px">${esc(x.n)}</b><div class="lbl">Responsável: ${esc(x.resp||x.nome||"—")} · WhatsApp: ${esc(x.tel||x.wa||"—")}</div><div style="color:${cor};font-weight:800">${st}</div><div class="lbl" style="font-size:16px">Hoje: <b>${n}</b> ${x.lib?"pedidos":"de 15"}</div><div class="lbl" style="font-size:16px;color:${par.length?"#ff7b7b":"var(--mu)"}">Corridas paradas: <b>${par.length}</b>${par.length?" · a mais antiga há "+mais+" min":""} · Motoboys online: <b>${onl}</b>${adm?" · ⚠️ ADM acionado":""}</div></div><button data-lib="${esc(x.id)}" data-v="${x.lib?0:1}" class="${x.lib?"sec":""}" style="width:auto;min-width:150px;font-size:17px">${x.lib?"🔒 Travar de volta":"🔓 Liberar"}</button></div>`}).join("")||'<div class="lbl">Nenhuma loja encontrada.</div>'}
+
+    function pintaMotos(){const lim=Date.now()-30*864e5,P=PD.filter(o=>(o.ct||0)>=lim);$("mLista").innerHTML=EN.filter(e=>e.nome).map(e=>{const ac=P.filter(o=>o.en===e.id&&o.aat),rec=P.filter(o=>(o.rcs||[]).includes(e.id)).length,tot=P.filter(o=>o.en===e.id).length,den=tot+rec,taxa=den?Math.round(100*tot/den):null,tm=ac.filter(o=>o.pr).map(o=>o.aat-o.pr),med=tm.length?Math.round(tm.reduce((a,b)=>a+b,0)/tm.length/6e4*10)/10:null,alerta=rec>=3&&tot===0;return {e,tot,rec,taxa,med,alerta}}).sort((a,b)=>(b.alerta-a.alerta)||(b.rec-a.rec)).map(m=>`<div class="row" style="flex-wrap:wrap"><div style="flex:1 1 180px"><b>${esc(m.e.nome)}</b><div class="lbl">${m.e.on===true&&Date.now()-(m.e.ots||0)<18e4?"🟢 online":"⚪ offline"}${m.alerta?' · <span style="color:#ff7b7b">⚠️ nunca aceita</span>':""}</div></div><div class="lbl" style="font-size:16px;text-align:right">Aceite: <b>${m.taxa===null?"—":m.taxa+"%"}</b><br>Tempo médio: <b>${m.med===null?"—":m.med+" min"}</b><br>Aceitas: <b>${m.tot}</b> · Recusadas: <b>${m.rec}</b></div></div>`).join("")||'<div class="lbl">Sem motoboys cadastrados.</div>'}
+    $("lBusca").oninput=pintaLojas;
+    $("lLista").onclick=e=>{const b=e.target.closest("[data-lib]");if(!b)return;$("lErro").textContent="";db.collection("empresas").doc(empresa).collection("lojas").doc(String(b.dataset.lib)).update({lib:b.dataset.v==="1"}).catch(()=>{$("lErro").textContent="Não foi possível salvar. Publique as regras novas do Firestore (firestore.rules)."})};
+    auth.onAuthStateChanged(u=>{
+      if(unL){unL();unL=null}if(unD){unD();unD=null}if(unP){unP();unP=null}if(unE){unE();unE=null}
+      if(unsub){unsub();unsub=null}
+      if(unsubCfg){unsubCfg();unsubCfg=null}
+      if(!u){show("login");return}
+      if(!ok(u)){show("semAcesso");return}
+      show("painel");
+      unL=db.collection("empresas").doc(empresa).collection("lojas").onSnapshot(s=>{LJ=s.docs.map(d=>d.data());pintaLojas()},()=>{$("lErro").textContent="Sem permissão para ler as lojas."});
+      unP=db.collection("empresas").doc(empresa).collection("pedidos").where("ct",">=",Date.now()-30*864e5).onSnapshot(s=>{PD=s.docs.map(d=>d.data());pintaLojas();pintaMotos()},()=>{$("lErro").textContent="Sem permissão para ler pedidos/motoboys. Publique o firestore.rules novo."});
+      unE=db.collection("empresas").doc(empresa).collection("ent").onSnapshot(s=>{EN=s.docs.map(d=>d.data());pintaLojas();pintaMotos()},()=>{});
+      unD=db.collection("empresas").doc(empresa).collection("dias").onSnapshot(s=>{DI=s.docs.map(d=>d.data());pintaLojas()},()=>{});
+      unsubCfg=cfgRef.onSnapshot(sn=>{const d=sn.exists?sn.data():{};cfgAtual={motoGlobal:d.motoGlobal===true,marketplace:d.marketplace===true};pintaCfg()},()=>{$("erroCfg").textContent="Sem permissão para ler os controles. Confira as regras do Firestore."});
+      unsub=db.collection("empresas").doc(empresa).collection("metricas").onSnapshot(snap=>atualizar(snap.docs),err=>{
+        $("rodape").textContent="Sem permissão para ler as contagens. Confira as regras do Firestore e o PEDEAI_CRIADOR.";
+      });
+    });
+  }).catch(()=>{$("erroLogin").textContent="Não foi possível carregar o Firebase. Verifique a conexão.";show("login")});
+  show("login");
+})();
+</script>
+</body>
+</html>
