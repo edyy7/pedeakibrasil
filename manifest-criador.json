@@ -1,0 +1,25 @@
+{
+ "id": "./criador.html",
+ "name": "PedeAí Criador",
+ "short_name": "Criador",
+ "start_url": "./criador.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0b0b0d",
+ "theme_color": "#6b46c1",
+ "lang": "pt-BR",
+ "icons": [
+  {
+   "src": "icon-criador-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "icon-criador-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

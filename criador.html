@@ -1,221 +1,167 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; font-src data:; img-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://*.firebaseapp.com https://accounts.google.com;">
-<meta name="theme-color" content="#0b0b0f">
-<title>Painel do Criador · PedeAí</title>
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Criador · PedeAí Brasil</title>
 <style>
-:root{color-scheme:dark;--bg:#0b0b0f;--card:#16161d;--br:#2a2a35;--tx:#f2f2f5;--mu:#9a9aa8;--ac:#e0202a;--ok:#2fbf71}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
-main{max-width:720px;margin:0 auto;padding:24px 18px 60px}
-h1{font-size:22px;margin:0 0 4px}
-.sub{color:var(--mu);margin:0 0 22px;font-size:14px}
-.card{background:var(--card);border:1px solid var(--br);border-radius:14px;padding:18px;margin-bottom:14px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.num{font-size:30px;font-weight:800;color:var(--tx)}
-.lbl{color:var(--mu);font-size:13px}
-.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--br)}
-.row:last-child{border-bottom:0}
-input{width:100%;background:#0f0f14;color:var(--tx);border:1px solid var(--br);border-radius:10px;padding:12px;font:inherit;margin:6px 0}
-button{width:100%;background:var(--ac);color:#fff;border:0;border-radius:10px;padding:13px;font:inherit;font-weight:700;cursor:pointer;margin-top:8px}
-button.sec{background:transparent;border:1px solid var(--br);color:var(--tx)}
-.err{color:#ff7b7b;min-height:20px;font-size:14px;margin-top:6px}
-.ok{color:var(--ok)}
-.hidden{display:none}
-.foot{color:var(--mu);font-size:12px;margin-top:18px}
-@media (max-width:480px){.grid{grid-template-columns:1fr}.num{font-size:26px}}
-</style>
-</head>
-<body>
-<main>
-  <h1>Painel do Criador</h1>
-  <p class="sub">Monitoramento de uso do PedeAí. O painel mostra contagens, lojas e nomes de motoboys; não exibe telefones, endereços nem dados de clientes.</p>
-
-  <section id="semCfg" class="card hidden">
-    <b>Firebase não configurado.</b>
-    <p class="lbl">Preencha <code>PEDEAI_FIREBASE</code> e <code>PEDEAI_EMPRESA</code> neste arquivo para ver os números.</p>
-  </section>
-
-  <section id="login" class="card hidden">
-    <b>Entrar</b>
-    <p class="lbl">Use a conta do criador. Somente o e-mail configurado em <code>PEDEAI_CRIADOR</code>, com e-mail verificado, tem acesso.</p>
-    <input id="em" type="email" autocomplete="username" placeholder="E-mail" autocapitalize="none">
-    <input id="pw" type="password" autocomplete="current-password" placeholder="Senha">
-    <button id="btnEntrar">Entrar</button>
-    <button id="btnGoogle" class="sec">Entrar com Google</button>
-    <button id="btnEsqueci" class="sec">Esqueci minha senha / trocar senha</button>
-    <div id="erroLogin" class="err"></div>
-  </section>
-
-  <section id="semAcesso" class="card hidden">
-    <b>Acesso negado.</b>
-    <p class="lbl">Esta conta não tem permissão para ver o painel, ou o e-mail ainda não foi verificado.</p>
-    <button id="btnSair" class="sec">Sair</button>
-  </section>
-
-  <section id="painel" class="hidden">
-    <section id="lojasSec" class="card" style="font-size:17px"><b style="font-size:20px">Lojas do sistema</b>
-      <div class="grid" style="margin-top:10px"><div><div class="num" id="lTot">0</div><div class="lbl">Total de lojas</div></div><div><div class="num" id="lLib">0</div><div class="lbl">Liberadas</div></div><div><div class="num" id="lTrv">0</div><div class="lbl">Travadas</div></div><div><div class="num" id="lPed">0</div><div class="lbl">Pedidos hoje (todas)</div></div></div>
-      <input id="lBusca" placeholder="Buscar loja por nome, responsável ou WhatsApp"><div id="lLista"></div><div class="err" id="lErro"></div></section>
-    <section class="card" style="font-size:17px"><b style="font-size:20px">Motoboys (últimos 30 dias)</b>
-      <div class="lbl">Taxa de aceite = aceitas ÷ (aceitas + recusadas). Tempo = do pedido pronto até o aceite.</div><div id="mLista"></div></section>
-    <div class="card">
-      <div class="grid">
-        <div><div class="num" id="nAparelhos">0</div><div class="lbl">Aparelhos que abriram o app</div></div>
-        <div><div class="num" id="nCadastros">0</div><div class="lbl">Cadastros concluídos</div></div>
-        <div><div class="num" id="nProdutos">0</div><div class="lbl">Lojas com produtos cadastrados</div></div>
-        <div><div class="num" id="nUsando">0</div><div class="lbl">Pessoas que já pediram ou entregaram</div></div>
-      </div>
-    </div>
-    <div class="card">
-      <b>Por tipo de conta</b>
-      <div class="row"><span>Clientes</span><b id="pCliente">0</b></div>
-      <div class="row"><span>Lojistas</span><b id="pLojista">0</b></div>
-      <div class="row"><span>Entregadores</span><b id="pEntregador">0</b></div>
-    </div>
-    <div class="card">
-      <b>Atividade</b>
-      <div class="row"><span>Aberturas registradas (total)</span><b id="vTotal">0</b></div>
-      <div class="row"><span>Última atividade</span><b id="vUltimo">—</b></div>
-      <div class="row"><span>Primeiro registro</span><b id="vPrimeiro">—</b></div>
-    </div>
-    <div class="card">
-      <b>Cadastros concluídos por tipo</b>
-      <div class="row"><span>Clientes</span><b id="cCliente">0</b></div>
-      <div class="row"><span>Gerentes (lojistas)</span><b id="cLojista">0</b></div>
-      <div class="row"><span>Motoboys</span><b id="cEntregador">0</b></div>
-    </div>
-    <div class="card">
-      <b>Usuários ativos</b>
-      <div class="row"><span>Últimas 24 horas</span><b id="aDia">0</b></div>
-      <div class="row"><span>Últimos 7 dias</span><b id="aSemana">0</b></div>
-      <div class="row"><span>Últimos 30 dias</span><b id="aMes">0</b></div>
-    </div>
-    <div class="card">
-      <b>Catálogo dos gerentes</b>
-      <div class="row"><span>Produtos novos inseridos</span><b id="pNovos">0</b></div>
-      <div class="row"><span>Edições em produtos existentes</span><b id="pEdicoes">0</b></div>
-    </div>
-    <div class="card">
-      <b>Desempenho comercial</b>
-      <div class="row"><span>Lojas na meta hoje (15 vendas ou mais)</span><b id="lMetaHoje">0</b></div>
-      <div class="row"><span>Dias de meta batida (soma das lojas)</span><b id="lDiasMeta">0</b></div>
-      <div class="row"><span>Pedidos pelo link do cardápio</span><b id="oLink">0</b></div>
-      <div class="row"><span>Entregas avulsas (balcão/WhatsApp)</span><b id="oAvulso">0</b></div>
-    </div>
-    <div class="card">
-      <b>Controles do sistema</b>
-      <p class="lbl">Os dois botões começam desligados. Qualquer mudança vale na hora para todos os aparelhos.</p>
-      <div class="row"><div><b>1. Motoboys globais</b><div class="lbl">OFF: cada motoboy só vê pedidos da loja que o convidou. ON: todos os motoboys veem pedidos de todas as lojas.</div></div><button id="tMoto" class="sec" style="width:auto;margin:0;padding:10px 14px">OFF</button></div>
-      <div class="row"><div><b>2. Marketplace</b><div class="lbl">OFF: cliente vê só a loja do link que recebeu. ON: cliente vê todas as lojas aprovadas e escolhe qual usar (modelo iFood).</div></div><button id="tMkt" class="sec" style="width:auto;margin:0;padding:10px 14px">OFF</button></div>
-      <div class="err" id="erroCfg"></div>
-    </div>
-    <button id="btnSairPainel" class="sec">Sair</button>
-    <div class="foot" id="rodape"></div>
-  </section>
-</main>
-
+:root{--bg:#0b0b0d;--cd:#16161a;--br:#2a2a31;--tx:#f4f4f6;--mu:#a3a3ad;--ac:#d4141c;--gd:#c99700;--ok:#22a559;--rd:#ff4d55;--yl:#e0a800}
+@media(prefers-color-scheme:light){:root{--bg:#f6f6f8;--cd:#fff;--br:#dcdce3;--tx:#15151a;--mu:#5d5d68}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.4 system-ui,sans-serif;padding-bottom:40px}
+.pv{background:var(--gd);color:#000;font-size:13.5px;font-weight:800;padding:6px 12px;text-align:center}
+.top{padding:12px 16px;font-weight:800;color:var(--ac);border-bottom:1px solid var(--br)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 12px}.tabs button{flex:none;border:1px solid var(--br);background:var(--cd);color:var(--tx);padding:10px 14px;border-radius:999px;font:inherit;font-weight:700}.tabs button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.pg{padding:4px 14px;max-width:720px;margin:0 auto}h2{margin:14px 0 6px;font-size:18px}
+.card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:12px;margin:10px 0}.card.al{border-color:var(--rd)}
+.meta,.lbl{color:var(--mu);font-size:15.5px}.row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid>div{background:var(--bg);border:1px solid var(--br);border-radius:12px;padding:10px}.num{font-size:24px;font-weight:800}
+.tag{font-size:13.5px;font-weight:800;border:1px solid var(--br);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.summ{display:block;width:100%;text-align:left;background:var(--cd);border:1px solid var(--ac);border-radius:14px;padding:14px;margin:10px 0;color:var(--tx);font:inherit}.summ .more{color:var(--ac);font-weight:800;margin-top:6px}
+button.cta,.cta{display:flex;justify-content:center;width:100%;margin-top:8px;padding:12px;border:0;border-radius:12px;background:var(--ac);color:#fff;font:inherit;font-weight:800}
+.cta.o{background:transparent;color:var(--rd);border:1px solid var(--rd)}.cta.b{background:transparent;color:var(--ac);border:1px solid var(--ac)}.cta.g{background:var(--ok)}
+.sec{width:100%;margin-top:8px;padding:12px;border-radius:12px;border:1px solid var(--br);background:var(--cd);color:var(--tx);font:inherit;font-weight:700}
+.tg{flex:none;padding:10px 16px;border-radius:999px;border:0;font:inherit;font-weight:800;background:#777;color:#fff}.tg.on{background:var(--ok)}
+input,select{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1px solid var(--br);background:var(--bg);color:var(--tx);font:inherit}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center;z-index:8}
+.mbox{background:var(--bg);width:100%;max-width:720px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:14px}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.mhead button{border:1px solid var(--br);background:var(--cd);color:var(--tx);border-radius:10px;padding:8px 14px;font:inherit;font-weight:800}
+.item{display:block;width:100%;text-align:left;background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:12px;margin:8px 0;color:var(--tx);font:inherit}
+.ok{color:var(--ok)}.bad{color:var(--rd)}.foot{text-align:center;color:var(--mu);font-size:13.5px;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;display:none;z-index:20}
+</style><link rel="manifest" href="manifest-criador.json"><meta name="theme-color" content="#6b46c1"><link rel="icon" href="icon-criador-192.png"><link rel="apple-touch-icon" href="icon-criador-192.png"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
+<div class="pv" id="pa-st" style="background:#111;color:#e0a800;font-size:12.5px;font-weight:700">Conectado ao Firebase · esta tela ainda usa dados de exemplo</div>
+<div class="pg" id="inst"></div>
+<div class="top">Criador · painel mestre (exemplo)</div>
+<div class="tabs" id="tabs"></div><div class="pg" id="v"></div>
+<div id="modal"></div><div class="toast" id="t"></div>
 <script>
-/* PedeAí Brasil — configuração embutida (Firebase delivery-67d14) */
-window.PEDEAI_FIREBASE = {
-  apiKey: "AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",
-  authDomain: "delivery-67d14.firebaseapp.com",
-  projectId: "delivery-67d14",
-  storageBucket: "delivery-67d14.firebasestorage.app",
-  messagingSenderId: "684086028448",
-  appId: "1:684086028448:web:9e86061b8e29e947eac1c5",
-  measurementId: "G-KYQRSY9V5H"
-};
-
-window.PEDEAI_EMPRESA = "def6202e7456197c7da93c72e3b424e5";
-
-window.PEDEAI_URL = "https://meudelivery-six.vercel.app/";
-
-window.PEDEAI_CRIADOR = "edinaldooliveiradesouza@gmail.com";
-</script>
-<script>
+const $=i=>document.getElementById(i),toast=m=>{const t=$("t");t.textContent=m;t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",2200)};
+const R$=n=>"R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2});
+const PLN={mensal:"Mensal",anual:"Anual",pers:"Personalizado"};
+let L=[
+{id:1,n:"Lanchonete do Zé",resp:"José Almeida",tel:"27 99811-2233",tp:"prod",ent:true,sus:false,lib:false,hoje:15,pl:{t:"mensal",v:"2026-11-20"},fat:18420.5,ped:312,mb:3,par:1},
+{id:2,n:"Farmácia Vida",resp:"Carla Mendes",tel:"27 99722-4455",tp:"prod",ent:true,sus:false,lib:true,hoje:22,pl:{t:"anual",v:"2026-10-29"},fat:9210,ped:148,mb:2,par:0},
+{id:3,n:"Depósito Construir",resp:"Paulo Reis",tel:"27 99633-7788",tp:"prod",ent:false,sus:false,lib:false,hoje:4,pl:{t:"mensal",v:"2026-10-20"},fat:6310,ped:41,mb:0,par:0},
+{id:4,n:"Salão Bella Vitória",resp:"Lia Souza",tel:"27 99544-1100",tp:"agenda",ent:false,sus:false,lib:false,hoje:7,pl:{t:"mensal",v:"2026-12-05"},fat:4880,ped:96,mb:0,par:0},
+{id:5,n:"Pizzaria Capixaba",resp:"Marcos Lima",tel:"27 99455-9090",tp:"prod",ent:true,sus:true,lib:false,hoje:0,pl:{t:"mensal",v:"2026-09-30"},fat:5120,ped:77,mb:1,par:0}];
+const MOTOS=[["João da Silva","Lanchonete do Zé","online","moto"],["Carla Dias","Lanchonete do Zé","online","bike"],["Paulo Neto","Farmácia Vida","online","carro"],["Ana Ribeiro","Farmácia Vida","offline","moto"],["Rui Matos","Pizzaria Capixaba","offline","moto"],["Bia Lopes","Lanchonete do Zé","offline","bike"]];
+let tab="adm",mod=null,det=null,busca="",moto=false,mkt=false,criar=false;
+const entOn=x=>x.ent!==false&&x.tp!=="agenda",retOn=x=>x.ret!==false;
+const dias=x=>Math.round((new Date(x.pl.v+"T00:00:00")-new Date("2026-10-27T00:00:00"))/864e5);
+const stl=x=>x.sus?["Suspensa","bad"]:x.lib?["Liberada (sem limite)","ok"]:x.hoje>=15?["Limite atingido","bad"]:["Limitada (15/dia)",""];
+const TABS=[["adm","👑 ADMs"],["fat","💰 Faturamento"],["trv","🔓 Travas"],["bkp","💾 Backup"],["msg","📨 Mensagens"],["cfg","⚙️ Configurações"]];
+let PIX=[{id:1,l:"Lanchonete do Zé",ref:"LOJA-0001 · Mensal · Nov/2026",v:100,t:"titular",st:"analise"},{id:2,l:"Depósito Construir",ref:"LOJA-0003 · Mensal · Out/2026",v:100,t:"terceiro",st:"analise"}];
+function pixOk(id){const p=PIX.find(x=>x.id==id);p.st="ok";som("plim");draw();toast("💰 Pix confirmado: "+p.l+" · aviso enviado ao ADM e à loja")}
+function pixNo(id){const p=PIX.find(x=>x.id==id);p.st="no";draw();toast("❌ Pix recusado: aviso ao ADM e à loja · loja continua travada")}
+let zl=true,zm=false,PZ=false,pay=false,HIST=[],PX="chave-criador@pix",WA="27 99999-0000",CNOME="Criador (exemplo)",CMAIL="criador@exemplo.com",rp=null;
+const MSG=[{id:1,de:"ADM · Edinaldo",dt:"27/10/2026 09:12",tx:"Preciso ajustar o vencimento da Pizzaria Capixaba. Pode me ajudar?",lida:false,arq:false},{id:2,de:"ADM · Edinaldo",dt:"26/10/2026 18:40",tx:"Cliente da Lanchonete do Zé reportou problema. Estou acompanhando.",lida:true,arq:false}];
+const nov=()=>{const n=MSG.filter(m=>!m.arq&&!m.lida).length;return n?" ("+n+")":""};
+function som(k){try{const c=new(window.AudioContext||window.webkitAudioContext)(),seq=k=="plim"?[[1318,0],[1568,.16]]:[[440,0],[330,.22],[440,.44]];seq.forEach(([fr,t])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=fr;o.type=k=="plim"?"sine":"square";g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+t);o.stop(c.currentTime+t+.14)})}catch(e){}}
+function zerar(q){L.forEach(x=>{x.fat=0;x.ped=0;x.hoje=0});PZ=true;PIX=[];if(zm)MSG.length=0;HIST.unshift("Criador (exemplo) · "+new Date().toLocaleString("pt-BR")+" · zerou vendas e lucros de teste"+(zm?" e mensagens":""));if(!q){mod=null;draw();toast("Vendas e lucros zerados em todo o painel")}}
+const optZ=(a)=>`${a?`<button class="sec" onclick="zl=!zl;draw()">${zl?"☑":"☐"} Zerar vendas, lucros e Pix de teste antes de ligar (recomendado)</button>`:""}<button class="sec" onclick="zm=!zm;draw()">${zm?"☑":"☐"} Apagar também as mensagens de teste</button>`;
+function salvaPerfil(){CNOME=$("cn").value;CMAIL=$("ce").value;PX=$("cpx").value;WA=$("cwa").value;draw();toast("Perfil salvo · WhatsApp atualizado em todos os botões do site")}
+function resp(id){const t=$("rpt").value.trim();if(!t){toast("Escreva a resposta");return}const m=MSG.find(x=>x.id==id);m.rs=t;m.lida=true;rp=null;draw();toast("Resposta enviada dentro do app")}
+function msg(){const at=MSG.filter(m=>!m.arq),ar=MSG.length-at.length;return `<h2>📨 Caixa de entrada</h2><div class="meta">Mensagens de ADM (inclusive casos escalados de lojas). Lojas não falam direto com o Criador — hierarquia Loja → ADM → Criador. ${at.filter(m=>!m.lida).length} nova(s). Motoboy não envia mensagem.</div>`+(at.map(m=>`<div class="card" style="${m.lida?"":"border-color:var(--ac)"}"><div class="row"><b>${m.lida?"":"● "}${m.de}</b><span class="meta">${m.dt}</span></div><div style="margin:4px 0">${m.tx}</div>${m.rs?`<div class="meta ok">Você respondeu: ${m.rs}</div>`:""}${rp==m.id?`<input id="rpt" placeholder="Sua resposta"><button class="cta" onclick="resp(${m.id})">Enviar resposta</button>`:""}<div style="display:flex;gap:6px"><button class="sec" onclick="MSG.find(x=>x.id==${m.id}).lida=true;draw()">Marcar como lida</button><button class="sec" onclick="rp=${m.id};draw()">Responder</button><button class="sec" onclick="MSG.find(x=>x.id==${m.id}).arq=true;draw()">Arquivar</button></div></div>`).join("")||`<div class="meta">Nenhuma mensagem.</div>`)+(ar?`<div class="meta">${ar} arquivada(s)</div>`:"")}
+const pl=(a,b)=>`<div style="padding:8px 0;border-bottom:1px solid var(--br)"><b>${a}</b><div class="meta">${b}</div></div>`;
+function cfg(){return `<h2>⚙️ Configurações</h2>
+<div class="card"><b>👤 Perfil do Criador</b><div class="meta">A chave Pix recebe de todos os ADMs e lojas. O WhatsApp atualiza todos os botões do site na hora.</div><input id="cn" value="${CNOME}" placeholder="Nome"><input id="ce" value="${CMAIL}" placeholder="E-mail"><input id="cpx" value="${PX}" placeholder="Chave Pix"><input id="cwa" value="${WA}" placeholder="WhatsApp de contato"><button class="cta" onclick="salvaPerfil()">Salvar perfil</button></div>
+<div class="card"><b>💳 Planos e valores</b>${pl("Mensal · R$ 100/mês","Afiliado (terceiro): 100% do 1º mês (R$ 100) · Autoindicação: 50% (R$ 50)")}${pl("Por uso · R$ 1,00/pedido","Terceiro: R$ 0,50/pedido por 3 meses · Autoindicação: R$ 0,50/pedido")}${pl("Anual 1 ano · R$ 1.000","Comissão 20%: R$ 200 (terceiro e autoindicação)")}${pl("Anual 3 anos · R$ 2.000","Comissão 20%: R$ 400")}${pl("Anual 5 anos · R$ 3.000","Comissão 20%: R$ 600")}<div class="lbl" style="margin-top:6px">Os 3 meses do plano por uso contam a partir do 1º pagamento. A comissão é só sobre pagamento efetivo, repassada no ato do pagamento da loja, em 1 nível.</div></div>
+<div class="card"><b>🎁 Período gratuito</b>${pl("7 dias grátis dentro dos 30","Não somam. Cancela sem pagar até o dia 7; se não cancelar, continua automaticamente. 1º pagamento no dia 30 da entrada.")}${pl("Não reinicia","Quem cancela e volta entra pagando (mínimo 1 mês). No trial ninguém recebe comissão.")}</div>
+<div class="card"><b>📅 Vencimento, carência e troca de plano</b>${pl("Data de vencimento","Só o ADM escolhe. Máximo de 35 dias da entrada, até 2 alterações. Acima disso, só falando com o Criador. Ciclos seguintes na mesma data.")}${pl("Carência de 3 dias","3 a 4 avisos por dia (loja e ADM). Depois dela a loja trava só para pedidos novos: pode adicionar estoque e acessar o painel. Só volta a vender pagando.")}${pl("Troca de plano","Pagamento na hora e integral, nova data escolhida (até 35 dias). Sem crédito do período não usado. Dados preservados.")}${pl("Pix de terceiro","Titular da loja: 1 clique. Terceiro: o cliente informa o nome completo, a loja confere e o Criador decide. Se recusar, a loja segue travada e o Pix fica como “não identificado”.")}</div>
+<div class="card"><b>💠 Pagamento (quando ON)</b>${pl("Chave Pix única do Criador","Recebe de todas as lojas. Cada Pix leva a referência embutida, por exemplo LOJA-0042 · Mensal · Nov/2026.")}${pl("QR Code por loja","Com o valor e a referência. O ADM vê o extrato: recebidos, pendentes e atrasados.")}${pl("Por uso","Acumula no mês e cobra 1 vez no fechamento via Pix.")}</div>
+<div class="card"><b>🔔 Notificações sonoras</b><div class="meta" style="margin:4px 0">💰 “Plim plim” no pagamento confirmado. ⚠️ Alerta (som diferente) em atraso ou carência. Tocam no ADM e no Criador.</div><div style="display:flex;gap:8px"><button class="sec" onclick="som('plim');toast('💰 Pagamento confirmado')">Testar plim plim</button><button class="sec" onclick="som('alerta');toast('⚠️ Atraso / carência')">Testar alerta</button></div></div>
+<div class="card" style="margin-top:28px;opacity:.9"><div class="row"><div style="flex:1"><div class="lbl">Pagamentos · ${pay?"validação real ativa":"modo teste (nada é cobrado)"}</div></div><button class="tg ${pay?"on":""}" onclick="mod='pay';draw()">${pay?"ON":"OFF"}</button></div><div class="lbl">Só o Criador vê e controla; o ADM não. Com pagamentos DESLIGADOS, o sistema não valida pagamento real. Use só em teste. Ao LIGAR, toda cobrança passa a valer de verdade. Na hora de ligar o app vai oferecer zerar os dados de teste.</div><button class="cta o" style="margin-top:12px" onclick="mod='zero';draw()">Zerar números de vendas e lucros</button><div class="lbl">Zera faturamento, pedidos, comissão e lucro em todas as abas (ADMs, Faturamento, Travas e Backup).</div>${HIST.length?`<div class="lbl" style="margin-top:8px"><b>Histórico</b></div>`+HIST.map(h=>`<div class="lbl">${h}</div>`).join(""):""}</div>
+<div class="card" style="margin-top:18px"><b>🎛️ Controles do sistema</b><p class="lbl">Os dois botões começam desligados. Qualquer mudança vale na hora para todos os aparelhos.</p><div class="row"><div style="flex:1"><b>1. Motoboys globais</b><div class="lbl">OFF: cada motoboy só vê pedidos da loja que o convidou. ON: todos os motoboys veem pedidos de todas as lojas.</div></div><button class="tg ${moto?"on":""}" onclick="moto=!moto;draw();toast('Motoboys globais: '+(moto?'ON':'OFF'))">${moto?"ON":"OFF"}</button></div><div class="row" style="margin-top:8px"><div style="flex:1"><b>2. Marketplace</b><div class="lbl">OFF: cliente vê só a loja do link que recebeu. ON: cliente vê todas as lojas aprovadas e escolhe qual usar (modelo iFood).</div></div><button class="tg ${mkt?"on":""}" onclick="mkt=!mkt;draw();toast('Marketplace: '+(mkt?'ON':'OFF'))">${mkt?"ON":"OFF"}</button></div></div>`}
+const row=(a,b)=>`<div class="row"><span>${a}</span><b>${b}</b></div>`;
+const tile=(n,l)=>`<div><div class="num">${n}</div><div class="lbl">${l}</div></div>`;
+function adm(){const par=L.reduce((t,x)=>t+x.par,0),ped=L.reduce((t,x)=>t+x.hoje,0),venc=L.filter(x=>dias(x)<0).length;
+ return `<div class="card"><b style="font-size:20px">ADM (inquilino do prédio)</b>${row("ADM","Edinaldo (exemplo)")}${row("Contas com poder de ADM","1")}${row("Lojas (total · liberadas · travadas)",L.length+" · "+L.filter(x=>x.lib).length+" · "+L.filter(x=>x.sus).length)}${row("Lojas com plano vencido",venc)}${row("Corridas paradas agora",par)}${row("Pedidos hoje (todas as lojas)",ped)}${par?`<div class="card al" style="margin:8px 0 0"><b>⚠️ ${par} corrida parada</b><div class="meta">ADM acionado: veja a loja na aba Travas.</div></div>`:""}</div>
+ <button class="summ" onclick="mod='motos';draw()"><div class="lbl">Total de Motoboys no Sistema</div><div class="num">${MOTOS.length}</div><div class="lbl">${MOTOS.filter(m=>m[2]=="online").length} online agora</div><div class="more">Toque para ver a lista ›</div></button>
+ <div class="card"><div class="grid">${tile(214,"Aparelhos que abriram o app")}${tile(87,"Cadastros concluídos")}${tile(4,"Lojas com produtos cadastrados")}${tile(63,"Pessoas que já pediram ou entregaram")}</div></div>
+ <div class="card"><b>Por tipo de conta</b>${row("Clientes",151)}${row("Lojas",5)}${row("Entregadores",6)}</div>
+ <div class="card"><b>Usuários ativos</b>${row("Últimas 24 horas",38)}${row("Últimos 7 dias",96)}${row("Últimos 30 dias",172)}</div>
+ <div class="card"><b>Desempenho comercial</b>${row("Lojas na meta hoje (15 vendas ou mais)",L.filter(x=>x.hoje>=15).length)}${row("Pedidos pelo link do cardápio",PZ?0:402)}${row("Entregas avulsas (balcão/WhatsApp)",PZ?0:58)}</div>`}
+function fat(){const vol=L.reduce((t,x)=>t+x.fat,0);return `<div class="card"><b style="font-size:20px">💠 Pix de mensalidades — 2 etapas</b><div class="lbl">ADM ou loja confirma o Pix → loja liberada na hora (Em análise) → você recebe aviso → você confirma o recebimento (Confirmado) ou recusa (a loja é avisada).</div></div>
+<h2>Aguardando sua confirmação (${PIX.filter(p=>p.st=="analise").length})</h2>
+${PIX.filter(p=>p.st=="analise").map(p=>`<div class="card al"><div class="row"><b>${p.l}</b><span class="tag">Em análise</span></div><div class="meta">${p.ref} · ${R$(p.v)} · ${p.t=="titular"?"pago pelo titular":"pago por terceiro"}</div><button class="cta g" onclick="pixOk(${p.id})">✅ Confirmar recebimento</button><button class="cta o" onclick="pixNo(${p.id})">❌ Recusar (não encontrei)</button></div>`).join("")||"<div class='meta'>Nenhum Pix em análise.</div>"}
+<h2>Já confirmados (${PIX.filter(p=>p.st=="ok").length})</h2>
+${PIX.filter(p=>p.st=="ok").map(p=>`<div class="card"><div class="row"><b>${p.l}</b><span class="tag ok">Confirmado</span></div><div class="meta">${p.ref} · ${R$(p.v)}</div></div>`).join("")||"<div class='meta'>Nenhum confirmado ainda.</div>"}
+<div class="card"><b style="font-size:20px">Faturamento do sistema (últimos 30 dias)</b><div class="lbl">Valores estimados a partir dos pedidos entregues e dos planos cadastrados pelo ADM. Não substituem o extrato do Pix.</div><div class="grid" style="margin-top:10px">${tile(L.reduce((t,x)=>t+x.ped,0),"Pedidos entregues")}${tile(R$(vol),"Volume vendido")}${tile(R$(vol*.07),"Comissão estimada (7% do valor da loja)")}${tile(R$(100*L.filter(x=>x.pl.t=="mensal").length+1000/12*L.filter(x=>x.pl.t=="anual").length),"Mensalidades por mês (planos)")}</div></div>
+ <div class="card"><b>Planos das lojas</b>${row("Lojas com plano definido",L.length)}${row("Planos vencidos",L.filter(x=>dias(x)<0).length)}${row("Vencem em até 7 dias",L.filter(x=>dias(x)>=0&&dias(x)<=7).length)}${row("Personalizados (valor combinado fora do app)",0)}${row("Lojas sem plano",0)}</div>
+ <button class="summ" onclick="mod='fat';draw()"><div class="lbl">Faturamento por loja (30 dias)</div><div class="num">${L.length}</div><div class="lbl">lojas cadastradas</div><div class="more">Toque para ver cada loja ›</div></button>`}
+function trv(){return `<div class="card" style="font-size:17px"><b style="font-size:20px">Lojas do sistema</b><div class="grid" style="margin-top:10px">${tile(L.length,"Total de lojas")}${tile(L.filter(x=>x.lib).length,"Liberadas")}${tile(L.filter(x=>x.sus).length,"Travadas")}${tile(L.reduce((t,x)=>t+x.hoje,0),"Pedidos hoje (todas)")}</div><button class="sec" onclick="mod='lojas';det=null;busca='';draw()">Ver lojas ›</button></div>`}
+function bkp(){return `<div class="card"><b style="font-size:20px">Backup mestre</b><div class="lbl">Gera um arquivo .json neste aparelho com lojas (cardápios e planos), motoboys (só nome, status e loja), pedidos dos últimos 30 dias (sem endereço, telefone ou códigos), contadores de uso e os controles do sistema. Não inclui clientes, fotos, CNH nem senhas.</div>${row("Lojas",L.length)}${row("Motoboys",MOTOS.length)}${row("Pedidos (30 dias)",PZ?0:674)}${row("Aparelhos nas métricas",214)}<button class="cta" onclick="toast('Exemplo: backup gerado (nada foi baixado)')">⬇️ Baixar backup mestre (.json)</button></div>`}
+function lojas(){const q=busca.toLowerCase(),l=L.filter(x=>(x.n+" "+x.resp+" "+x.tel).toLowerCase().includes(q));
+ const lib=L.filter(x=>x.lib).length,lim=L.filter(x=>!x.lib&&!x.sus&&x.hoje<15).length,at=L.filter(x=>!x.lib&&!x.sus&&x.hoje>=15).length;
+ return `<div class="grid" style="margin-bottom:8px">${tile(lib,"Liberadas")}${tile(lim,"Limitadas")}${tile(at,"Limite atingido")}${tile(L.reduce((t,x)=>t+x.hoje,0),"Pedidos hoje")}</div>
+ <button class="cta" onclick="criar=!criar;draw()">➕ Criar loja</button>
+ ${criar?`<div class="card"><input placeholder="Nome da loja"><div class="meta" style="margin-top:6px">Modelo da loja</div><select><option>Produtos — lanchonete, farmácia, construção</option><option>Agendamento — salão de beleza (sem entrega)</option></select><input type="email" placeholder="E-mail da loja"><button class="cta" onclick="toast('Exemplo: nada foi criado');criar=false;draw()">Criar loja</button></div>`:""}
+ <input id="bq" placeholder="Buscar loja por nome, responsável ou WhatsApp" value="${busca}" oninput="busca=this.value;draw(true)">
+ ${l.map(x=>{const s=stl(x);return `<button class="item" onclick="det=${x.id};draw()"><div class="row"><b>${x.n}</b><span class="tag ${s[1]}">${s[0]}</span></div><div class="meta">${x.hoje} pedido(s) hoje${x.lib?"":" de 15"} · ${entOn(x)?"🛵 entrega ligada":"sem entrega"} · ${retOn(x)?"🏪 retirada liberada":"retirada desligada"}</div></button>`}).join("")||`<div class="meta">Nenhuma loja encontrada.</div>`}`}
+function detalhe(x){const s=stl(x),on=entOn(x),ag=x.tp=="agenda";
+ return `<div class="card"><div class="row"><span>Responsável</span><b>${x.resp}</b></div>${row("WhatsApp",x.tel)}${row("Situação",`<span class="${s[1]}">${s[0]}</span>`)}${row("Plano",PLN[x.pl.t]+" · vence "+x.pl.v.split("-").reverse().join("/"))}${row("Pedidos hoje",x.hoje+(x.lib?"":" de 15"))}${row("Corridas paradas",`<span class="${x.par?"bad":""}">${x.par}</span>`)}${row("Motoboys online",x.mb)}</div>
+ <button class="cta ${x.lib?"o":"g"}" onclick="x_=L.find(y=>y.id==${x.id});x_.lib=!x_.lib;draw();toast(x_.lib?'Loja liberada: cliente, loja e motoboy destravados':'Loja travada em 15 pedidos/dia')">${x.lib?"Travar loja (voltar ao limite de 15/dia)":"Liberar loja (sem limite)"}</button>
+ <div class="card"><b>🛵 Habilitar Serviço de Entrega</b><div class="meta" style="margin:4px 0 8px">${ag?"Loja de Agendamento não usa entrega.":on?"LIGADO: a loja vê a entrega e o cliente escolhe entrega.":"DESLIGADO: só retirada."}</div><button class="cta ${on?"o":""}" ${ag?"disabled style='opacity:.5'":""} onclick="x_=L.find(y=>y.id==${x.id});x_.ent=!entOn(x_);draw();toast(x_.ent?'Entrega ligada':'Entrega desligada: só retirada')">${on?"Desligar entrega desta loja":"Ligar entrega desta loja"}</button></div>
+ <div class="card"><b>🏪 Habilitar Retirada no local</b><div class="meta" style="margin:4px 0 8px">${retOn(x)?"LIGADO: o cliente vê “Retirada no local” no cardápio e “Retirar na loja” na sacola.":"DESLIGADO: a loja não aceita pedido para retirada."}${!on&&!retOn(x)?" <b class='bad'>Sem entrega e sem retirada, o cliente não consegue pedir.</b>":""}</div><button class="cta ${retOn(x)?"o":""}" onclick="x_=L.find(y=>y.id==${x.id});x_.ret=!retOn(x_);draw();toast(x_.ret?'Retirada ligada':'Retirada desligada')">${retOn(x)?"Desligar retirada desta loja":"Ligar retirada desta loja"}</button></div>
+ <div class="card"><b>📄 Plano e vencimento</b><div class="meta" style="margin-top:6px">${PLN[x.pl.t]} · vence ${x.pl.v.split("-").reverse().join("/")}${dias(x)<0?" · <span class='bad'>vencido</span>":""}</div><select><option>${PLN[x.pl.t]}</option><option>Mensal · R$ 100/mês</option><option>Por uso · R$ 1,00/pedido</option><option>Anual 1 ano · R$ 1.000</option><option>Anual 3 anos · R$ 2.000</option><option>Anual 5 anos · R$ 3.000</option></select><input type="date" value="${x.pl.v}"><button class="cta b" onclick="toast('Exemplo: plano salvo')">Salvar plano</button></div>
+ <button class="cta ${x.sus?"":"o"}" onclick="x_=L.find(y=>y.id==${x.id});x_.sus=!x_.sus;draw();toast(x_.sus?'Loja suspensa':'Loja reativada')">${x.sus?"Reativar loja":"Suspender loja"}</button>
+ <h2>Motoboys desta loja</h2>${MOTOS.filter(m=>m[1]==x.n).map(m=>`<div class="card"><div class="row"><b>${m[0]}</b><span class="tag ${m[2]=="online"?"ok":""}">${m[2]}</span></div><div class="meta">${m[3]}</div></div>`).join("")||`<div class="meta">Nenhum motoboy vinculado.</div>`}`}
+function modal(){
+ let t="",b="",voltar=false;
+ if(mod=="motos"){t="Motoboys no sistema";b=MOTOS.map(m=>`<div class="card"><div class="row"><b>${m[0]}</b><span class="tag ${m[2]=="online"?"ok":""}">${m[2]}</span></div><div class="meta">${m[3]} · loja: ${m[1]}</div></div>`).join("")}
+ else if(mod=="fat"){t="Faturamento por loja (30 dias)";b=L.slice().sort((a,b)=>b.fat-a.fat).map(x=>`<div class="card"><div class="row"><b>${x.n}</b><b>${R$(x.fat)}</b></div><div class="meta">${x.ped} pedidos · comissão ${R$(x.fat*.07)} · plano ${PLN[x.pl.t]}</div></div>`).join("")}
+ else if(mod=="zero"){t="Zerar vendas e lucros?";b=`<div class="card al"><b>Isso não pode ser desfeito</b><div class="meta" style="margin-top:6px">Faturamento, pedidos, comissão e lucro de todas as lojas e ADMs voltam a zero. Lojas, planos e configurações não são apagados.</div></div>${optZ(0)}<button class="cta o" onclick="zerar()">Sim, zerar tudo</button><button class="cta b" onclick="mod=null;draw()">Cancelar</button>`}
+ else if(mod=="pay"){t=pay?"Desligar pagamentos?":"Ligar pagamentos?";b=`<div class="card ${pay?"":"al"}"><b>${pay?"Voltar ao modo teste":"Ativar validação real"}</b><div class="meta" style="margin-top:6px">${pay?"Ao DESLIGAR, o sistema deixa de validar pagamento real e você confirma tudo manualmente. Nada será cobrado.":"Ao LIGAR, toda cobrança passa a valer de verdade em todo o sistema."}</div></div>${pay?"":`<div class="meta" style="margin-bottom:4px">Os números de teste (vendas, lucros e Pix) vão ficar misturados com as vendas reais se você não zerar agora.</div>${optZ(1)}`}<button class="cta ${pay?"o":"g"}" onclick="if(!pay&&zl)zerar(1);HIST.unshift('Criador (exemplo) · '+new Date().toLocaleString('pt-BR')+' · '+(pay?'ON → OFF':'OFF → ON'));pay=!pay;mod=null;draw();toast('Pagamentos: '+(pay?'ON':'OFF'))">${pay?"Sim, desligar pagamentos":"Sim, ligar pagamentos"}</button><button class="cta b" onclick="mod=null;draw()">Cancelar</button>`}
+ else if(det){const x=L.find(y=>y.id==det);t=x.n;voltar=true;b=detalhe(x)}
+ else{t="Lojas do sistema";b=lojas()}
+ return `<div class="modal" onclick="if(event.target===this){mod=null;det=null;draw()}"><div class="mbox"><div class="mhead">${voltar?`<button onclick="det=null;draw()">‹ Voltar</button>`:`<span></span>`}<b>${t}</b><button onclick="mod=null;det=null;draw()">✕</button></div>${b}</div></div>`}
+function draw(keep){
+ $("tabs").innerHTML=TABS.map(([k,l])=>`<button class="${tab==k?"on":""}" onclick="tab='${k}';draw()">${l}${k=="msg"?nov():""}</button>`).join("");
+ $("v").innerHTML=({adm,fat,trv,bkp,msg,cfg})[tab]()+`<button class="sec" style="margin-top:14px" onclick="toast('Exemplo: sairia do painel')">Sair</button><div class="foot">Atualizado em 27/10/2026 (exemplo)</div>`;
+ $("modal").innerHTML=mod?modal():"";
+ if(keep===true){const e=$("bq");if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}}}
+draw();
+</script><script>
+/* Botão "Baixar e instalar": some depois da instalação (evento appinstalled ou app aberto instalado) */
+(function(){const NM="PedeAí Brasil Criador";let dp=null,inst=false;const box=document.getElementById("inst");
+const stand=()=>(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
+function show(){box.innerHTML=(inst||stand())?"":`<div style="background:var(--cd);border:1px solid var(--ac);border-radius:14px;padding:12px;margin:10px 0"><b>📲 ${NM}</b><div style="color:var(--mu);font-size:15.5px;margin-top:2px">Instale no celular para abrir como aplicativo, com nome e ícone próprios.</div><button class="cta c" style="margin-top:10px" onclick="baixarApp()">📲 Baixar e instalar</button></div>`}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;show()});
+window.addEventListener("appinstalled",()=>{inst=true;dp=null;show()});
+window.baixarApp=async function(){if(dp){dp.prompt();const r=await dp.userChoice;if(r&&r.outcome=="accepted"){inst=true;dp=null}else toast("Instalação cancelada");show();return}
+ if(location.protocol=="file:"){inst=true;show();toast("Exemplo: instalaria o app e o botão some");return}
+ toast("No menu do navegador, toque em “Instalar app” ou “Adicionar à tela inicial”")};
+show()})();
+</script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
 (function(){
-  const $=id=>document.getElementById(id);
-  const show=id=>{["semCfg","login","semAcesso","painel"].forEach(x=>$(x).classList.toggle("hidden",x!==id))};
-  const cfg=window.PEDEAI_FIREBASE, empresa=window.PEDEAI_EMPRESA, criador=String(window.PEDEAI_CRIADOR||"").trim().toLowerCase();
-  if(!cfg||!cfg.projectId||!empresa){show("semCfg");return}
-  const V="10.12.2",B="https://www.gstatic.com/firebasejs/"+V+"/";
-  const load=src=>new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("Falha ao carregar "+src));document.head.appendChild(s)});
-  const msgErro=e=>{const c=e&&e.code||"";const m={"auth/invalid-credential":"E-mail ou senha incorretos.","auth/wrong-password":"Senha incorreta.","auth/user-not-found":"Conta não encontrada.","auth/too-many-requests":"Muitas tentativas. Aguarde alguns minutos.","auth/popup-closed-by-user":"Login cancelado."};return m[c]||"Não foi possível entrar. Tente novamente."};
-  let unsub=null;
-  Promise.resolve().then(()=>load(B+"firebase-app-compat.js")).then(()=>load(B+"firebase-auth-compat.js")).then(()=>load(B+"firebase-firestore-compat.js")).then(()=>{
-    const app=firebase.apps.length?firebase.app():firebase.initializeApp(cfg);
-    const auth=firebase.auth(), db=firebase.firestore();
-    const ok=u=>!!(u&&!u.isAnonymous&&u.email&&u.email.toLowerCase()===criador&&u.emailVerified);
-    $("btnEntrar").onclick=()=>{$("erroLogin").textContent="";const em=$("em").value.trim(),pw=$("pw").value;if(!em||!pw){$("erroLogin").textContent="Informe e-mail e senha.";return}auth.signInWithEmailAndPassword(em,pw).catch(e=>$("erroLogin").textContent=msgErro(e))};
-    $("btnEsqueci").onclick=()=>{const em=$("em").value.trim();$("erroLogin").textContent="";if(!em){$("erroLogin").textContent="Digite seu e-mail acima e toque de novo.";return}auth.sendPasswordResetEmail(em).then(()=>{$("erroLogin").textContent="Se este e-mail tiver conta com senha, enviamos o link para criar uma nova senha. Confira a caixa de entrada e o spam."}).catch(e=>{$("erroLogin").textContent=(e&&e.code=="auth/invalid-email")?"E-mail inválido.":"Não foi possível enviar agora. Tente novamente."})};
-    $("btnGoogle").onclick=()=>{const P=new firebase.auth.GoogleAuthProvider();P.setCustomParameters({prompt:"select_account"});auth.signInWithPopup(P).catch(e=>$("erroLogin").textContent=msgErro(e))};
-    const sair=()=>auth.signOut();
-    $("btnSair").onclick=sair; $("btnSairPainel").onclick=sair;
-    const fmt=t=>t?new Date(t).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"—";
-    const cfgRef=db.collection("empresas").doc(empresa).collection("config").doc("app");
-    let cfgAtual={motoGlobal:false,marketplace:false}, unsubCfg=null;
-    const pintaCfg=()=>{$("tMoto").textContent=cfgAtual.motoGlobal?"ON":"OFF";$("tMkt").textContent=cfgAtual.marketplace?"ON":"OFF"};
-    const alterna=campo=>{$("erroCfg").textContent="";const novo=!cfgAtual[campo];cfgRef.set({[campo]:novo},{merge:true}).catch(()=>{$("erroCfg").textContent="Não foi possível salvar. Entre com a conta do criador e confira as regras do Firestore."})};
-    $("tMoto").onclick=()=>alterna("motoGlobal");$("tMkt").onclick=()=>alterna("marketplace");
-    const numero=(id,v)=>{$(id).textContent=String(v)};
-    function atualizar(docs){
-      const m=docs.map(d=>d.data());
-      numero("nAparelhos",m.length);
-      numero("nCadastros",m.filter(x=>x.cadastro).length);
-      numero("nProdutos",m.filter(x=>(x.produtos||0)>0).length);
-      numero("nUsando",m.filter(x=>(x.pedidos||0)>0).length);
-      numero("pCliente",m.filter(x=>x.papel==="cliente").length);
-      numero("pLojista",m.filter(x=>x.papel==="lojista").length);
-      numero("pEntregador",m.filter(x=>x.papel==="entregador").length);
-      numero("vTotal",m.reduce((t,x)=>t+(x.visitas||0),0));
-      numero("cCliente",m.filter(x=>x.cadastro&&x.papel==="cliente").length);
-      numero("cLojista",m.filter(x=>x.cadastro&&x.papel==="lojista").length);
-      numero("cEntregador",m.filter(x=>x.cadastro&&x.papel==="entregador").length);
-      const agora=Date.now(),ativos=ms=>m.filter(x=>(x.ultimo||0)>=agora-ms).length;
-      numero("aDia",ativos(864e5));numero("aSemana",ativos(7*864e5));numero("aMes",ativos(30*864e5));
-      const soma=k=>m.reduce((t,x)=>t+(x[k]||0),0);
-      numero("pNovos",soma("prodNovos"));numero("pEdicoes",soma("prodEdicoes"));
-      const d=new Date(),hoje=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
-      numero("lMetaHoje",m.filter(x=>x.diaRef===hoje&&(x.vendasHoje||0)>=15).length);
-      numero("lDiasMeta",soma("diasMeta"));numero("oLink",soma("pedLink"));numero("oAvulso",soma("pedAvulso"));
-      const ult=Math.max(0,...m.map(x=>x.ultimo||0));const pri=m.length?Math.min(...m.map(x=>x.primeiro||Infinity)):0;
-      $("vUltimo").textContent=fmt(ult);$("vPrimeiro").textContent=fmt(pri===Infinity?0:pri);
-      $("rodape").textContent="Atualizado em "+new Date().toLocaleString("pt-BR");
-    }
-
-    let LJ=[],DI=[],PD=[],EN=[],unL=null,unD=null,unP=null,unE=null;
-    const dia=()=>{const d=new Date(Date.now()-60000);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
-    const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-    const nHoje=id=>{const d=DI.find(x=>x.id===dia()+"_"+id);return d&&d.n||0};
-    function pintaLojas(){const q=($("lBusca").value||"").toLowerCase();const L=LJ.filter(x=>!q||[x.n,x.resp,x.tel,x.wa].join(" ").toLowerCase().includes(q));numero("lTot",LJ.length);numero("lLib",LJ.filter(x=>x.lib).length);numero("lTrv",LJ.filter(x=>!x.lib).length);numero("lPed",LJ.reduce((t,x)=>t+nHoje(x.id),0));
-      $("lLista").innerHTML=L.map(x=>{const par=PD.filter(o=>String(o.rid)===String(x.id)&&o.st==="pronto"&&!o.en&&!o.rt),mais=par.length?Math.max(...par.map(o=>Math.floor((Date.now()-(o.pr||o.ct||Date.now()))/6e4))):0,onl=EN.filter(e=>e.ap===1&&e.on===true&&Date.now()-(e.ots||0)<18e4&&String(e.lojaConvite)===String(x.id)).length,adm=par.some(o=>o.admAc),n=nHoje(x.id),st=x.lib?"Liberada (sem limite)":n>=15?"Limite atingido":"Limitada (15/dia)",cor=x.lib?"var(--ok)":n>=15?"#ff7b7b":"var(--mu)";return `<div class="row" style="flex-wrap:wrap;align-items:center"><div style="flex:1 1 200px"><b style="font-size:18px">${esc(x.n)}</b><div class="lbl">Responsável: ${esc(x.resp||x.nome||"—")} · WhatsApp: ${esc(x.tel||x.wa||"—")}</div><div style="color:${cor};font-weight:800">${st}</div><div class="lbl" style="font-size:16px">Hoje: <b>${n}</b> ${x.lib?"pedidos":"de 15"}</div><div class="lbl" style="font-size:16px;color:${par.length?"#ff7b7b":"var(--mu)"}">Corridas paradas: <b>${par.length}</b>${par.length?" · a mais antiga há "+mais+" min":""} · Motoboys online: <b>${onl}</b>${adm?" · ⚠️ ADM acionado":""}</div></div><button data-lib="${esc(x.id)}" data-v="${x.lib?0:1}" class="${x.lib?"sec":""}" style="width:auto;min-width:150px;font-size:17px">${x.lib?"🔒 Travar de volta":"🔓 Liberar"}</button></div>`}).join("")||'<div class="lbl">Nenhuma loja encontrada.</div>'}
-
-    function pintaMotos(){const lim=Date.now()-30*864e5,P=PD.filter(o=>(o.ct||0)>=lim);$("mLista").innerHTML=EN.filter(e=>e.nome).map(e=>{const ac=P.filter(o=>o.en===e.id&&o.aat),rec=P.filter(o=>(o.rcs||[]).includes(e.id)).length,tot=P.filter(o=>o.en===e.id).length,den=tot+rec,taxa=den?Math.round(100*tot/den):null,tm=ac.filter(o=>o.pr).map(o=>o.aat-o.pr),med=tm.length?Math.round(tm.reduce((a,b)=>a+b,0)/tm.length/6e4*10)/10:null,alerta=rec>=3&&tot===0;return {e,tot,rec,taxa,med,alerta}}).sort((a,b)=>(b.alerta-a.alerta)||(b.rec-a.rec)).map(m=>`<div class="row" style="flex-wrap:wrap"><div style="flex:1 1 180px"><b>${esc(m.e.nome)}</b><div class="lbl">${m.e.on===true&&Date.now()-(m.e.ots||0)<18e4?"🟢 online":"⚪ offline"}${m.alerta?' · <span style="color:#ff7b7b">⚠️ nunca aceita</span>':""}</div></div><div class="lbl" style="font-size:16px;text-align:right">Aceite: <b>${m.taxa===null?"—":m.taxa+"%"}</b><br>Tempo médio: <b>${m.med===null?"—":m.med+" min"}</b><br>Aceitas: <b>${m.tot}</b> · Recusadas: <b>${m.rec}</b></div></div>`).join("")||'<div class="lbl">Sem motoboys cadastrados.</div>'}
-    $("lBusca").oninput=pintaLojas;
-    $("lLista").onclick=e=>{const b=e.target.closest("[data-lib]");if(!b)return;$("lErro").textContent="";db.collection("empresas").doc(empresa).collection("lojas").doc(String(b.dataset.lib)).update({lib:b.dataset.v==="1"}).catch(()=>{$("lErro").textContent="Não foi possível salvar. Publique as regras novas do Firestore (firestore.rules)."})};
-    auth.onAuthStateChanged(u=>{
-      if(unL){unL();unL=null}if(unD){unD();unD=null}if(unP){unP();unP=null}if(unE){unE();unE=null}
-      if(unsub){unsub();unsub=null}
-      if(unsubCfg){unsubCfg();unsubCfg=null}
-      if(!u){show("login");return}
-      if(!ok(u)){show("semAcesso");return}
-      show("painel");
-      unL=db.collection("empresas").doc(empresa).collection("lojas").onSnapshot(s=>{LJ=s.docs.map(d=>d.data());pintaLojas()},()=>{$("lErro").textContent="Sem permissão para ler as lojas."});
-      unP=db.collection("empresas").doc(empresa).collection("pedidos").where("ct",">=",Date.now()-30*864e5).onSnapshot(s=>{PD=s.docs.map(d=>d.data());pintaLojas();pintaMotos()},()=>{$("lErro").textContent="Sem permissão para ler pedidos/motoboys. Publique o firestore.rules novo."});
-      unE=db.collection("empresas").doc(empresa).collection("ent").onSnapshot(s=>{EN=s.docs.map(d=>d.data());pintaLojas();pintaMotos()},()=>{});
-      unD=db.collection("empresas").doc(empresa).collection("dias").onSnapshot(s=>{DI=s.docs.map(d=>d.data());pintaLojas()},()=>{});
-      unsubCfg=cfgRef.onSnapshot(sn=>{const d=sn.exists?sn.data():{};cfgAtual={motoGlobal:d.motoGlobal===true,marketplace:d.marketplace===true};pintaCfg()},()=>{$("erroCfg").textContent="Sem permissão para ler os controles. Confira as regras do Firestore."});
-      unsub=db.collection("empresas").doc(empresa).collection("metricas").onSnapshot(snap=>atualizar(snap.docs),err=>{
-        $("rodape").textContent="Sem permissão para ler as contagens. Confira as regras do Firestore e o PEDEAI_CRIADOR.";
-      });
-    });
-  }).catch(()=>{$("erroLogin").textContent="Não foi possível carregar o Firebase. Verifique a conexão.";show("login")});
-  show("login");
+const CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
+const PA=window.PA={ready:false,online:false,_q:[],_status(on,msg){PA.online=on;const b=document.getElementById("pa-st");if(b){b.textContent=on?"● Online · sincronizado":"○ "+(msg||"Sem conexão · modo local");b.style.color=on?"#22a559":"#e0a800"}},
+ whenReady(f){PA.ready?f():PA._q.push(f)}};
+/* ids de pedido: contador no Firestore (transação) */
+const strip=d=>{const o={...d};delete o.atualizadoEm;return o};
+PA.strip=strip;
+if(window.PA_MOCK){window.PA_MOCK(PA);return}
+(async()=>{try{
+ const B="https://www.gstatic.com/firebasejs/10.8.0/";
+ const [A,F,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);
+ const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
+ await H.signInAnonymously(au);
+ PA.uid=au.currentUser.uid;
+ PA.nextId=async()=>{const r=F.doc(db,"meta","contador");return F.runTransaction(db,async t=>{const s=await t.get(r);const n=(s.exists()?s.data().n:5000)+1;t.set(r,{n});return n})};
+ const cl=o=>JSON.parse(JSON.stringify(o));
+ PA.setPedido=(id,patch)=>F.setDoc(F.doc(db,"pedidos",String(id)),{...cl(patch),id:Number(id),atualizadoEm:Date.now()},{merge:true});
+ PA.aceitar=(id,me)=>F.runTransaction(db,async t=>{const r=F.doc(db,"pedidos",String(id));const s=await t.get(r);if(!s.exists())return false;const d=s.data();if(d.mot||d.st!=="enviado")return false;t.update(r,{mot:me.id,motN:me.n,atualizadoEm:Date.now()});return true});
+ PA.watchDoc=(id,cb)=>F.onSnapshot(F.doc(db,"pedidos",String(id)),s=>cb(s.exists()?strip(s.data()):null));
+ PA.watchLoja=(loja,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("loja","==",loja)),s=>cb(s.docs.map(d=>strip(d.data()))));
+ PA.watchEnviados=cb=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("st","==","enviado")),s=>cb(s.docs.map(d=>strip(d.data()))));
+ PA.watchMoto=(mid,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("mot","==",mid)),s=>cb(s.docs.map(d=>strip(d.data()))));
+ PA.setOco=(id,o)=>F.setDoc(F.doc(db,"ocorrencias",String(id)),{...cl(o),id:Number(id)},{merge:true});
+ PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
+ PA.setLojaCfg=(slug,d)=>F.setDoc(F.doc(db,"lojas",slug),{...cl(d),atualizadoEm:Date.now()},{merge:true});
+ PA.watchLojaCfg=(slug,cb)=>F.onSnapshot(F.doc(db,"lojas",slug),s=>cb(s.exists()?s.data():null));
+ PA.ready=true;PA._status(true);PA._q.splice(0).forEach(f=>f());
+}catch(e){console.error("Firebase:",e);PA._status(false,"Sem conexão · modo local")}})();
 })();
-</script>
-</body>
-</html>
+/* ===== helpers comuns ===== */
+window.PA_toast=m=>{try{toast(m)}catch(e){}};
+window.PA_beep=()=>{try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}};
+/* ===== extras: cardápio/estado da loja ===== */
+PA.whenReady(()=>{});
+</script><script>if("serviceWorker"in navigator&&location.protocol!="file:")navigator.serviceWorker.register("sw.js").catch(function(){})</script></body></html>

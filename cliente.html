@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cliente · PedeAí Brasil</title>
+<style>
+:root{--bg:#0b0b0d;--cd:#16161a;--br:#2a2a31;--tx:#f4f4f6;--mu:#a3a3ad;--ac:#d4141c;--gd:#c99700;--ok:#22a559;--rd:#ff4d55;--yl:#e0a800}
+@media(prefers-color-scheme:light){:root{--bg:#f6f6f8;--cd:#fff;--br:#dcdce3;--tx:#15151a;--mu:#5d5d68}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.4 system-ui,sans-serif;padding-bottom:90px}
+.pv{background:var(--gd);color:#000;font-size:13.5px;font-weight:800;padding:6px 12px;text-align:center}
+.top{padding:12px 16px;border-bottom:1px solid var(--br)}.logo{font-size:21px;font-weight:800;line-height:1.1}
+.addr{border:1px solid var(--br);background:var(--cd);color:var(--tx);border-radius:12px;padding:8px 12px;font:inherit;text-align:left;margin-top:8px;width:100%}.addr small{display:block;color:var(--mu);font-size:13.5px}
+.pg{padding:4px 14px;max-width:720px;margin:0 auto}h2{margin:14px 0 6px;font-size:18px}
+.oc,.card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:12px;margin:10px 0}
+.card{display:flex;gap:12px;align-items:center;width:100%;text-align:left;color:var(--tx);font:inherit}.thumb{font-size:34px;width:52px;height:52px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex:none}
+.meta{color:var(--mu);font-size:15.5px}.row{display:flex;justify-content:space-between;gap:8px;align-items:center}.free{color:var(--ok);font-weight:800}.star{color:var(--gd);font-weight:800}
+.tag{font-size:13.5px;font-weight:800;border:1px solid var(--br);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.cta{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:10px;padding:13px 16px;border:0;border-radius:12px;background:var(--ac);color:#fff;font:inherit;font-weight:800}.cta.c{justify-content:center}
+.cta.b{background:transparent;color:var(--ac);border:1px solid var(--ac)}.cta.o{background:transparent;color:var(--rd);border:1px solid var(--rd)}.cta:disabled{opacity:.45}
+.add{border:0;background:var(--ac);color:#fff;border-radius:10px;font:inherit;font-weight:800;padding:8px 14px}.add:disabled{background:var(--br);color:var(--mu)}
+input,select,textarea{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1px solid var(--br);background:var(--bg);color:var(--tx);font:inherit}
+.search{margin:10px 0 0}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0}.chip{flex:none;border:1px solid var(--br);background:var(--cd);color:var(--tx);border-radius:999px;padding:8px 14px;font:inherit;font-weight:700}.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.back{border:1px solid var(--br);background:var(--cd);color:var(--tx);padding:8px 14px;border-radius:10px;font:inherit;margin:8px 0}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px;background:var(--bg);border-top:1px solid var(--br);z-index:5}.bar .cta{max-width:720px;margin:0 auto}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;z-index:8}
+.panel{background:var(--bg);width:100%;max-width:720px;max-height:90%;overflow:auto;border-radius:18px 18px 0 0;padding:16px}
+.line{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--br)}
+.sel{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}.sel button{flex:1;min-width:110px;padding:8px;border-radius:10px;border:1px solid var(--br);background:var(--cd);color:var(--tx);font:inherit;font-size:15.5px}.sel .on{border-color:var(--ac);color:var(--ac);font-weight:800}
+.seg{display:flex;gap:6px;margin:8px 0}.seg button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--br);background:var(--cd);color:var(--tx);font:inherit}.seg .on{border-color:var(--ac);color:var(--ac);font-weight:800}
+.step{display:flex;gap:10px;align-items:center;padding:8px 0;color:var(--mu)}.step i{width:22px;height:22px;border-radius:50%;border:2px solid var(--br);flex:none;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:13.5px}.step.d{color:var(--tx);font-weight:700}.step.d i{background:var(--ok);border-color:var(--ok);color:#fff}.step.n{color:var(--ac);font-weight:800}.step.n i{border-color:var(--ac)}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#000;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;display:none;z-index:20}
+</style><link rel="manifest" href="manifest-cliente.json"><meta name="theme-color" content="#d4141c"><link rel="icon" href="icon-cliente-192.png"><link rel="apple-touch-icon" href="icon-cliente-192.png"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
+<div class="pv" id="pa-st" style="background:#111;color:#e0a800;font-size:12.5px;font-weight:700">○ Conectando…</div>
+<div class="pg" id="inst"></div>
+<div class="top"><div class="logo"><span style="color:#d4141c">Esse aplicativo pode ser</span> <span style="color:#c99700">seu</span></div><div id="ad"></div></div>
+<div class="pg"><div class="sel" id="sel"></div><div id="v"></div></div>
+<div id="bar"></div><div id="sheet"></div><div class="toast" id="t"></div>
+<script>
+const $=i=>document.getElementById(i),toast=m=>{const t=$("t");t.textContent=m;t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",2200)};
+const R$=n=>"R$ "+n.toFixed(2).replace(".",",");
+const nz=t=>t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+/* Só existe UMA loja: o cliente vê apenas o cardápio (sem Marketplace, sem opções soltas de Entrega/Retirada, sem link da loja) */
+let X={n:"Lanchonete do Zé",c:"Lanches",ic:"🍔",r:"4,8",t:"25–35 min",m:[["X-Burger",18,true,"Pão, hambúrguer, queijo e salada","🍔"],["Suco de laranja",8,true,"300 ml, natural","🥤"],["Batata frita",12,false,"Porção média","🍟"],["Pastel de carne",9,true,"Recheio caseiro","🥟"]]};
+const X0=X;
+/* MARKETPLACE (liga/desliga só pelo Criador). OFF = só a loja do link · ON = todas as lojas aprovadas. Cada loja tem 20 produtos de exemplo editáveis */
+const mk=s=>s.split(";").map((t,i)=>{const[n,p,e]=t.split("|");return[n,+p,i!=6,"Exemplo editável",e]});
+const MKS=[
+{n:"Farmácia Vida",c:"Farmácia",tp:"prod",ic:"💊",r:"4,7",t:"20–30 min",m:mk("Dipirona 500 mg|8.9|💊;Paracetamol 750 mg|9.5|💊;Ibuprofeno 400 mg|14.9|💊;Vitamina C efervescente|18|🍊;Soro fisiológico 500 ml|7.5|💧;Álcool em gel 500 ml|12|🧴;Protetor solar FPS 50|42|🧴;Shampoo anticaspa|24.9|🧴;Sabonete líquido|11.9|🧼;Fralda M (pacote)|39.9|👶;Escova de dente|9.9|🪥;Creme dental|6.9|🦷;Fio dental|8.5|🦷;Curativo (caixa)|10.9|🩹;Termômetro digital|29.9|🌡️;Máscara descartável (caixa)|19.9|😷;Absorvente (pacote)|9.9|🩸;Repelente|21.9|🦟;Colírio lubrificante|23.9|👁️;Multivitamínico|34.9|💊")},
+{n:"Salão Bella Vitória",c:"Salão / Consultório",tp:"agenda",ic:"💇",r:"4,9",t:"Agendamento",m:mk("Corte feminino|80|💇‍♀️;Corte masculino|45|💈;Barba|30|🧔;Escova|50|💇;Hidratação|70|💆;Coloração|150|🎨;Mechas|280|✨;Manicure|35|💅;Pedicure|40|🦶;Manicure + pedicure|70|💅;Design de sobrancelha|35|👁️;Henna|45|🌿;Depilação axila|20|🪒;Depilação perna|60|🪒;Limpeza de pele|110|🧖;Massagem relaxante|120|💆;Progressiva|250|💇‍♀️;Penteado|130|👰;Maquiagem|100|💄;Cauterização|140|🔥")},
+{n:X0.n,c:"Lanchonete / Restaurante",tp:"prod",ic:X0.ic,r:X0.r,t:X0.t,m:[...X0.m,...mk("Hambúrguer duplo|26|🍔;X-Salada|20|🥪;X-Bacon|24|🥓;Cachorro-quente|14|🌭;Pastel de queijo|9|🧀;Coxinha|8|🍗;Pão de queijo|6|🧀;Misto quente|11|🥪;Porção de calabresa|28|🍖;Onion rings|16|🧅;Refrigerante lata|6|🥤;Água mineral|4|💧;Milk-shake|16|🥛;Açaí 300 ml|15|🍇;Pudim|9|🍮;Brigadeiro|4|🍫")]},
+{n:"Depósito Construir",c:"Depósito / Construção",tp:"prod",ic:"🧱",r:"4,6",t:"40–60 min",m:mk("Cimento 50 kg|38|🧱;Areia fina (saco)|12|🏖️;Tijolo (cento)|85|🧱;Tinta branca 18 L|219|🎨;Rolo de pintura|14|🖌️;Trena 5 m|16|📏;Martelo|29|🔨;Chave de fenda|11|🪛;Alicate|27|🔧;Furadeira|189|🛠️;Serra manual|24|🪚;Parafusos (caixa)|9|🔩;Fita isolante|6|⚡;Fio elétrico 2,5 mm (rolo)|135|🔌;Lâmpada LED|12|💡;Torneira|32|🚰;Registro|28|🚿;Cano PVC 3 m|19|🪠;Luva de proteção|9|🧤;Capacete|22|⛑️")}];
+let MKT=false,cur=null;
+function mercado(){return `<h2>🛍️ Marketplace</h2><div class="meta">Todas as lojas aprovadas. Escolha onde pedir.</div>`+MKS.map((s,i)=>`<button class="card" onclick="abre(${i})"><div class="thumb">${s.ic}</div><div style="flex:1"><b>${s.n}</b><div class="meta"><span class="star">★ ${s.r}</span> · ${s.c} · ${s.t}</div><div class="meta">${s.m.length} ${s.tp=="agenda"?"serviços":"produtos"}</div></div>›</button>`).join("")}
+function abre(i){cur=MKS[i];X=cur;cart=[];draw()}
+function agenda(){return `<div class="oc"><b>📅 Agendamento</b><div class="meta">Escolha o serviço e o horário. Esta loja não tem entrega.</div></div>${AG.length?`<button class="card" style="border-color:var(--ac)" onclick="sh='mag';draw()"><div class="thumb" style="color:var(--ac)">📅</div><div><b>Meus agendamentos (${AG.length})</b><div class="meta">Ver, conferir e cancelar</div></div></button>`:""}<h2>Serviços</h2>`+X.m.map((p,i)=>`<div class="oc"><div class="row"><div><b>${p[0]}</b><div class="meta">${p[3]}</div></div><div style="text-align:right"><b>${R$(p[1])}</b><br>${p[2]?`<button class="add" onclick="agIni(${i})">Agendar</button>`:`<button class="add" disabled>Indisponível</button>`}</div></div></div>`).join("")}
+/* ---------- AGENDAMENTO (dia → horário → confirmação → Meus agendamentos) ---------- */
+let AG=[],ag=null,agN=1;
+const HRS=["09:00","10:00","11:00","13:00","14:00","15:00","16:00","17:00"];
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const brd=t=>t.split("-").reverse().join("/");
+function dias(){const o=[],h=new Date();h.setHours(0,0,0,0);for(let k=1;o.length<7;k++){const d=new Date(h);d.setDate(h.getDate()+k);if(d.getDay()==0)continue;o.push(d)}return o}
+const ocup=(dia,hr)=>{const n=parseInt(dia.slice(8),10)+HRS.indexOf(hr);return n%4==0||AG.some(a=>a.dia==dia&&a.hr==hr&&a.loja==X.n)};
+function agIni(i){ag={i,dia:"",hr:""};sh="agd";draw()}
+function agDia(v){ag.dia=v;ag.hr="";draw()}
+function agHr(v){ag.hr=v;draw()}
+function agOk(){if(!ag||!ag.dia||!ag.hr){toast("Escolha o dia e o horário");return}const p=X.m[ag.i];ag.id=agN++;AG.push({id:ag.id,loja:X.n,serv:p[0],v:p[1],dia:ag.dia,hr:ag.hr});sh="agok";draw()}
+function agCancela(id){AG=AG.filter(a=>a.id!=id);draw();toast("Agendamento cancelado");if(!AG.length){sh=null;draw()}}
+function agSheet(){const p=X.m[ag.i],D=dias();return `<div class="panel"><b style="font-size:20px">Agendar · ${p[0]}</b><div class="meta">${X.n} · ${R$(p[1])}</div>
+<div class="meta" style="margin-top:12px;font-weight:800">1. Escolha o dia</div><div class="chips">${D.map(d=>{const v=iso(d);return `<button class="chip ${ag.dia==v?"on":""}" onclick="agDia('${v}')">${d.toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"})}</button>`}).join("")}</div>
+<div class="meta" style="font-weight:800">2. Escolha o horário</div>${ag.dia?`<div class="chips" style="flex-wrap:wrap">${HRS.map(h=>{const oc=ocup(ag.dia,h);return `<button class="chip ${ag.hr==h?"on":""}" ${oc?"disabled style=\"opacity:.4;text-decoration:line-through\"":""} onclick="agHr('${h}')">${h}</button>`}).join("")}</div><div class="meta">Horários riscados já estão ocupados.</div>`:`<div class="meta" style="margin:6px 0">Escolha primeiro o dia.</div>`}
+${ag.dia&&ag.hr?`<div class="oc"><b>Resumo</b><div class="meta">${p[0]} · ${brd(ag.dia)} às ${ag.hr} · ${R$(p[1])}</div><div class="meta">Pagamento na loja, no dia do atendimento.</div></div>`:""}
+<button class="cta c" ${ag.dia&&ag.hr?"":"disabled"} onclick="agOk()">Confirmar agendamento</button><button class="cta b c" onclick="sh=null;ag=null;draw()">Voltar aos serviços</button></div>`}
+function agConf(){const a=AG[AG.length-1];return `<div class="panel"><b style="font-size:20px">✅ Agendamento confirmado</b><div class="oc" style="border-color:var(--ok)"><b>${a.serv}</b><div class="meta">${a.loja}</div><div class="meta" style="color:var(--tx);font-weight:800">${brd(a.dia)} às ${a.hr} · ${R$(a.v)}</div></div><div class="meta">A loja foi avisada. Você pode ver ou cancelar em Meus agendamentos.</div><button class="cta c" onclick="sh='mag';draw()">Ir para Meus agendamentos</button><button class="cta b c" onclick="sh=null;ag=null;draw()">Voltar aos serviços</button></div>`}
+function agMeus(){return `<div class="panel"><b style="font-size:20px">📅 Meus agendamentos</b>${AG.map(a=>`<div class="oc"><div class="row"><b>${a.serv}</b><span class="tag" style="color:var(--ok)">Confirmado</span></div><div class="meta">${a.loja}</div><div class="meta" style="color:var(--tx);font-weight:800">${brd(a.dia)} às ${a.hr} · ${R$(a.v)}</div><button class="cta o c" onclick="agCancela(${a.id})">Cancelar agendamento</button></div>`).join("")||`<div class="meta" style="margin:8px 0">Você ainda não tem agendamentos.</div>`}<button class="cta c" onclick="sh=null;ag=null;draw()">Voltar aos serviços</button></div>`}
+/* AUT = o que o ADM autoriza para esta loja */
+let AUT="ambas",taxa=false,cart=[],sh=null,pg="din",troco="",tipo="ent",pedido=null,st=0,asn="Lariquinha",vr="",pq=0,pnome="";
+const TAXA=5;
+/* Fora do raio: KMC = distância do cliente até a loja · RAIO = limite da loja · TX = taxa extra que a loja define ao aceitar · xs: 0 nada · 1 perguntou · 2 loja aceitou · 3 loja recusou */
+let fora=false,xs=0;const KMC=7.4,RAIO=5,TX=4;
+const ent=()=>AUT=="ambas",ret=()=>AUT=="ambas"||AUT=="ret",nada=()=>AUT=="nada";
+function avisos(){if(nada())return `<div class="oc" style="border-color:var(--rd)"><b>Esta loja está fechada ou sem forma de recebimento liberada no momento.</b><div class="meta">Não é possível fazer pedidos agora.</div></div>`;
+ return `<div class="oc">${ent()?`<div class="row"><b>🛵 Entrega disponível</b><span class="${taxa?"":"free"}">${taxa?"Taxa "+R$(TAXA):"Entrega grátis"}</span></div>`:""}${ret()?`<div class="row"><b>🏪 Retirada no local</b><span class="meta">${ent()?"também disponível":"só retirada"}</span></div>`:""}</div>`}
+function pontoLoja(){return `<div class="card" style="cursor:default"><div class="thumb">${X.ic}</div><div style="flex:1"><b style="font-size:19px">${X.n}</b><div class="meta"><span class="star">★ ${X.r}</span> · ${X.c} · ${X.t}</div></div></div>`}
+const foto=(p,z)=>`<div style="width:${z}px;height:${z}px;border-radius:14px;background:linear-gradient(135deg,var(--bg),var(--br));display:flex;align-items:center;justify-content:center;font-size:${Math.round(z*.52)}px;flex:none;overflow:hidden" role="img" aria-label="Foto de ${p[0]}">${p[4]||"🍽️"}</div>`;
+function cardapio(){return avisos()+`<h2>Cardápio</h2><div class="meta" style="margin:-2px 0 6px">Neste exemplo as fotos são ícones; no app real aparece a foto que a loja enviou.</div>`+X.m.map((p,i)=>`<div class="oc"><div style="display:flex;gap:12px;align-items:center"><div style="position:relative">${foto(p,88)}${!p[2]?`<div style="position:absolute;inset:0;border-radius:14px;background:rgba(0,0,0,.55);color:#fff;font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center">Esgotado</div>`:""}</div><div style="flex:1;min-width:0"><b>${p[0]}</b>${p[3]?`<div class="meta">${p[3]}</div>`:""}<div class="row" style="margin-top:6px"><b>${R$(p[1])}</b>${nada()?`<button class="add" disabled>Indisponível</button>`:p[2]?`<button class="add" onclick="add(${i})">Adicionar</button>`:`<button class="add" disabled>Esgotado</button>`}</div></div></div></div>`).join("")+assist()}
+function assist(){if(!asn||nada())return"";return `<div class="oc"><b>🎙️ ${asn}, sua atendente por voz</b><div class="meta" style="margin:4px 0">No celular você toca no botão e fala o pedido. Aqui, digite o que falaria: “quero dois x-burger”, “um suco”, “desfazer”, “é só isso”.</div><button class="cta b c" onclick="alert('Preview: em Chrome/Android este botão abre o microfone. Use a caixa de texto abaixo.')">🎙️ Falar com ${asn}</button><input id="vt" placeholder="Digite o que você falaria"><button class="cta c" onclick="fala($('vt').value)">Enviar</button><div class="meta" style="margin-top:8px">${vr}</div></div>`}
+function add(i){cart.push({n:X.m[i][0],p:X.m[i][1]});draw();toast("Adicionado: "+X.m[i][0])}
+function fala(txt){const t=" "+nz(txt)+" ";
+ if(/ desfazer /.test(t)){const k=cart.pop();vr=k?"Desfeito. Mais alguma coisa?":"Não tenho nada para desfazer.";return draw()}
+ if(/ so isso | e so | fechar /.test(t)){vr=cart.length?"Certo! Confira a sacola e toque em Fazer pedido.":"A sacola está vazia.";return draw()}
+ const NUM={um:1,uma:1,dois:2,duas:2,tres:3,quatro:4},ws=t.trim().split(" ");let a=null;
+ X.m.forEach(p=>{if(!p[2])return;const tk=nz(p[0]).split(" ").filter(w=>w.length>2);if(tk.length&&tk.every(w=>ws.includes(w)))a={p,q:NUM[ws[ws.indexOf(tk[0])-1]]||1}});
+ if(!a){vr="Não encontrei esse item no cardápio de hoje. Pode repetir?";return draw()}
+ for(let i=0;i<a.q;i++)cart.push({n:a.p[0],p:a.p[1]});vr="Anotei "+(a.q>1?a.q+" ":"")+a.p[0]+(a.p[0]=="X-Burger"?". Quer uma bebida? Temos Suco de laranja.":". Mais alguma coisa?");draw()}
+const LB=["Pedido enviado à loja","Loja aceitou e está preparando","Pronto: procurando entregador","Entregador a caminho da loja","Em rota até você","Entregue"];
+const LBR=["Pedido enviado à loja","Loja aceitou e está preparando","Pronto para retirada","Retirado"];
+function home(){const fin=pedido&&(pedido.tipo=="ret"?st>=3:st>=5)?`<button class="card" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ok)">✅</div><div><b>Pedido #${pedido.id} · ${pedido.tipo=="ret"?"Retirado":"Entregue"}</b><div class="meta">Ver detalhes ou reportar um problema</div></div></button>`:"";const trk=pedido&&(pedido.tipo=="ret"?st<3:st<5)?`<button class="card" style="border-color:var(--ac)" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ac)">${pedido.tipo=="ret"?"🏪":"🛵"}</div><div><b>Acompanhar pedido #${pedido.id}</b><div class="meta">${(pedido.tipo=="ret"?LBR:LB)[st]}</div></div></button>`:"";if(MKT&&!cur)return trk+fin+mercado();return (MKT?`<button class="back" onclick="cur=null;X=X0;cart=[];draw()">‹ Marketplace</button>`:"")+trk+fin+pontoLoja()+(X.tp=="agenda"?agenda():cardapio())}
+const sub=()=>cart.reduce((t,i)=>t+i.p,0);
+function sacola(){const m={};cart.forEach(i=>{m[i.n]=m[i.n]||{...i,q:0};m[i.n].q++});const it=Object.values(m),tt=sub();
+ if(!ent())tipo="ret";const fr=tipo=="ent"&&taxa?TAXA:0,blk=tipo=="ent"&&fora&&xs!=2,ex=tipo=="ent"&&fora&&xs==2?TX:0,tot=tt+fr+ex;
+ const opc=nada()?`<div class="oc" style="border-color:var(--rd)"><b>Sem forma de recebimento disponível</b><div class="meta">Esta loja não tem entrega nem retirada liberadas. Não é possível finalizar o pedido.</div></div>`:
+ `<div class="meta" style="margin-top:12px;font-weight:800">Como receber</div><div class="seg">${ent()?`<button class="${tipo=="ent"?"on":""}" onclick="tipo='ent';draw()">🛵 Entrega</button>`:""}<button class="${tipo=="ret"?"on":""}" onclick="tipo='ret';draw()">🏪 Retirar na loja</button></div>`+
+ (!ent()?`<div class="oc" style="border-color:var(--yl)"><b>⚠️ Esta loja não faz entrega.</b><div class="meta" style="color:var(--tx)">Você deverá ir até a loja para retirar seu pedido.</div></div>`:tipo=="ent"?`<div class="meta">Entregar em: Rua das Flores, 120 · Jardim da Penha</div><button class="cta b c" onclick="toast('Exemplo: usaria o GPS do aparelho')">📍 Usar minha localização atual</button>${fora?foraBox():""}`:`<div class="meta">Você vai até a loja e informa o número do pedido para retirar.</div>`);
+ return `<div class="panel"><b style="font-size:20px">Sua sacola · ${X.n}</b>${it.map(i=>{const pr=X.m.find(m=>m[0]==i.n);return `<div class="line" style="align-items:center"><span style="display:flex;gap:10px;align-items:center">${pr?foto(pr,40):""}${i.q}x ${i.n}</span><b>${R$(i.p*i.q)}</b></div>`}).join("")}${opc}<div class="meta" style="margin-top:12px;font-weight:800">Pagamento</div><div class="seg"><button class="${pg=="din"?"on":""}" onclick="pg='din';draw()">💵 Dinheiro</button><button class="${pg=="pix"?"on":""}" onclick="pg='pix';draw()">💠 Pix</button><button class="${pg=="car"?"on":""}" onclick="pg='car';draw()">💳 ${tipo=="ret"?"Na loja":"Na entrega"}</button></div>${pg=="din"&&tipo=="ent"?`<input inputmode="decimal" placeholder="Troco para quanto? (opcional)" value="${troco}" oninput="troco=this.value">`:""}<div class="line" style="margin-top:12px"><span>Subtotal</span><b>${R$(tt)}</b></div>${tipo=="ent"?`<div class="line"><span>Taxa de entrega</span><b class="${fr?"":"free"}">${fr?R$(fr):"Grátis"}</b></div>`:""}${ex?`<div class="line"><span>Taxa extra (fora do raio)</span><b>${R$(ex)}</b></div>`:""}<div class="line"><b>Total</b><b>${R$(tot)}</b></div><button class="cta" ${nada()||blk?"disabled":""} onclick="fazer()"><span>${tipo=="ret"?"Fazer pedido para retirada":"Fazer pedido"}</span><span>${R$(tot)}</span></button><button class="cta b c" onclick="cart=[];sh=null;draw()">Esvaziar sacola</button><button class="cta b c" onclick="sh=null;draw()">Voltar ao cardápio</button></div>`}
+function fazer(){if(!cart.length||nada())return;if(tipo=="ent"&&fora&&xs!=2){toast("Fora do raio: pergunte à loja se entrega no seu endereço");return}const fr=tipo=="ent"&&taxa?TAXA:0,ex=tipo=="ent"&&fora&&xs==2?TX:0;pedido={id:window.__nid||4833,tt:sub()+fr+ex,tipo,pg,codRet:String(1000+Math.floor(Math.random()*9000)),codEnt:String(1000+Math.floor(Math.random()*9000))};cart=[];st=0;pq=0;pnome="";sh="trk";draw();toast("Pedido enviado!")}
+function trk(){const p=pedido,rt=p.tipo=="ret",S=rt?LBR:LB,fim=rt?3:5;
+ if(st>=fim)p.em=p.em||new Date().toLocaleString("pt-BR");
+ const succ=st>=fim&&!rt?`<div class="oc" style="border:3px solid var(--ok);text-align:center;padding:22px"><div style="font-size:64px">✅</div><b style="font-size:26px">Pedido entregue!</b><div style="margin-top:6px">Pedido #${p.id} · ${X.n}</div><div class="meta">${p.em}</div><b class="free" style="font-size:20px;display:block;margin-top:6px">ENTREGUE</b><div class="meta" style="margin-top:6px">Mostre esta tela ao entregador se ele pedir a foto.</div></div>`:"";
+ return `<div class="panel"><b style="font-size:20px">Pedido #${p.id}</b><div class="meta">${R$(p.tt)} · ${p.pg=="pix"?"Pix":p.pg=="din"?"Dinheiro":rt?"Na loja":"Na entrega"} · ${rt?"Retirada na loja":"Entrega"}</div>
+${st==0?`<button class="cta o c" onclick="sh='cancelar';draw()">❌ Cancelar pedido</button>`:""}${succ}<div style="margin:10px 0">${S.map((s,i)=>`<div class="step ${i<st?"d":i==st?"n":""}"><i>${i<st?"✓":""}</i><span>${s}</span></div>`).join("")}</div>
+ ${p.pg=="pix"&&st<2?`<div class="oc"><b>💠 Pague com Pix</b><div class="meta">Chave: chave-exemplo@pix · ${R$(p.tt)}</div><button class="cta b c" onclick="toast('Exemplo: Pix copia e cola copiado')">Copiar Pix copia e cola</button><div class="meta" style="margin-top:6px">O app não confirma o pagamento; a loja confere no banco.</div></div><div class="meta" style="margin:-4px 0 8px">Sem confirmação do pagamento em 10 min, o pedido é cancelado e você é avisado.</div>`:""}
+ ${p.pg=="pix"&&pq>=1?`<div class="oc" style="border-color:var(--yl)"><b>❓ A loja não encontrou seu Pix</b><div class="meta" style="color:var(--tx);margin:4px 0">O Pix foi pago por terceiros ou por você mesmo?</div>${pq==1?`<div class="seg"><button onclick="pq=2;draw()">Fui eu mesmo</button><button onclick="pq=3;draw()">Foi um terceiro</button></div>`:pq==3?`<input id="pnm" placeholder="Nome completo de quem pagou" value="${pnome}"><button class="cta c" onclick="pnome=$('pnm').value.trim();if(!pnome){toast('Informe o nome completo');return}pq=4;draw()">Enviar à loja</button>`:`<div class="meta" style="color:var(--ok);font-weight:800">✓ Resposta enviada: ${pq==2?"Fui eu mesmo":"Foi um terceiro · "+pnome}. A loja vai conferir o extrato.</div>`}</div>`:""}
+ ${rt&&st<3?`<div class="oc" style="border-color:${st==2?"var(--ok)":"var(--br)"}"><b>${st==2?"🔔 Seu pedido está pronto para retirada.":"🏪 Retirada na loja"}</b><div class="meta" style="color:var(--tx);margin:4px 0">${st==2?"Dirija-se à loja e informe o código abaixo.":"Guarde este código: você vai informá-lo na loja ao retirar."}</div><div class="meta">Código de retirada</div><b style="font-size:34px;letter-spacing:.2em">${p.codRet}</b><div class="meta" style="margin-top:6px">Pedido #${p.id}</div></div>`:""}
+ ${!rt&&st>=4&&st<5?`<div class="oc" style="border-color:var(--ok)"><div class="meta">Código de confirmação (diga ao entregador só na hora da entrega)</div><b style="font-size:34px;letter-spacing:.2em">${p.codEnt||"1234"}</b></div><button class="cta c" onclick="st=5;draw();toast('✅ Você confirmou o recebimento. Pedido entregue.')">✅ Recebi meu pedido</button>
+<button class="cta b c" onclick="toast('Exemplo: chat com o entregador')">Falar com entregador</button>`:""}
+ ${st>=fim?`<div class="oc"><b>✅ ${rt?"Retirado":"Entregue"}</b><div class="meta">Status final registrado no sistema.</div>${p.av?`<div class="meta" style="margin-top:8px">⭐ Avaliação enviada. Obrigado!</div>`:`<b style="display:block;margin-top:8px">⭐ Avalie</b><div style="font-size:28px">☆☆☆☆☆</div>${rt?"":`<input placeholder="Gorjeta para o entregador (opcional)" inputmode="decimal">`}<button class="cta c" onclick="toast('Exemplo: avaliação enviada');pedido.av=true;sh=null;draw()">Enviar avaliação</button>`}</div>`:""}
+ ${st<fim?``:""}<button class="cta b c" onclick="toast('Exemplo: chat com a loja')">💬 Falar com a loja</button>
+<button class="cta o c" onclick="sh='reportar';draw()">⚠️ Reportar problema</button>
+<button class="cta b c" onclick="sh=null;draw()">Fechar</button></div>`}
+function foraBox(){const k=KMC.toFixed(1).replace(".",",");
+ if(xs==2)return `<div class="oc" style="border-color:var(--ok)"><b>✅ A loja aceitou entregar no seu endereço</b><div class="meta">Foi adicionada a taxa extra de ${R$(TX)} (fora do raio de ${RAIO} km).</div></div>`;
+ if(xs==3)return `<div class="oc" style="border-color:var(--rd)"><b>A loja não entrega no seu endereço.</b><div class="meta" style="color:var(--tx)">Escolha "Retirar na loja" para fazer o pedido.</div><button class="cta b c" onclick="xs=0;draw()">Perguntar de novo</button></div>`;
+ return `<div class="oc" style="border-color:var(--yl)"><b>📍 Fora do raio de entrega</b><div class="meta" style="color:var(--tx)">Seu endereço fica a ${k} km da loja (raio de ${RAIO} km). A entrega automática está bloqueada.</div>${xs==1?`<div class="meta" style="color:var(--ok);font-weight:800;margin-top:6px">✓ Pergunta enviada. Aguardando a resposta da loja.</div>`:`<button class="cta b c" onclick="sh='chatx';draw()">💬 Perguntar à loja</button>`}</div>`}
+function chatx(){const k=KMC.toFixed(1).replace(".",",");
+ return `<div class="panel"><b style="font-size:20px">💬 Chat com a loja</b><div class="meta">${X.n}</div><div class="oc"><div class="meta">Mensagem pronta (você pode editar):</div><textarea id="mx" rows="4">Olá, gostaria de saber se entregam no meu endereço. Ele fica a ${k} km da loja (fora do raio de ${RAIO} km). Endereço: Rua das Flores, 120</textarea></div><button class="cta c" onclick="xs=1;sh='bag';draw();toast('Mensagem enviada à loja')">Enviar à loja</button><button class="cta b c" onclick="sh='bag';draw()">Voltar à sacola</button></div>`}
+let reportMotivo="",reportTxt="";
+function reportar(){
+ return `<div class="panel"><b style="font-size:20px">⚠️ Reportar problema</b>
+ <div class="meta" style="margin:6px 0">Pedido #${pedido?pedido.id:"—"}</div>
+ <div class="meta" style="margin-top:8px;font-weight:800">Qual o problema?</div>
+ <div class="sel" style="flex-wrap:wrap;gap:6px">${["Pedido errado","Não chegou","Loja não responde","Outro"].map(m=>`<button class="${reportMotivo==m?"on":""}" onclick="reportMotivo='${m}';draw()">${m}</button>`).join("")}</div>
+ <input id="rt" placeholder="Descreva (opcional)" value="${reportTxt.replace(/"/g,"&quot;")}" oninput="reportTxt=this.value">
+ <button class="cta" onclick="if(!reportMotivo){toast('Escolha um motivo');return}PA_report(pedido,reportMotivo,reportTxt);reportMotivo='';reportTxt='';sh=null;draw();toast('A loja foi avisada. Se não resolver, o administrador vai acompanhar.')">Enviar ocorrência</button>
+ <button class="cta b c" onclick="reportMotivo='';reportTxt='';sh='trk';draw()">Voltar</button></div>`;
+}
+let cancMotivo="";
+function cancelar(){
+ return `<div class="panel"><b style="font-size:20px">❌ Cancelar pedido</b>
+ <div class="meta" style="margin:6px 0">Pedido #${pedido?pedido.id:"—"}</div>
+ <div class="meta" style="margin-top:8px;font-weight:800">Por que está cancelando?</div>
+ <div class="sel" style="flex-wrap:wrap;gap:6px">${["Desisti","Pedi errado","Demora","Outro"].map(m=>`<button class="${cancMotivo==m?"on":""}" onclick="cancMotivo='${m}';draw()">${m}</button>`).join("")}</div>
+ <button class="cta o c" onclick="if(!cancMotivo){toast('Escolha um motivo');return}const m=cancMotivo;cancMotivo='';PA_cancelCli(pedido,m);sh=null;pedido=null;st=0;draw();toast('Pedido cancelado · motivo: '+m)">Confirmar cancelamento</button>
+ <button class="cta b c" onclick="cancMotivo='';sh='trk';draw()">Voltar</button></div>`;
+}
+function draw(){
+ const B=(k,l)=>`<button class="${AUT==k?"on":""}" onclick="AUT='${k}';tipo='${k=="ret"?"ret":"ent"}';draw()">${l}</button>`;
+ $("sel").innerHTML=`<div class="meta" style="width:100%">Opções de teste (o ADM ainda não está ligado a esta tela). O Marketplace só o Criador liga:</div>`+B("ambas","🛵 Entrega + 🏪 Retirada")+B("ret","🏪 Só retirada")+B("nada","⛔ Nenhuma")+`<button class="${taxa?"on":""}" onclick="taxa=!taxa;draw()">${taxa?"Entrega com taxa":"Entrega grátis"}</button><button class="${asn?"on":""}" onclick="asn=asn?'':'Lariquinha';draw()">${asn?"🎙️ Assistente ligado":"🎙️ Assistente desligado"}</button><button class="${fora?"on":""}" onclick="fora=!fora;xs=0;draw()">${fora?"📍 Endereço fora do raio":"📍 Endereço dentro do raio"}</button><button class="${MKT?"on":""}" onclick="MKT=!MKT;cur=null;X=X0;cart=[];draw()">${MKT?"🛍️ Marketplace ligado":"🛍️ Marketplace desligado"}</button>`;
+ $("ad").innerHTML=ent()?`<button class="addr" onclick="toast('Exemplo: trocaria o endereço de entrega')"><small>Entregar em</small><b>Rua das Flores, 120 · Jardim da Penha ▾</b></button>`:"";
+ $("v").innerHTML=home();
+ const n=cart.length;$("bar").innerHTML=n&&!sh?`<div class="bar"><button class="cta" onclick="sh='bag';draw()"><span>Ver sacola (${n})</span><span>${R$(sub())}</span></button></div>`:"";
+ $("sheet").innerHTML=sh?`<div class="sheet" onclick="if(event.target===this){sh=null;draw()}">${sh=="bag"?sacola():sh=="agd"?agSheet():sh=="agok"?agConf():sh=="mag"?agMeus():sh=="reportar"?reportar():sh=="cancelar"?cancelar():sh=="chatx"?chatx():trk()}</div>`:""}
+draw();
+</script><script>
+/* Botão "Baixar e instalar": some depois da instalação (evento appinstalled ou app aberto instalado) */
+(function(){const NM="PedeAí Brasil Cliente";let dp=null,inst=false;const box=document.getElementById("inst");
+const stand=()=>(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
+function show(){box.innerHTML=(inst||stand())?"":`<div style="background:var(--cd);border:1px solid var(--ac);border-radius:14px;padding:12px;margin:10px 0"><b>📲 ${NM}</b><div style="color:var(--mu);font-size:15.5px;margin-top:2px">Instale no celular para abrir como aplicativo, com nome e ícone próprios.</div><button class="cta c" style="margin-top:10px" onclick="baixarApp()">📲 Baixar e instalar</button></div>`}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;show()});
+window.addEventListener("appinstalled",()=>{inst=true;dp=null;show()});
+window.baixarApp=async function(){if(dp){dp.prompt();const r=await dp.userChoice;if(r&&r.outcome=="accepted"){inst=true;dp=null}else toast("Instalação cancelada");show();return}
+ if(location.protocol=="file:"){inst=true;show();toast("Exemplo: instalaria o app e o botão some");return}
+ toast("No menu do navegador, toque em “Instalar app” ou “Adicionar à tela inicial”")};
+show()})();
+</script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
+(function(){
+const CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
+const PA=window.PA={ready:false,online:false,_q:[],_status(on,msg){PA.online=on;const b=document.getElementById("pa-st");if(b){b.textContent=on?"● Online · sincronizado":"○ "+(msg||"Sem conexão · modo local");b.style.color=on?"#22a559":"#e0a800"}},
+ whenReady(f){PA.ready?f():PA._q.push(f)}};
+/* ids de pedido: contador no Firestore (transação) */
+const strip=d=>{const o={...d};delete o.atualizadoEm;return o};
+PA.strip=strip;
+if(window.PA_MOCK){window.PA_MOCK(PA);return}
+(async()=>{try{
+ const B="https://www.gstatic.com/firebasejs/10.8.0/";
+ const [A,F,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);
+ const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
+ await H.signInAnonymously(au);
+ PA.uid=au.currentUser.uid;
+ PA.nextId=async()=>{const r=F.doc(db,"meta","contador");return F.runTransaction(db,async t=>{const s=await t.get(r);const n=(s.exists()?s.data().n:5000)+1;t.set(r,{n});return n})};
+ const cl=o=>JSON.parse(JSON.stringify(o));
+ PA.setPedido=(id,patch)=>F.setDoc(F.doc(db,"pedidos",String(id)),{...cl(patch),id:Number(id),atualizadoEm:Date.now()},{merge:true});
+ PA.aceitar=(id,me)=>F.runTransaction(db,async t=>{const r=F.doc(db,"pedidos",String(id));const s=await t.get(r);if(!s.exists())return false;const d=s.data();if(d.mot||d.st!=="enviado")return false;t.update(r,{mot:me.id,motN:me.n,atualizadoEm:Date.now()});return true});
+ PA.watchDoc=(id,cb)=>F.onSnapshot(F.doc(db,"pedidos",String(id)),s=>cb(s.exists()?strip(s.data()):null));
+ PA.watchLoja=(loja,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("loja","==",loja)),s=>cb(s.docs.map(d=>strip(d.data()))));
+ PA.watchEnviados=cb=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("st","==","enviado")),s=>cb(s.docs.map(d=>strip(d.data()))));
+ PA.watchMoto=(mid,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("mot","==",mid)),s=>cb(s.docs.map(d=>strip(d.data()))));
+ PA.setOco=(id,o)=>F.setDoc(F.doc(db,"ocorrencias",String(id)),{...cl(o),id:Number(id)},{merge:true});
+ PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
+ PA.setLojaCfg=(slug,d)=>F.setDoc(F.doc(db,"lojas",slug),{...cl(d),atualizadoEm:Date.now()},{merge:true});
+ PA.watchLojaCfg=(slug,cb)=>F.onSnapshot(F.doc(db,"lojas",slug),s=>cb(s.exists()?s.data():null));
+ PA.ready=true;PA._status(true);PA._q.splice(0).forEach(f=>f());
+}catch(e){console.error("Firebase:",e);PA._status(false,"Sem conexão · modo local")}})();
+})();
+/* ===== helpers comuns ===== */
+window.PA_toast=m=>{try{toast(m)}catch(e){}};
+window.PA_beep=()=>{try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}};
+/* ===== extras: cardápio/estado da loja ===== */
+PA.whenReady(()=>{});
+</script><script>(function(){
+const LOJA=X0.n,SLUG="lanchonete-do-ze";
+let unw=null,rs=null,lastPq=pq,prim=true;
+const pgLabel=(p,t)=>p=="din"?"Dinheiro":p=="pix"?"Pix":(t=="ret"?"Pagar na loja":"Cartão na entrega");
+const st2=d=>{if(d.tp=="ret")return({novo:0,preparo:1,pronto:2,retirado:3})[d.st]??0;
+ switch(d.st){case"novo":return 0;case"preparo":return 1;case"pronto":return 2;case"enviado":return d.mot?3:2;case"emrota":case"devolucao":return 4;case"aguardando":case"entregue":return 5;default:return 0}};
+function fim(){localStorage.removeItem("pa_pedido");if(unw){unw();unw=null}}
+function watch(id){if(unw){unw();unw=null}prim=true;
+ unw=PA.watchDoc(id,d=>{if(!d)return;
+  if(!pedido||pedido.id!=id)pedido={id:d.id,tt:d.v,tipo:d.tp,pg:d.pgc,codRet:d.codRet,codEnt:d.codEnt};
+  pedido.tipo=d.tp;pedido.codRet=d.codRet;pedido.codEnt=d.codEnt;pedido.tt=d.v;
+  if(d.st=="cancelado"||d.st=="cancelado_cli"){const m=d.motivoCancel||"Recusado pela loja";fim();pedido=null;sh=null;st=0;draw();if(d.st=="cancelado")toast("❌ A loja cancelou o pedido: "+m);return}
+  if(d.pq!=null&&d.pq!==pq){pq=d.pq;lastPq=pq}if(d.pnome)pnome=d.pnome;
+  const n=st2(d);if(n===5&&st<5&&pedido.tipo!="ret")pedido.em=new Date().toLocaleString("pt-BR");
+  if(!prim&&n!==st&&n>0)toast("📦 "+(pedido.tipo=="ret"?LBR:LB)[Math.min(n,pedido.tipo=="ret"?3:5)]);
+  rs=n;st=n;prim=false;draw()})}
+/* só envia ao servidor o que mudou no lado do cliente (recebi o pedido / resposta do Pix) */
+const _d=draw;
+draw=function(){_d();if(!pedido||!PA.ready)return;
+ if(st===5&&rs!==5&&pedido.tipo!="ret"){rs=5;PA.setPedido(pedido.id,{st:"entregue",recebidoCli:true,entregueEm:Date.now()})}
+ if(pq!==lastPq){lastPq=pq;PA.setPedido(pedido.id,{pq,pnome})}};
+const _f=fazer;
+fazer=async function(){
+ if(!cart.length||nada())return;
+ if(!PA.ready){toast("Sem conexão com o servidor. Tente de novo em instantes.");return}
+ let nome=localStorage.getItem("pa_nome");
+ if(!nome){nome=(prompt("Seu nome (a loja vai ver):")||"").trim();if(!nome){toast("Informe seu nome para fazer o pedido");return}localStorage.setItem("pa_nome",nome)}
+ const snap=cart.slice(),tp=tipo,pgc=pg,tr=troco,antes=pedido,ex=fora;
+ let id;try{id=await PA.nextId()}catch(e){toast("Não foi possível enviar o pedido. Tente de novo.");return}
+ window.__nid=id;_f();
+ if(!pedido||pedido===antes)return;
+ const m={};snap.forEach(i=>m[i.n]=(m[i.n]||0)+1);
+ const d={id:pedido.id,loja:LOJA,it:Object.entries(m).map(([n,q])=>q+"x "+n).join(", "),v:pedido.tt,pg:pgLabel(pgc,tp),pgc,tp,st:"novo",cli:nome,bairro:"Jardim da Penha",rua:"Rua das Flores, 120",dl:0,dc:ex?KMC:3.5,volta:false,maq:pgc=="car"&&tp=="ent",troco:pgc=="din"&&tp=="ent"&&!!String(tr).trim(),trocoPara:String(tr||""),paid:false,ps:0,codRet:pedido.codRet,codEnt:pedido.codEnt,criadoEm:Date.now(),uid:PA.uid};
+ rs=0;lastPq=0;
+ PA.setPedido(d.id,d).then(()=>{localStorage.setItem("pa_pedido",d.id);watch(d.id)}).catch(e=>{console.error(e);pedido=null;st=0;sh=null;draw();toast("Não foi possível enviar o pedido. Tente de novo.")})};
+window.PA_cancelCli=(p,m)=>{PA.setPedido(p.id,{st:"cancelado_cli",motivoCancel:m});fim()};
+window.PA_report=(p,m,t)=>{PA.setOco(Date.now(),{ped:p?p.id:0,lj:LOJA,cli:localStorage.getItem("pa_nome")||"Cliente",mot:m,txt:t||"",st:"aberta",rep:false,criadoEm:Date.now()})};
+/* cardápio e entrega/retirada vindos da loja */
+PA.whenReady(()=>{PA.watchLojaCfg(SLUG,c=>{if(!c)return;
+ if(c.m&&c.m.length){X0.m.length=0;c.m.forEach(p=>X0.m.push(p))}
+ if(c.ent===false&&AUT=="ambas"){AUT="ret";tipo="ret"}else if(c.ent===true&&AUT=="ret"){AUT="ambas"}
+ if(c.fechada){AUT="nada"}else if(AUT=="nada"){AUT=c.ent===false?"ret":"ambas"}
+ draw()});
+ const pid=localStorage.getItem("pa_pedido");if(pid)watch(+pid)});
+})();
+</script><script>if("serviceWorker"in navigator&&location.protocol!="file:")navigator.serviceWorker.register("sw.js").catch(function(){})</script></body></html>
