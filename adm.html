@@ -25,38 +25,39 @@ table{width:100%;border-collapse:collapse;font-size:15.5px}td,th{padding:6px 4px
 </style><link rel="manifest" href="manifest-adm.json"><meta name="theme-color" content="#2b6cb0"><link rel="icon" href="icon-adm-192.png"><link rel="apple-touch-icon" href="icon-adm-192.png"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
 <div class="pv" id="pa-st" style="background:#111;color:#e0a800;font-size:12.5px;font-weight:700">○ Conectando… (ocorrências sincronizadas; as demais abas ainda são exemplo)</div>
 <div class="pg" id="inst"></div>
-<div class="top">Administração · Edinaldo (exemplo)</div>
+<div class="top" id="topn">Administração</div>
 <div class="tabs" id="tabs"></div><div class="pg" id="v"></div><div class="toast" id="t"></div>
 <script>
 const PLN={mensal:"Mensal",anual:"Anual",pers:"Personalizado"};
-let L=[
-{id:1,n:"Lanchonete do Zé",tp:"prod",ent:true,sus:false,pl:{t:"mensal",v:"2026-11-20"},ped:312,fat:18420.5},
-{id:2,n:"Farmácia Vida",tp:"prod",ent:true,sus:false,pl:{t:"anual",v:"2026-10-29"},ped:148,fat:9210},
-{id:3,n:"Depósito Construir",tp:"prod",ent:false,sus:false,pl:{t:"mensal",v:"2026-10-25"},ped:41,fat:6310},
-{id:4,n:"Salão Bella Vitória",tp:"agenda",ent:false,sus:false,lib:true,pl:{t:"mensal",v:"2026-12-05"},ped:96,fat:4880},
-{id:5,n:"Pizzaria Capixaba",tp:"prod",ent:true,sus:true,pl:{t:"mensal",v:"2026-09-30"},ped:77,fat:5120}];
+let L=[],MYCODE=null,LOADED=false,LERR=null;const MYS=new Set(),IDS={};let SEQ=0;
+const nid=s=>IDS[s]||(IDS[s]=++SEQ);
+const nmS=s=>{const x=L.find(y=>y.slug==s);return x?x.n:s};
+const OCm=()=>OCO.filter(o=>MYS.has(o.lj));
 const ACC=[["Marcos (caixa)","Lanchonete do Zé","pendente"],["Ana (atendente)","Farmácia Vida","autorizado"],["Rui (entregador da loja)","Depósito Construir","autorizado"],["Lia (recepção)","Salão Bella Vitória","pendente"]];
 let bk=false,fc=false;
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 function som(k){try{const c=new(window.AudioContext||window.webkitAudioContext)(),seq=k=="plim"?[[1318,0],[1568,.16]]:[[440,0],[330,.22],[440,.44]];seq.forEach(([fr,t])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=fr;o.type=k=="plim"?"sine":"square";g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+t);o.stop(c.currentTime+t+.14)})}catch(e){}}
-function salvaPlano(id){const x=L.find(y=>y.id==id),v=$("pv"+id).value;if(!v)return;if(!x.en){const d=new Date(x.pl.v+"T00:00:00");d.setDate(d.getDate()-30);x.en=iso(d)}
- const lim=new Date(x.en+"T00:00:00");lim.setDate(lim.getDate()+35);x.alt=x.alt||0;
- if(v==x.pl.v){toast("Plano salvo");return}
- if(x.alt>=2){toast("Já usou as 2 alterações: só falando com o Criador");return}
- if(new Date(v+"T00:00:00")>lim){toast("Passa de 35 dias da entrada. Máximo: "+iso(lim).split("-").reverse().join("/"));return}
- x.pl.v=v;x.alt++;draw();toast("Vencimento salvo ("+x.alt+" de 2 alterações usadas)")}
+const fd=ms=>iso(new Date(ms)).split("-").reverse().join("/");
+async function salvaPlano(id){const x=L.find(y=>y.id==id),v=$("pv"+id).value;if(!v||!x||!x.conta){toast("Plano ainda carregando");return}
+ const cur=PA_estado(x.conta,Date.now()).v,base=x.conta.vencBase||cur,alt=x.conta.admAlt||0;
+ const dias=Math.round((new Date(v+"T00:00:00")-new Date(iso(new Date(cur))+"T00:00:00"))/864e5);
+ if(!dias){toast("Plano salvo");return}
+ if(alt>=2){toast("Já usou as 2 alterações: só falando com o Criador");return}
+ const novo=cur+dias*864e5,lim=base+5*864e5;
+ if(novo>lim){toast("Passa de 35 dias da entrada. Máximo: "+fd(lim));return}
+ if(novo<Date.now()){toast("Escolha uma data de hoje em diante");return}
+ try{await PA.setVencLoja(x.dono,{venc:novo,admAlt:alt+1,vencBase:base});toast("Vencimento salvo ("+(alt+1)+" de 2 alterações usadas)")}
+ catch(e){console.error(e);toast("Não foi possível salvar ("+(e.code||"erro")+")")}}
+async function susp(id){const x=L.find(y=>y.id==id);if(!x)return;
+ try{await PA.setSusp(x.slug,!x.sus);toast(x.sus?"Loja reativada":"Loja suspensa")}catch(e){console.error(e);toast("Não foi possível alterar ("+(e.code||"erro")+")")}}
 let tab="painel",open=null,ENT={km:1.5,min:6,vel:25,esp:5,raio:10};const $=i=>document.getElementById(i);
 const R$=n=>"R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2});
 const entOn=x=>x.ent!==false&&x.tp!=="agenda";
 const HOJE=new Date("2026-10-27T00:00:00");
 /* estadoPlano: 🟢 Ativa · 🟡 A vencer (até 7 dias) · 🟠 Carência (até 3 dias após vencer) · 🔴 Travada (depois da carência) */
-function estadoPlano(x){const d=Math.round((new Date(x.pl.v+"T00:00:00")-HOJE)/864e5);let r;
- if(d<-3)r={k:"travada",ico:"🔴",cor:"var(--rd)",lbl:"Travada · venceu há "+Math.abs(d)+" dias"};
- else if(d<0)r={k:"carencia",ico:"🟠",cor:"#ff8a3d",lbl:"Carência · venceu há "+Math.abs(d)+" dia(s)"};
- else if(d<=7)r={k:"avencer",ico:"🟡",cor:"var(--yl)",lbl:"A vencer · vence em "+d+" dia(s)"};
- else r={k:"ativa",ico:"🟢",cor:"var(--ok)",lbl:"Ativa · vence em "+d+" dias"};
- if(x.lib&&(r.k=="travada"||r.k=="carencia"))r={k:"ativa",ico:"🟢",cor:"var(--ok)",lbl:"Ativa · liberada pelo ADM (Pix em análise)"};
- return r}
+function estadoPlano(x){if(!x.conta&&x.pend)return{k:"pendente",ico:"⏳",cor:"var(--mu)",lbl:"Aguardando o gerente abrir o link"};if(!x.conta)return{k:"carregando",ico:"⏳",cor:"var(--mu)",lbl:"Carregando plano…"};
+ const e=PA_estado(x.conta,Date.now()),cor={ativa:"var(--ok)",avencer:"var(--yl)",carencia:"#ff8a3d",travada:"var(--rd)"}[e.k];
+ return{k:e.k,ico:e.ico,cor,lbl:e.t}}
 const bdg=x=>{const e=estadoPlano(x);return `<span class="tag" style="border-color:${e.cor};color:${e.cor}">${e.ico} ${e.lbl}</span>`};
 const toast=m=>{const t=$("t");t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",2200)};
 const nm=v=>parseFloat(String(v).replace(",","."))||0;
@@ -67,27 +68,27 @@ function sim(){const d1=nm($("s1").value),d2=nm($("s2").value),E={km:nm($("ekm")
  $("sr").innerHTML=`<b style="font-size:20px">${R$(ganhoKm(d2,E))}</b> de ganho · ${d2.toFixed(1).replace(".",",")} km de entrega<div class="meta">⏱️ ~${tempoMin(d1,d2,E)} min no total: ${Math.round(d1/E.vel*60)} min até a loja + ${E.esp} min na loja + ${Math.round(d2/E.vel*60)} min até o cliente</div>`}
 function salvaEnt(){const k=nm($("ekm").value),m=nm($("emin").value),v=nm($("evel").value);if(k<=0||v<=0){toast("Informe o valor por km e a velocidade média");return}const rm=nm($("erm").value);if(rm<=0){toast("Informe o raio máximo global (km)");return}ENT={km:k,min:m,vel:v,esp:Math.max(0,nm($("eesp").value)),raio:rm};draw();toast("Regra salva: "+R$(k)+" por km · raio máximo "+String(rm).replace(".",",")+" km")}
 const TABS=[["painel","Painel"],["lj","Lojas"],["pix","💠 Pix"],["msg","📨 Mensagens"],["oc","⚠️ Ocorrências"],["eq","Acessos"],["fin","Financeiro"],["cfg","Config"]];
-const cnt=k=>k=="pix"?PIX.filter(p=>p.st=="pend").length:k=="msg"?MSG.filter(m=>!m.lida&&!m.resp).length:k=="oc"?OCO.filter(o=>o.st=="aberta").length:0;
+const cnt=k=>k=="eq"?((window.PA&&PA.rhN)||0):k=="pix"?PIX.filter(p=>p.st=="pend").length:k=="msg"?MSG.filter(m=>!m.lida&&!m.resp).length:k=="oc"?OCm().filter(o=>o.st=="aberta").length:0;
 const tile=(n,l)=>`<div class="tile"><b>${n}</b><span class="meta">${l}</span></div>`;
-function painel(){const C={ativa:0,avencer:0,carencia:0,travada:0};L.forEach(x=>C[estadoPlano(x).k]++);return `<h2>Hoje</h2><div class="grid">${tile(37,"pedidos criados")}${tile(29,"entregues")}${tile(6,"em andamento")}${tile(R$(2184.9),"pago pelos clientes hoje")}${tile(12,"entregadores aprovados")}</div>
+function painel(){const H=L.reduce((a,x)=>({cri:a.cri+x.h.cri,ent:a.ent+x.h.ent,and:a.and+x.h.and,pago:a.pago+x.h.pago}),{cri:0,ent:0,and:0,pago:0});const C={ativa:0,avencer:0,carencia:0,travada:0};L.forEach(x=>{const k=estadoPlano(x).k;if(k in C)C[k]++});return `<h2>Hoje</h2><div class="grid">${tile(H.cri,"pedidos criados")}${tile(H.ent,"entregues")}${tile(H.and,"em andamento")}${tile(R$(H.pago),"pago pelos clientes hoje")}</div>
 <h2 style="margin-top:16px">📄 Planos das lojas</h2><div class="grid">${tile(C.ativa,"🟢 Ativa")}${tile(C.avencer,"🟡 A vencer")}${tile(C.carencia,"🟠 Carência")}${tile(C.travada,"🔴 Travada")}</div>
 <h2 style="margin-top:16px">🚨 Alertas</h2>
-${OCO.filter(o=>o.st=="aberta").map(o=>`<div class="oc al"><b>⚠️ Cliente reportou problema no pedido #${o.ped} da loja ${o.lj}</b><div class="meta">Motivo: ${o.mot}</div><button class="cta b" onclick="go('oc')">Ver ocorrência</button></div>`).join("")}
-<div class="oc al"><b>🔴 Pagamento pendente há 5 min</b><div class="meta">Pedido #4830 · Lanchonete do Zé · a loja já recebeu 2 avisos e o sistema escalou para você. Aos 10 min o pedido é cancelado e cliente e loja são avisados.</div></div>
+${OCm().filter(o=>o.st=="aberta").map(o=>`<div class="oc al"><b>⚠️ Cliente reportou problema no pedido #${o.ped} da loja ${nmS(o.lj)}</b><div class="meta">Motivo: ${o.mot}</div><button class="cta b" onclick="go('oc')">Ver ocorrência</button></div>`).join("")}
 <div class="oc"><b>Limite diário</b><div class="meta">Cada loja: até 15 pedidos por dia. Renova às 00:01.</div></div>`}
 function lj(){if(open)return det(L.find(x=>x.id==open));const sus=L.filter(x=>x.sus).length;
 return `<h2>🏪 Lojas</h2><div class="grid">${tile(L.length,"lojas no sistema")}${tile(L.length-sus,"ativas")}${tile(sus,"suspensas")}${tile(L.filter(entOn).length,"com entrega ligada")}</div>
-<details class="oc"><summary>➕ Criar loja</summary><div class="meta" style="margin:8px 0">Escolha o modelo da loja.</div><input placeholder="Nome da loja"><div class="meta" style="margin-top:6px">Modelo da loja</div><select><option>Produtos — lanchonete, farmácia, construção</option><option>Agendamento — salão de beleza (sem entrega)</option></select><button class="cta" onclick="toast('Exemplo: nada foi criado')">Criar loja</button></details>
+<div class="oc"><b>➕ Trazer uma loja</b><div class="meta" style="margin:6px 0">A loja agora é criada por você: toque em <b>👥 RH</b> na barra de cima → <b>Nova loja</b>, escolha o plano e envie o link de Gerente.</div><button class="cta" onclick="PA_RH.adm()">👥 Abrir RH e criar loja</button></div>
 <div class="meta" style="margin:10px 0 4px">Toque numa loja para abrir as configurações dela.</div>
-${L.map(x=>`<button class="card" onclick="open=${x.id};draw()"><div style="flex:1"><div class="row"><b>${x.n}</b>${x.sus?`<span class="tag" style="color:var(--rd)">Suspensa</span>`:""}</div><div class="meta">${x.tp=="agenda"?"📅 Agendamento":"🛍️ Produtos"} · ${entOn(x)?"🛵 entrega ligada":"🏪 só retirada"}</div><div style="margin-top:6px">${bdg(x)}</div></div>›</button>`).join("")}`}
+${LERR?`<div class="oc al"><b>Não foi possível carregar as suas lojas</b><div class="meta">${LERR} — confira se as regras do Firestore foram publicadas.</div></div>`:!LOADED?`<div class="meta">Carregando suas lojas…</div>`:!L.length?`<div class="oc"><div class="meta">Nenhuma loja ainda. Crie uma em 👥 RH → Nova loja.</div></div>`:""}${L.map(x=>`<button class="card" onclick="open=${x.id};draw()"><div style="flex:1"><div class="row"><b>${x.n}</b>${x.sus?`<span class="tag" style="color:var(--rd)">Suspensa</span>`:""}</div><div class="meta">${x.tp=="agenda"?"📅 Agendamento":"🛍️ Produtos"} · ${entOn(x)?"🛵 entrega ligada":"🏪 só retirada"}</div><div style="margin-top:6px">${bdg(x)}</div></div>›</button>`).join("")}`}
 function det(x){const on=entOn(x),ag=x.tp=="agenda";return `<button class="back" onclick="open=null;draw()">‹ Todas as lojas</button>
-<div class="oc"><div class="row"><b style="font-size:19px">${x.n}</b>${x.sus?`<span class="tag" style="color:var(--rd)">Suspensa</span>`:""}</div><div class="meta">${ag?"📅 Modelo Agendamento":"🛍️ Modelo Produtos"} · ${x.ped} pedidos · ${R$(x.fat)}</div><div style="margin-top:8px">${bdg(x)}</div></div>
-<div class="oc ${on?'':'sw'}"><b>🛵 Habilitar Serviço de Entrega</b><div class="meta" style="margin:4px 0 8px">${ag?"Loja de Agendamento não usa entrega.":on?"LIGADO: a loja vê a entrega e o cliente escolhe entrega.":"DESLIGADO: a loja não vê a entrega e o cliente só vê Retirada na loja."}</div><button class="cta ${on?'o':''}" ${ag?'disabled style="opacity:.5"':''} onclick="sw(${x.id})">${on?"Desligar entrega desta loja":"Ligar entrega desta loja"}</button></div>
-<div class="oc"><b>📄 Plano e vencimento</b><div class="meta" style="margin-top:6px">${PLN[x.pl.t]} · vence ${x.pl.v.split("-").reverse().join("/")}</div><select><option>${PLN[x.pl.t]}</option></select><input id="pv${x.id}" type="date" value="${x.pl.v}"><div class="meta" style="margin-top:6px">Só o ADM escolhe a data. Não pode passar de 35 dias da entrada e só pode mudar 2 vezes (usadas: ${x.alt||0}). Acima disso, só falando com o Criador. Os ciclos seguintes mantêm a mesma data.</div><button class="cta b" onclick="salvaPlano(${x.id})">Salvar plano</button></div>
-<button class="cta ${x.sus?'':'o'}" onclick="x_=L.find(y=>y.id==${x.id});x_.sus=!x_.sus;draw();toast(x_.sus?'Loja suspensa':'Loja reativada')">${x.sus?"Reativar loja":"Suspender loja"}</button>
-<div class="oc" style="margin-top:12px"><b>Como o cliente vê esta loja</b><div class="meta">${on?"Entrega grátis · escolhe endereço":"🏪 Só retirada na loja · sem taxa e sem endereço"}</div></div>`}
-function eq(){return `<h2>🔑 Acessos</h2><div class="meta">Funcionários das lojas. A administração autoriza e revoga.</div>${ACC.map((a,i)=>`<div class="oc"><div class="row"><b>${a[0]}</b><span class="tag" style="${a[2]=='pendente'?'color:var(--yl)':'color:var(--ok)'}">${a[2]}</span></div><div class="meta">${a[1]}</div>${a[2]=='pendente'?`<button class="cta" onclick="ACC[${i}][2]='autorizado';draw();toast('Acesso autorizado')">Autorizar</button>`:`<button class="cta o" onclick="ACC[${i}][2]='pendente';draw();toast('Acesso revogado')">Revogar</button>`}</div>`).join("")}`}
-function fin(){return `<h2>💰 Financeiro</h2><div class="grid">${tile(R$(44940.5),"faturado (30 dias)")}${ENTG?tile(R$(11640),"repasse aos entregadores"):""}</div><button class="cta b" onclick="bk=true;go('cfg')">⬇ Relatório do contador (PDF)</button>
+<div class="oc"><div class="row"><b style="font-size:19px">${x.n}</b>${x.sus?`<span class="tag" style="color:var(--rd)">Suspensa</span>`:""}</div><div class="meta">${ag?"📅 Modelo Agendamento":"🛍️ Modelo Produtos"} · ${x.ped} pedidos · ${R$(x.fat)} faturados</div><div style="margin-top:8px">${bdg(x)}</div></div>
+<div class="oc"><b>🛵 Serviço de Entrega</b><div class="meta" style="margin:4px 0 0">${ag?"Loja de Agendamento não usa entrega.":on?"LIGADO pela loja: o cliente pode escolher entrega.":"DESLIGADO pela loja: o cliente só vê Retirada na loja."}</div></div>
+<div class="oc"><b>📄 Plano e vencimento</b><div class="meta" style="margin-top:6px">Plano ${(PA_PLANOS[x.plano]||{}).n||""} · ${x.conta?"vence "+fd(PA_estado(x.conta,Date.now()).v):"carregando…"}</div><input id="pv${x.id}" type="date" value="${x.conta?iso(new Date(PA_estado(x.conta,Date.now()).v)):""}"><div class="meta" style="margin-top:6px">Só o ADM escolhe a data. Não pode passar de 35 dias da entrada e só pode mudar 2 vezes (usadas: ${x.conta&&x.conta.admAlt||0}). Acima disso, só falando com o Criador. Os ciclos seguintes mantêm a mesma data.</div><button class="cta b" onclick="salvaPlano(${x.id})">Salvar plano</button></div>
+<button class="cta ${x.sus?'':'o'}" onclick="susp(${x.id})">${x.sus?"Reativar loja":"Suspender loja"}</button>
+<div class="oc" style="margin-top:12px"><b>Como o cliente vê esta loja</b><div class="meta">${x.sus?"⛔ Loja suspensa: o cliente não consegue pedir":on?"Entrega grátis · escolhe endereço":"🏪 Só retirada na loja · sem taxa e sem endereço"}</div></div>`}
+function eq(){return `<h2>🔑 Acessos</h2><div class="oc"><div class="meta">Funcionários cadastrados pelos Gerentes aguardam a sua autorização. Você escolhe o cargo e libera.</div><b style="font-size:20px">${(window.PA&&PA.rhN)||0} aguardando</b><button class="cta" onclick="PA_RH.adm()">👥 Abrir RH (autorizar, cargos, folha)</button></div>`}
+function fin(){return `<h2>💰 Financeiro</h2><div class="grid">${tile(R$(L.reduce((s,x)=>s+x.fat30,0)),"faturado (30 dias)")}${tile(R$(L.reduce((s,x)=>s+x.fat,0)),"faturado (total)")}</div>
+<div class="oc"><b>Por loja</b><table><tr><th>Loja</th><th>30 dias</th><th>Total</th></tr>${L.map(x=>`<tr><td>${x.n}${x.sus?" ⛔":""}</td><td>${R$(x.fat30)}</td><td>${R$(x.fat)}</td></tr>`).join("")||`<tr><td colspan="3" class="meta">Nenhuma loja ainda.</td></tr>`}</table><div class="meta" style="margin-top:6px">Só pedidos entregues ou retirados.</div></div><button class="cta b" onclick="bk=true;go('cfg')">⬇ Relatório do contador (PDF)</button>
 <div class="oc"><b>💠 Chave Pix</b><input placeholder="Chave Pix" value="chave-exemplo@pix"><input placeholder="Nome do recebedor" value="Cooperativa Exemplo"><input placeholder="Cidade" value="Vitória"><button class="cta" onclick="toast('Exemplo: Pix salvo')">Salvar Pix</button></div>
 <div class="oc"><b>↩️ Reembolsos</b><div class="meta">Em desenvolvimento: ainda não existe no app real (só neste exemplo).</div></div>`}
 function cfg(){return `<h2>⚙️ Config</h2><div class="oc"><b>🛵 Entregas</b><div class="meta" style="margin:4px 0 8px">${ENTG?"LIGADO: os ganhos por entrega aparecem abaixo e no Financeiro.":"DESLIGADO: ganhos por entrega e repasse aos entregadores ficam escondidos. Ligue para abrir."}</div><button class="cta ${ENTG?"o":"g"}" onclick="ENTG=!ENTG;draw();toast(ENTG?'Entregas ligadas':'Entregas desligadas')">${ENTG?"Desligar entregas":"Ligar entregas"}</button></div><div class="oc"><b style="color:var(--mu)">🛍️ Marketplace</b><div class="meta" style="margin:4px 0">Desligado</div><div class="meta">Quem liga ou desliga é o Criador.</div></div><div class="oc"><b>👤 Cadastro da administração</b><input placeholder="Nome" value="Edinaldo (exemplo)"><input placeholder="E-mail" value="adm@exemplo.com"><input placeholder="WhatsApp" value="27 99999-0000"><button class="cta" onclick="toast('Exemplo: cadastro salvo')">Salvar cadastro</button></div>
@@ -103,13 +104,15 @@ ${ENTG?`<div class="oc"><b>🛵 Ganho do entregador por distância</b><div class
 <div class="row" style="gap:8px"><div style="flex:1"><div class="meta">Entregador → loja (km)</div><input id="s1" inputmode="decimal" value="1,5" oninput="sim()"></div><div style="flex:1"><div class="meta">Loja → cliente (km)</div><input id="s2" inputmode="decimal" value="4,0" oninput="sim()"></div></div>
 <div class="oc" id="sr" style="margin-bottom:0"></div></div>`:""}
 <div class="oc"><b>💾 Backup</b><div class="meta">Relatório completo da empresa (balanço detalhado), em PDF.</div><button class="cta b" onclick="bk=!bk;draw()">Gerar backup</button>${bk?`<div class="meta" style="margin-top:8px"><b>Relatório gerado · PDF</b></div><button class="cta b" onclick="toast('Exemplo: abriria o PDF')">👁️ Visualizar</button><button class="cta b" onclick="toast('Exemplo: abriria a impressão')">🖨️ Imprimir</button><button class="cta b" onclick="toast('Exemplo: PDF salvo neste aparelho')">💾 Salvar em PDF</button><button class="cta b" onclick="toast('Exemplo: abriria o compartilhar do aparelho')">📤 Compartilhar</button><button class="cta" onclick="toast('Exemplo: PDF enviado ao contador')">📧 Enviar ao contador</button>`:""}</div>
-<div class="oc"><b>🤝 Indicação Comissionada</b><div class="meta" style="margin:4px 0">Indique lojas com o seu link. Ele é único, já vem pronto e só precisa ser copiado. Comissão de 1 nível, só sobre pagamento efetivo, repassada no ato do pagamento da loja. No período grátis ninguém recebe.</div><div class="meta">Terceiro: Por uso R$ 0,50/pedido por 3 meses · Mensal 100% do 1º mês · Anual 20% do total. Autoindicação: Por uso R$ 0,50/pedido · Mensal 50% · Anual 20%.</div><div class="oc" style="margin-bottom:0"><b style="word-break:break-all;font-size:16px">https://meudelivery-six.vercel.app/#indica=ADM-0001</b></div><button class="cta" onclick="try{navigator.clipboard.writeText('https://meudelivery-six.vercel.app/#indica=ADM-0001')}catch(e){};toast('Link de indicação copiado')">Copiar link</button></div>
+<div class="oc"><b>🤝 Indicação Comissionada</b><div class="meta" style="margin:4px 0">Para trazer uma loja use 👥 RH → Nova loja (o link de Gerente já leva o seu vínculo). O código abaixo identifica você nas indicações. Comissão de 1 nível, só sobre pagamento efetivo, repassada no ato do pagamento da loja. No período grátis ninguém recebe.</div><div class="meta">Terceiro: Por uso R$ 0,50/pedido por 3 meses · Mensal 100% do 1º mês · Anual 20% do total. Autoindicação: Por uso R$ 0,50/pedido · Mensal 50% · Anual 20%.</div><div class="oc" style="margin-bottom:0"><div class="meta">Seu código</div><b style="font-size:20px">${MYCODE||"gerando…"}</b></div><button class="cta" onclick="copiaAdm('cod')">Copiar código</button></div>
 <div class="oc"><b>🔔 Notificações sonoras</b><div class="meta" style="margin:4px 0">💰 “Plim plim” quando o pagamento é confirmado. ⚠️ Alerta (som diferente) em atraso ou carência. Tocam no ADM e no Criador.</div><div style="display:flex;gap:8px"><button class="cta b" onclick="som('plim');toast('💰 Pagamento confirmado')">Testar plim plim</button><button class="cta b" onclick="som('alerta');toast('⚠️ Atraso / carência')">Testar alerta</button></div></div>
 <div class="oc"><b>📋 Regras de cobrança</b><div class="meta" style="margin-top:4px">7 dias grátis dentro dos 30 (não somam); cancela sem pagar até o dia 7; 1º pagamento no dia 30. Quem cancela e volta paga desde o início. Carência de 3 dias após o vencimento, com 3 a 4 avisos por dia. Depois dela a loja para só de pedidos novos: pode mexer no estoque e acessar o painel, e só volta a vender pagando. Troca de plano: pagamento integral na hora, sem crédito do período não usado, dados preservados.</div></div>
 <div style="text-align:center;margin-top:18px"><button style="background:none;border:0;color:var(--mu);font:inherit;font-size:14.5px;text-decoration:underline" onclick="fc=!fc;draw()">Falar com o Criador / Desenvolvedor</button></div>${fc?`<div class="oc"><b>Mensagem ao Criador</b><input id="fcm" placeholder="Escreva sua mensagem"><button class="cta" onclick="if(!$('fcm').value.trim()){toast('Escreva a mensagem');return}fc=false;draw();toast('Mensagem enviada ao Criador (dentro do app)')">Enviar</button></div>`:""}`}
 /* ---------- PIX EM 2 ETAPAS ---------- */
+const ADMLINK=()=>(/^https?:/.test(location.origin)?location.origin:"https://pedeakibrasil.vercel.app")+"/lojista.html?adm="+encodeURIComponent(MYCODE||"");
+function copiaAdm(k){if(!MYCODE){toast("Seu código ainda está sendo gerado");return}PA_copia(k=="cod"?MYCODE:ADMLINK())}
 const CHAVE_CRIADOR="criador@pedeai.exemplo";
-let PIX=[{id:1,lj:3,v:200,pl:"Mensal",st:"pend"},{id:2,lj:5,v:200,pl:"Mensal",st:"pend"},{id:3,lj:4,v:200,pl:"Mensal",st:"analise",por:"Lia Souza"}];
+let PIX=[];
 const lojaNome=id=>(L.find(x=>x.id==id)||{}).n;
 function pix(){const pe=PIX.filter(p=>p.st=="pend"),an=PIX.filter(p=>p.st=="analise"),ok=PIX.filter(p=>p.st=="ok");
  return `<h2>💠 Pix</h2><div class="meta">Pagamento em 2 etapas: o ADM confere o Pix e confirma, e a loja é liberada na hora. O Pix fica “Em análise” até o Criador bater o martelo.</div>
@@ -127,8 +130,8 @@ function enviaResp(id){const t=$("rpm").value.trim();if(!t){toast("Escreva a res
 function repassaMsg(id){const m=MSG.find(x=>x.id==id);m.rep=true;m.lida=true;draw();toast("Mensagem repassada ao Criador")}
 /* ---------- OCORRENCIAS (problemas reportados por clientes) ---------- */
 let OCO=[{id:1,ped:4826,lj:"Lanchonete do Zé",cli:"Marcos T.",mot:"Não chegou",txt:"Pedi há mais de 1 hora e o pedido não chegou.",st:"aberta",rep:false},{id:2,ped:4825,lj:"Farmácia Vida",cli:"Ana P.",mot:"Pedido errado",txt:"Veio um medicamento diferente do que eu pedi.",st:"aberta",rep:false},{id:3,ped:4801,lj:"Depósito Construir",cli:"Caio B.",mot:"Loja não responde",txt:"Tentei falar com a loja e ninguém respondeu.",st:"resolvida",rep:false}];
-function oc(){const ab=OCO.filter(o=>o.st=="aberta"),rs=OCO.filter(o=>o.st!="aberta");
- const card=o=>`<div class="oc ${o.st=="aberta"?"al":""}"><div class="row"><b>Pedido #${o.ped} · ${o.lj}</b><span class="tag" style="${o.st=="aberta"?"color:var(--rd);border-color:var(--rd)":"color:var(--ok);border-color:var(--ok)"}">${o.st=="aberta"?"Aberta":"Resolvida"}</span></div><div class="meta">Cliente: ${o.cli} · Motivo: <b style="color:var(--tx)">${o.mot}</b></div><div style="margin:6px 0">“${o.txt}”</div>${o.rep?`<div class="meta" style="color:var(--yl)">📤 Repassada ao Criador</div>`:""}${o.st=="aberta"?`<button class="cta b" onclick="toast('Exemplo: abre o chat com ${o.lj}')">💬 Falar com a loja</button>${o.rep?"":`<button class="cta b" onclick="repassaOc(${o.id})">📤 Repassar ao Criador</button>`}<button class="cta" onclick="resolveOc(${o.id})">✅ Marcar como resolvida</button>`:""}</div>`;
+function oc(){const ab=OCm().filter(o=>o.st=="aberta"),rs=OCm().filter(o=>o.st!="aberta");
+ const card=o=>`<div class="oc ${o.st=="aberta"?"al":""}"><div class="row"><b>Pedido #${o.ped} · ${nmS(o.lj)}</b><span class="tag" style="${o.st=="aberta"?"color:var(--rd);border-color:var(--rd)":"color:var(--ok);border-color:var(--ok)"}">${o.st=="aberta"?"Aberta":"Resolvida"}</span></div><div class="meta">Cliente: ${o.cli} · Motivo: <b style="color:var(--tx)">${o.mot}</b></div><div style="margin:6px 0">“${o.txt}”</div>${o.rep?`<div class="meta" style="color:var(--yl)">📤 Repassada ao Criador</div>`:""}${o.st=="aberta"?`<button class="cta b" onclick="toast('Exemplo: abre o chat com ${nmS(o.lj)}')">💬 Falar com a loja</button>${o.rep?"":`<button class="cta b" onclick="repassaOc(${o.id})">📤 Repassar ao Criador</button>`}<button class="cta" onclick="resolveOc(${o.id})">✅ Marcar como resolvida</button>`:""}</div>`;
  return `<h2>⚠️ Ocorrências</h2><div class="meta">Problemas reportados por clientes nos pedidos.</div>${ab.map(card).join("")||`<div class="oc"><div class="meta">Nenhuma ocorrência aberta.</div></div>`}${rs.length?`<h2>Resolvidas</h2>`+rs.map(card).join(""):""}`}
 function repassaOc(id){OCO.find(o=>o.id==id).rep=true;draw();toast("Ocorrência repassada ao Criador")}
 function resolveOc(id){OCO.find(o=>o.id==id).st="resolvida";draw();toast("Ocorrência marcada como resolvida")}
@@ -148,9 +151,9 @@ window.baixarApp=async function(){if(dp){dp.prompt();const r=await dp.userChoice
  if(location.protocol=="file:"){inst=true;show();toast("Exemplo: instalaria o app e o botão some");return}
  toast("No menu do navegador, toque em “Instalar app” ou “Adicionar à tela inicial”")};
 show()})();
-</script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
+</script><script>window.PA_PAPEL="adm"</script><script src="conta.js"></script><script src="rh.js"></script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
 (function(){
-const CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
+const _h=location.hostname,CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:/\.vercel\.app$/.test(_h)?location.host:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
 const PA=window.PA={ready:false,online:false,_q:[],_status(on,msg){PA.online=on;const b=document.getElementById("pa-st");if(b){b.textContent=on?"● Online · sincronizado":"○ "+(msg||"Sem conexão · modo local");b.style.color=on?"#22a559":"#e0a800"}},
  whenReady(f){PA.ready?f():PA._q.push(f)}};
 /* ids de pedido: contador no Firestore (transação) */
@@ -161,8 +164,8 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);
  const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
- await H.signInAnonymously(au);
- PA.uid=au.currentUser.uid;
+ await PA_login(H,au);
+ PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
  PA.nextId=async()=>{const r=F.doc(db,"meta","contador");return F.runTransaction(db,async t=>{const s=await t.get(r);const n=(s.exists()?s.data().n:5000)+1;t.set(r,{n});return n})};
  const cl=o=>JSON.parse(JSON.stringify(o));
  PA.setPedido=(id,patch)=>F.setDoc(F.doc(db,"pedidos",String(id)),{...cl(patch),id:Number(id),atualizadoEm:Date.now()},{merge:true});
@@ -175,6 +178,10 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
  PA.setLojaCfg=(slug,d)=>F.setDoc(F.doc(db,"lojas",slug),{...cl(d),atualizadoEm:Date.now()},{merge:true});
  PA.watchLojaCfg=(slug,cb)=>F.onSnapshot(F.doc(db,"lojas",slug),s=>cb(s.exists()?s.data():null));
+ PA.watchLojasAdm=(cb)=>F.onSnapshot(F.query(F.collection(db,"lojas"),F.where("admId","==",au.currentUser.uid)),s=>cb(s.docs.map(d=>({slug:d.id,...d.data()})),null),e=>cb(null,e));
+ PA.watchContaLoja=(uid,cb)=>F.onSnapshot(F.doc(db,"contas",uid+"_lojista"),s=>cb(s.exists()?s.data():null),e=>{console.error(e);cb(null)});
+ PA.setSusp=(slug,on)=>F.setDoc(F.doc(db,"lojas",slug),{suspensa:!!on,suspEm:Date.now()},{merge:true});
+ PA.setVencLoja=(uid,patch)=>F.setDoc(F.doc(db,"contas",uid+"_lojista"),patch,{merge:true});
  PA.ready=true;PA._status(true);PA._q.splice(0).forEach(f=>f());
 }catch(e){console.error("Firebase:",e);PA._status(false,"Sem conexão · modo local")}})();
 })();
@@ -195,9 +202,42 @@ function push(){if(!PA.ready)return;
   if(Object.keys(df).length){Object.assign(prev,df);PA.setOco(o.id,df).catch(e=>console.error(e))}})}
 PA.whenReady(()=>PA.watchOco(docs=>{let ch=false,novas=0;
  docs.forEach(d=>{const prev=RO[d.id];if(prev&&sj(prev)===sj(d))return;ch=true;RO[d.id]=JSON.parse(sj(d));
-  const i=OCO.findIndex(o=>o.id==d.id);if(i<0){OCO.push({...d});if(!prim&&d.st=="aberta")novas++}else Object.assign(OCO[i],d)});
+  const i=OCO.findIndex(o=>o.id==d.id);if(i<0){OCO.push({...d});if(!prim&&d.st=="aberta"&&MYS.has(d.lj))novas++}else Object.assign(OCO[i],d)});
  OCO.sort((a,b)=>(b.criadoEm||b.id)-(a.criadoEm||a.id));
  if(novas){PA_beep();toast("⚠️ Nova ocorrência de cliente")}
  prim=false;if(ch)_d()}));
+})();
+</script><script>/* ===== ADM: lojas reais (vinculadas pelo código do ADM) ===== */
+(function(){
+const FIN=["entregue","retirado"],DIA=864e5;
+let ARR=[];const PEDS={},CONT={},uP={},uC={};
+function stats(os){const ini=new Date();ini.setHours(0,0,0,0);const i0=ini.getTime(),d30=Date.now()-30*DIA,h={cri:0,ent:0,and:0,pago:0};let fat=0,fat30=0;
+ os.forEach(o=>{const fim=FIN.includes(o.st),v=Number(o.v)||0,t=o.criadoEm||0;
+  if(fim){fat+=v;if((o.entregueEm||t)>=d30)fat30+=v}
+  if(t>=i0){h.cri++;if(fim){h.ent++;h.pago+=v}else if(!["cancelado","cancelado_cli"].includes(o.st))h.and++}});
+ return{ped:os.length,fat,fat30,h}}
+function rebuild(){
+ L.length=0;MYS.clear();
+ ARR.forEach(c=>{MYS.add(c.slug);const s=stats(PEDS[c.slug]||[]);
+  L.push({id:nid(c.slug),slug:c.slug,dono:c.dono,n:c.nome||c.slug,tp:"prod",ent:c.ent,sus:c.suspensa===true,pend:c.pendente===true,plano:c.plano||"iniciante",conta:CONT[c.dono]||null,...s})});
+ L.sort((a,b)=>a.n.localeCompare(b.n,"pt-BR"));
+ if(typeof open!=="undefined"&&open!=null&&!L.find(x=>x.id==open))open=null;
+ redesenha()}
+/* não apaga o que o ADM está digitando (ex.: data de vencimento): redesenha quando ele sair do campo */
+let pend=false;
+function digitando(){const a=document.activeElement;return !!a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)&&$("v").contains(a)}
+function redesenha(){if(digitando()){if(!pend){pend=true;document.addEventListener("focusout",()=>setTimeout(()=>{pend=false;if(!digitando())draw()},150),{once:true})}return}draw()}
+function sync(arr){ARR=arr;
+ const slugs=new Set(arr.map(c=>c.slug)),donos=new Set(arr.map(c=>c.dono).filter(Boolean));
+ Object.keys(uP).forEach(s=>{if(!slugs.has(s)){uP[s]();delete uP[s];delete PEDS[s]}});
+ Object.keys(uC).forEach(u=>{if(!donos.has(u)){uC[u]();delete uC[u];delete CONT[u]}});
+ slugs.forEach(s=>{if(!uP[s])uP[s]=PA.watchLoja(s,docs=>{PEDS[s]=docs;rebuild()})});
+ donos.forEach(u=>{if(!uC[u])uC[u]=PA.watchContaLoja(u,c=>{CONT[u]=c;rebuild()})});
+ rebuild()}
+PA.whenReady(()=>{
+ MYCODE=PA.admCodigo||null;
+ const n=PA.user&&(PA.user.displayName||PA.user.email);if(n)$("topn").textContent="Administração · "+n;
+ PA.watchLojasAdm((arr,err)=>{LOADED=true;if(err){console.error(err);LERR=err.code||err.message;L.length=0;draw();return}LERR=null;sync(arr)})});
+setInterval(()=>{if(L.length)redesenha()},60000);
 })();
 </script><script>if("serviceWorker"in navigator&&location.protocol!="file:")navigator.serviceWorker.register("sw.js").catch(function(){})</script></body></html>

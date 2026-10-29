@@ -1,35 +1,6 @@
 {
-  "headers": [
-    {
-      "source": "/downloads/PedeAi.apk",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/vnd.android.package-archive"
-        },
-        {
-          "key": "Content-Disposition",
-          "value": "attachment; filename=\"PedeAi.apk\""
-        }
-      ]
-    },
-    {
-      "source": "/sw.js",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache"
-        }
-      ]
-    },
-    {
-      "source": "/.well-known/assetlinks.json",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/json"
-        }
-      ]
-    }
+  "rewrites": [
+    { "source": "/__/auth/:path*", "destination": "https://delivery-67d14.firebaseapp.com/__/auth/:path*" },
+    { "source": "/__/firebase/init.json", "destination": "https://delivery-67d14.firebaseapp.com/__/firebase/init.json" }
   ]
 }

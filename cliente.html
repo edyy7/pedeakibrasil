@@ -72,7 +72,7 @@ ${ag.dia&&ag.hr?`<div class="oc"><b>Resumo</b><div class="meta">${p[0]} · ${brd
 function agConf(){const a=AG[AG.length-1];return `<div class="panel"><b style="font-size:20px">✅ Agendamento confirmado</b><div class="oc" style="border-color:var(--ok)"><b>${a.serv}</b><div class="meta">${a.loja}</div><div class="meta" style="color:var(--tx);font-weight:800">${brd(a.dia)} às ${a.hr} · ${R$(a.v)}</div></div><div class="meta">A loja foi avisada. Você pode ver ou cancelar em Meus agendamentos.</div><button class="cta c" onclick="sh='mag';draw()">Ir para Meus agendamentos</button><button class="cta b c" onclick="sh=null;ag=null;draw()">Voltar aos serviços</button></div>`}
 function agMeus(){return `<div class="panel"><b style="font-size:20px">📅 Meus agendamentos</b>${AG.map(a=>`<div class="oc"><div class="row"><b>${a.serv}</b><span class="tag" style="color:var(--ok)">Confirmado</span></div><div class="meta">${a.loja}</div><div class="meta" style="color:var(--tx);font-weight:800">${brd(a.dia)} às ${a.hr} · ${R$(a.v)}</div><button class="cta o c" onclick="agCancela(${a.id})">Cancelar agendamento</button></div>`).join("")||`<div class="meta" style="margin:8px 0">Você ainda não tem agendamentos.</div>`}<button class="cta c" onclick="sh=null;ag=null;draw()">Voltar aos serviços</button></div>`}
 /* AUT = o que o ADM autoriza para esta loja */
-let AUT="ambas",taxa=false,cart=[],sh=null,pg="din",troco="",tipo="ent",pedido=null,st=0,asn="Lariquinha",vr="",pq=0,pnome="";
+let TS=0,AUT="ambas",taxa=false,cart=[],sh=null,pg="din",troco="",tipo="ent",pedido=null,st=0,asn="Lariquinha",vr="",pq=0,pnome="";
 const TAXA=5;
 /* Fora do raio: KMC = distância do cliente até a loja · RAIO = limite da loja · TX = taxa extra que a loja define ao aceitar · xs: 0 nada · 1 perguntou · 2 loja aceitou · 3 loja recusou */
 let fora=false,xs=0;const KMC=7.4,RAIO=5,TX=4;
@@ -96,12 +96,12 @@ const LBR=["Pedido enviado à loja","Loja aceitou e está preparando","Pronto pa
 function home(){const fin=pedido&&(pedido.tipo=="ret"?st>=3:st>=5)?`<button class="card" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ok)">✅</div><div><b>Pedido #${pedido.id} · ${pedido.tipo=="ret"?"Retirado":"Entregue"}</b><div class="meta">Ver detalhes ou reportar um problema</div></div></button>`:"";const trk=pedido&&(pedido.tipo=="ret"?st<3:st<5)?`<button class="card" style="border-color:var(--ac)" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ac)">${pedido.tipo=="ret"?"🏪":"🛵"}</div><div><b>Acompanhar pedido #${pedido.id}</b><div class="meta">${(pedido.tipo=="ret"?LBR:LB)[st]}</div></div></button>`:"";if(MKT&&!cur)return trk+fin+mercado();return (MKT?`<button class="back" onclick="cur=null;X=X0;cart=[];draw()">‹ Marketplace</button>`:"")+trk+fin+pontoLoja()+(X.tp=="agenda"?agenda():cardapio())}
 const sub=()=>cart.reduce((t,i)=>t+i.p,0);
 function sacola(){const m={};cart.forEach(i=>{m[i.n]=m[i.n]||{...i,q:0};m[i.n].q++});const it=Object.values(m),tt=sub();
- if(!ent())tipo="ret";const fr=tipo=="ent"&&taxa?TAXA:0,blk=tipo=="ent"&&fora&&xs!=2,ex=tipo=="ent"&&fora&&xs==2?TX:0,tot=tt+fr+ex;
+ if(!ent())tipo="ret";const fr=tipo=="ent"&&taxa?TAXA:0,blk=tipo=="ent"&&fora&&xs!=2,ex=tipo=="ent"&&fora&&xs==2?TX:0,tot=tt+fr+ex+TS;
  const opc=nada()?`<div class="oc" style="border-color:var(--rd)"><b>Sem forma de recebimento disponível</b><div class="meta">Esta loja não tem entrega nem retirada liberadas. Não é possível finalizar o pedido.</div></div>`:
  `<div class="meta" style="margin-top:12px;font-weight:800">Como receber</div><div class="seg">${ent()?`<button class="${tipo=="ent"?"on":""}" onclick="tipo='ent';draw()">🛵 Entrega</button>`:""}<button class="${tipo=="ret"?"on":""}" onclick="tipo='ret';draw()">🏪 Retirar na loja</button></div>`+
  (!ent()?`<div class="oc" style="border-color:var(--yl)"><b>⚠️ Esta loja não faz entrega.</b><div class="meta" style="color:var(--tx)">Você deverá ir até a loja para retirar seu pedido.</div></div>`:tipo=="ent"?`<div class="meta">Entregar em: Rua das Flores, 120 · Jardim da Penha</div><button class="cta b c" onclick="toast('Exemplo: usaria o GPS do aparelho')">📍 Usar minha localização atual</button>${fora?foraBox():""}`:`<div class="meta">Você vai até a loja e informa o número do pedido para retirar.</div>`);
- return `<div class="panel"><b style="font-size:20px">Sua sacola · ${X.n}</b>${it.map(i=>{const pr=X.m.find(m=>m[0]==i.n);return `<div class="line" style="align-items:center"><span style="display:flex;gap:10px;align-items:center">${pr?foto(pr,40):""}${i.q}x ${i.n}</span><b>${R$(i.p*i.q)}</b></div>`}).join("")}${opc}<div class="meta" style="margin-top:12px;font-weight:800">Pagamento</div><div class="seg"><button class="${pg=="din"?"on":""}" onclick="pg='din';draw()">💵 Dinheiro</button><button class="${pg=="pix"?"on":""}" onclick="pg='pix';draw()">💠 Pix</button><button class="${pg=="car"?"on":""}" onclick="pg='car';draw()">💳 ${tipo=="ret"?"Na loja":"Na entrega"}</button></div>${pg=="din"&&tipo=="ent"?`<input inputmode="decimal" placeholder="Troco para quanto? (opcional)" value="${troco}" oninput="troco=this.value">`:""}<div class="line" style="margin-top:12px"><span>Subtotal</span><b>${R$(tt)}</b></div>${tipo=="ent"?`<div class="line"><span>Taxa de entrega</span><b class="${fr?"":"free"}">${fr?R$(fr):"Grátis"}</b></div>`:""}${ex?`<div class="line"><span>Taxa extra (fora do raio)</span><b>${R$(ex)}</b></div>`:""}<div class="line"><b>Total</b><b>${R$(tot)}</b></div><button class="cta" ${nada()||blk?"disabled":""} onclick="fazer()"><span>${tipo=="ret"?"Fazer pedido para retirada":"Fazer pedido"}</span><span>${R$(tot)}</span></button><button class="cta b c" onclick="cart=[];sh=null;draw()">Esvaziar sacola</button><button class="cta b c" onclick="sh=null;draw()">Voltar ao cardápio</button></div>`}
-function fazer(){if(!cart.length||nada())return;if(tipo=="ent"&&fora&&xs!=2){toast("Fora do raio: pergunte à loja se entrega no seu endereço");return}const fr=tipo=="ent"&&taxa?TAXA:0,ex=tipo=="ent"&&fora&&xs==2?TX:0;pedido={id:window.__nid||4833,tt:sub()+fr+ex,tipo,pg,codRet:String(1000+Math.floor(Math.random()*9000)),codEnt:String(1000+Math.floor(Math.random()*9000))};cart=[];st=0;pq=0;pnome="";sh="trk";draw();toast("Pedido enviado!")}
+ return `<div class="panel"><b style="font-size:20px">Sua sacola · ${X.n}</b>${it.map(i=>{const pr=X.m.find(m=>m[0]==i.n);return `<div class="line" style="align-items:center"><span style="display:flex;gap:10px;align-items:center">${pr?foto(pr,40):""}${i.q}x ${i.n}</span><b>${R$(i.p*i.q)}</b></div>`}).join("")}${opc}<div class="meta" style="margin-top:12px;font-weight:800">Pagamento</div><div class="seg"><button class="${pg=="din"?"on":""}" onclick="pg='din';draw()">💵 Dinheiro</button><button class="${pg=="pix"?"on":""}" onclick="pg='pix';draw()">💠 Pix</button><button class="${pg=="car"?"on":""}" onclick="pg='car';draw()">💳 ${tipo=="ret"?"Na loja":"Na entrega"}</button></div>${pg=="din"&&tipo=="ent"?`<input inputmode="decimal" placeholder="Troco para quanto? (opcional)" value="${troco}" oninput="troco=this.value">`:""}<div class="line" style="margin-top:12px"><span>Subtotal</span><b>${R$(tt)}</b></div>${tipo=="ent"?`<div class="line"><span>Taxa de entrega</span><b class="${fr?"":"free"}">${fr?R$(fr):"Grátis"}</b></div>`:""}${ex?`<div class="line"><span>Taxa extra (fora do raio)</span><b>${R$(ex)}</b></div>`:""}${TS?`<div class="line"><span>Taxa de Serviço</span><b>${R$(TS)}</b></div>`:""}<div class="line"><b>Total</b><b>${R$(tot)}</b></div><button class="cta" ${nada()||blk?"disabled":""} onclick="fazer()"><span>${tipo=="ret"?"Fazer pedido para retirada":"Fazer pedido"}</span><span>${R$(tot)}</span></button><button class="cta b c" onclick="cart=[];sh=null;draw()">Esvaziar sacola</button><button class="cta b c" onclick="sh=null;draw()">Voltar ao cardápio</button></div>`}
+function fazer(){if(!cart.length||nada())return;if(tipo=="ent"&&fora&&xs!=2){toast("Fora do raio: pergunte à loja se entrega no seu endereço");return}const fr=tipo=="ent"&&taxa?TAXA:0,ex=tipo=="ent"&&fora&&xs==2?TX:0;pedido={id:window.__nid||4833,tt:sub()+fr+ex+TS,tipo,pg,codRet:String(1000+Math.floor(Math.random()*9000)),codEnt:String(1000+Math.floor(Math.random()*9000))};cart=[];st=0;pq=0;pnome="";sh="trk";draw();toast("Pedido enviado!")}
 function trk(){const p=pedido,rt=p.tipo=="ret",S=rt?LBR:LB,fim=rt?3:5;
  if(st>=fim)p.em=p.em||new Date().toLocaleString("pt-BR");
  const succ=st>=fim&&!rt?`<div class="oc" style="border:3px solid var(--ok);text-align:center;padding:22px"><div style="font-size:64px">✅</div><b style="font-size:26px">Pedido entregue!</b><div style="margin-top:6px">Pedido #${p.id} · ${X.n}</div><div class="meta">${p.em}</div><b class="free" style="font-size:20px;display:block;margin-top:6px">ENTREGUE</b><div class="meta" style="margin-top:6px">Mostre esta tela ao entregador se ele pedir a foto.</div></div>`:"";
@@ -160,9 +160,9 @@ window.baixarApp=async function(){if(dp){dp.prompt();const r=await dp.userChoice
  if(location.protocol=="file:"){inst=true;show();toast("Exemplo: instalaria o app e o botão some");return}
  toast("No menu do navegador, toque em “Instalar app” ou “Adicionar à tela inicial”")};
 show()})();
-</script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
+</script><script>window.PA_PAPEL="cliente"</script><script src="conta.js"></script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
 (function(){
-const CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
+const _h=location.hostname,CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:/\.vercel\.app$/.test(_h)?location.host:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
 const PA=window.PA={ready:false,online:false,_q:[],_status(on,msg){PA.online=on;const b=document.getElementById("pa-st");if(b){b.textContent=on?"● Online · sincronizado":"○ "+(msg||"Sem conexão · modo local");b.style.color=on?"#22a559":"#e0a800"}},
  whenReady(f){PA.ready?f():PA._q.push(f)}};
 /* ids de pedido: contador no Firestore (transação) */
@@ -173,8 +173,8 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);
  const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
- await H.signInAnonymously(au);
- PA.uid=au.currentUser.uid;
+ await PA_login(H,au);
+ PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
  PA.nextId=async()=>{const r=F.doc(db,"meta","contador");return F.runTransaction(db,async t=>{const s=await t.get(r);const n=(s.exists()?s.data().n:5000)+1;t.set(r,{n});return n})};
  const cl=o=>JSON.parse(JSON.stringify(o));
  PA.setPedido=(id,patch)=>F.setDoc(F.doc(db,"pedidos",String(id)),{...cl(patch),id:Number(id),atualizadoEm:Date.now()},{merge:true});
@@ -185,6 +185,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.watchMoto=(mid,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("mot","==",mid)),s=>cb(s.docs.map(d=>strip(d.data()))));
  PA.setOco=(id,o)=>F.setDoc(F.doc(db,"ocorrencias",String(id)),{...cl(o),id:Number(id)},{merge:true});
  PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
+ PA.getCfg=()=>F.getDoc(F.doc(db,"meta","config"));
  PA.setLojaCfg=(slug,d)=>F.setDoc(F.doc(db,"lojas",slug),{...cl(d),atualizadoEm:Date.now()},{merge:true});
  PA.watchLojaCfg=(slug,cb)=>F.onSnapshot(F.doc(db,"lojas",slug),s=>cb(s.exists()?s.data():null));
  PA.ready=true;PA._status(true);PA._q.splice(0).forEach(f=>f());
@@ -194,9 +195,9 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
 window.PA_toast=m=>{try{toast(m)}catch(e){}};
 window.PA_beep=()=>{try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}};
 /* ===== extras: cardápio/estado da loja ===== */
-PA.whenReady(()=>{});
+PA.whenReady(()=>{const L=new URLSearchParams(location.search).get("loja");if(!L)return;let pl=null;const aplica=()=>{const t=pl&&PA.taxaServ!=null?PA.taxaServ:0;if(t!==TS){TS=t;try{draw()}catch(e){}}};PA.watchLojaCfg(L,d=>{pl=d?(d.plano||"iniciante")==="iniciante":false;aplica()});PA.getCfg().then(s=>{PA.taxaServ=s.exists()&&typeof s.data().taxaServico==="number"?s.data().taxaServico:1;aplica()}).catch(()=>{PA.taxaServ=1;aplica()})});
 </script><script>(function(){
-const LOJA=X0.n,SLUG="lanchonete-do-ze";
+const _q=new URLSearchParams(location.search).get("loja"),SLUG=_q||"lanchonete-do-ze",LOJA=_q||X0.n;
 let unw=null,rs=null,lastPq=pq,prim=true;
 const pgLabel=(p,t)=>p=="din"?"Dinheiro":p=="pix"?"Pix":(t=="ret"?"Pagar na loja":"Cartão na entrega");
 const st2=d=>{if(d.tp=="ret")return({novo:0,preparo:1,pronto:2,retirado:3})[d.st]??0;
@@ -227,16 +228,17 @@ fazer=async function(){
  window.__nid=id;_f();
  if(!pedido||pedido===antes)return;
  const m={};snap.forEach(i=>m[i.n]=(m[i.n]||0)+1);
- const d={id:pedido.id,loja:LOJA,it:Object.entries(m).map(([n,q])=>q+"x "+n).join(", "),v:pedido.tt,pg:pgLabel(pgc,tp),pgc,tp,st:"novo",cli:nome,bairro:"Jardim da Penha",rua:"Rua das Flores, 120",dl:0,dc:ex?KMC:3.5,volta:false,maq:pgc=="car"&&tp=="ent",troco:pgc=="din"&&tp=="ent"&&!!String(tr).trim(),trocoPara:String(tr||""),paid:false,ps:0,codRet:pedido.codRet,codEnt:pedido.codEnt,criadoEm:Date.now(),uid:PA.uid};
+ const d={ts:TS,id:pedido.id,loja:LOJA,lojaN:X0.n,it:Object.entries(m).map(([n,q])=>q+"x "+n).join(", "),v:pedido.tt,pg:pgLabel(pgc,tp),pgc,tp,st:"novo",cli:nome,bairro:"Jardim da Penha",rua:"Rua das Flores, 120",dl:0,dc:ex?KMC:3.5,volta:false,maq:pgc=="car"&&tp=="ent",troco:pgc=="din"&&tp=="ent"&&!!String(tr).trim(),trocoPara:String(tr||""),paid:false,ps:0,codRet:pedido.codRet,codEnt:pedido.codEnt,criadoEm:Date.now(),uid:PA.uid};
  rs=0;lastPq=0;
- PA.setPedido(d.id,d).then(()=>{localStorage.setItem("pa_pedido",d.id);watch(d.id)}).catch(e=>{console.error(e);pedido=null;st=0;sh=null;draw();toast("Não foi possível enviar o pedido. Tente de novo.")})};
+ PA.setPedido(d.id,d).then(()=>{localStorage.setItem("pa_pedido",d.id);watch(d.id)}).catch(e=>{console.error(e);pedido=null;st=0;sh=null;draw();toast(e&&e.code==="permission-denied"?"Esta loja está indisponível no momento. Tente mais tarde.":"Não foi possível enviar o pedido. Tente de novo.")})};
 window.PA_cancelCli=(p,m)=>{PA.setPedido(p.id,{st:"cancelado_cli",motivoCancel:m});fim()};
 window.PA_report=(p,m,t)=>{PA.setOco(Date.now(),{ped:p?p.id:0,lj:LOJA,cli:localStorage.getItem("pa_nome")||"Cliente",mot:m,txt:t||"",st:"aberta",rep:false,criadoEm:Date.now()})};
 /* cardápio e entrega/retirada vindos da loja */
 PA.whenReady(()=>{PA.watchLojaCfg(SLUG,c=>{if(!c)return;
+ if(c.nome){X0.n=c.nome;document.title=c.nome}
  if(c.m&&c.m.length){X0.m.length=0;c.m.forEach(p=>X0.m.push(p))}
  if(c.ent===false&&AUT=="ambas"){AUT="ret";tipo="ret"}else if(c.ent===true&&AUT=="ret"){AUT="ambas"}
- if(c.fechada){AUT="nada"}else if(AUT=="nada"){AUT=c.ent===false?"ret":"ambas"}
+ if(c.fechada||c.suspensa||c.pendente===true){AUT="nada"}else if(AUT=="nada"){AUT=c.ent===false?"ret":"ambas"}
  draw()});
  const pid=localStorage.getItem("pa_pedido");if(pid)watch(+pid)});
 })();

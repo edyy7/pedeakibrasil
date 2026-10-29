@@ -162,11 +162,14 @@ function caixa(){const ent_=CX.mov.filter(m=>m.t=="in").reduce((t,m)=>t+m.v,0),s
 function mov(t){const v=num(V("cv"));if(!v){toast("Informe o valor");return}CX.mov.push({t,d:V("cd")||(t=="in"?"Entrada":"Saída"),v});draw()}
 /* ---------- COMPARTILHAR & ENTREGADORES ---------- */
 const topo=t=>`<button class="back" onclick="${cm=="motoboys"&&cmMoto?"cmMoto=null":"cm=null;cmMoto=null"};draw()">‹ Voltar</button><b style="font-size:18px;margin-left:6px">${t}</b>`;
-const link2=(t,u,tx)=>`<div class="meta" style="margin:8px 0">${t}</div><div class="oc"><b style="word-break:break-all;font-size:16px">${u}</b></div><button class="cta" onclick="toast('Exemplo: abre a tela de compartilhar do aparelho')">📤 Compartilhar</button><button class="cta b" onclick="toast('Exemplo: abre o WhatsApp com a mensagem')">💬 Enviar direto pelo WhatsApp</button><div class="meta" style="margin-top:10px">Mensagem: “${tx}”</div>`;
+const PAE=x=>encodeURIComponent(x).replace(/'/g,'%27');
+const link2=(t,u,tx)=>`<div class="meta" style="margin:8px 0">${t}</div><div class="oc"><b style="word-break:break-all;font-size:16px">${u}</b></div><button class="cta" onclick="PA_share(decodeURIComponent('${PAE(u)}'),decodeURIComponent('${PAE(tx)}'))">📤 Compartilhar</button><button class="cta b" onclick="PA_wa(decodeURIComponent('${PAE(u)}'),decodeURIComponent('${PAE(tx)}'))">💬 Enviar direto pelo WhatsApp</button><button class="cta b" onclick="PA_copia(decodeURIComponent('${PAE(u)}'))">📋 Copiar link</button><div class="meta" style="margin-top:10px">Mensagem: “${tx}”</div>`;
 const mb=(k,v)=>`<div class="ln"><span>${k}</span><b>${v||"—"}</b></div>`;
 function compart(){
- if(cm=="cardapio")return topo("Compartilhar cardápio")+link2("Envie o link ao seu cliente pelo WhatsApp. Ele abre direto no seu cardápio e faz o pedido.","https://pedeaqui.com.br/ze-da-coxinha","🍔 Lanchonete do Zé — veja o cardápio e faça seu pedido pelo link:");
- if(cm=="motolink"&&ent)return topo("Compartilhar link do motoboy")+link2("Envie o link ao entregador pelo WhatsApp. Ele baixa o app e faz o cadastro com 3 fotos. Só você aprova.","https://meudelivery-six.vercel.app/#convite=m-1","Cadastre-se como motoboy no PedeAí:");
+ if(cm=="cardapio")return topo("Compartilhar cardápio")+link2("Envie o link ao seu cliente pelo WhatsApp. Ele abre direto no seu cardápio e faz o pedido.",(PA_link()||"https://pedeaqui.com.br/ze-da-coxinha"),"🍔 "+(window.PA&&PA.loja?PA.loja.nome:"Lanchonete do Zé")+" — veja o cardápio e faça seu pedido pelo link:");
+ if(cm=="motolink"&&ent){const cod=window.PA&&PA.conta&&PA.conta.convite,lk=window.PA&&PA_conviteLink();
+  if(!cod)return topo("Convite do motoboy")+`<div class="meta" style="margin:8px 0">O código de convite aparece aqui assim que a loja estiver conectada.</div>`;
+  return topo("Convite do motoboy")+`<div class="meta" style="margin:8px 0">Entregadores que usarem o seu código passam a ver só os pedidos da sua loja.</div><div class="oc" style="text-align:center"><div class="meta">Código de convite</div><b style="font-size:30px;letter-spacing:2px">${cod}</b></div>`+link2("Envie o link ao entregador pelo WhatsApp. Ele entra com Google, o código já vem preenchido e ele vira entregador da sua loja.",lk,"Seja entregador da "+PA.loja.nome+" no PedeAí:")+`<button class="cta b" onclick="PA_copia('${cod}')">📋 Copiar código</button><button class="cta b" onclick="if(confirm('Gerar um novo código? O código antigo deixa de funcionar para novos entregadores (quem já entrou continua).'))PA_novoConvite().then(()=>{draw();toast('Novo código gerado')}).catch(()=>toast('Não foi possível gerar'))">🔄 Gerar novo código</button>`}
  if(cm=="indic")return topo("Indicação Comissionada")+`<div class="oc"><div class="meta">Indique lojas, entregadores ou colegas com o seu link. Ele é único e não gera dois cadastros. Quem entra por ele já vem identificado e só preenche nome e chave Pix. Comissão de 1 nível, só sobre pagamento efetivo, repassada no ato do pagamento da loja. No período grátis ninguém recebe.</div></div><div class="oc"><div class="meta">Como terceiro: Por uso R$ 0,50/pedido por 3 meses · Mensal 100% do 1º mês · Anual 20% do total. Autoindicação: Por uso R$ 0,50/pedido · Mensal 50% · Anual 20%.</div></div><div class="oc"><div class="meta">Seu link já gerado</div><b style="word-break:break-all;font-size:16px">https://meudelivery-six.vercel.app/#indica=ZEDOLANCHE</b></div><button class="cta" onclick="try{navigator.clipboard.writeText('https://meudelivery-six.vercel.app/#indica=ZEDOLANCHE')}catch(e){};toast('Link de indicação copiado')">Copiar link</button>`;
  if(cm=="bkp")return topo("Backup da loja")+`<div class="meta" style="margin:8px 0">Arquivo criptografado só com os dados desta loja.</div><button class="cta" onclick="toast('Exemplo: backup exportado')">⬇️ Exportar backup</button>`;
  if(cm=="rst")return topo("Restauração")+`<div class="meta" style="margin:8px 0">Só é aceito backup desta mesma loja.</div><button class="cta" onclick="toast('Exemplo: restauraria o arquivo escolhido')">⬆️ Restaurar backup</button>`;
@@ -198,16 +201,16 @@ function cv(){$("vc").textContent="Sacola: "+(cart.join(", ")||"vazia")}
 function hist(){return feitos().map(o=>`<div class="oc"><div class="row"><b>Pedido #${o.id}</b><span class="tag" style="color:${["cancelado","cancelado_cli"].includes(o.st)?"var(--rd)":"var(--ok)"}">${{entregue:"Entregue",retirado:"Retirado",cancelado:"Cancelado",cancelado_cli:"Cancelado pelo cliente"}[o.st]}</span></div><div class="meta">${o.it} · ${R$(o.v)} · ${o.tp=="ret"?"Retirada":"Entrega"}</div>${["cancelado","cancelado_cli"].includes(o.st)?`<div class="meta" style="color:var(--rd)">Motivo: ${o.motivoCancel||(o.st=="cancelado"?"Recusado pela loja":"—")}</div>`:""}<button class="cta b" onclick="toast('Exemplo: abre histórico do chat (só leitura)')">Ver conversa</button></div>`).join("")}
 function draw(){
  ent=perm&&eo;if(!ent&&tab=="diarias")tab="pedidos";if(trav())showAv=false;
- $("ln").textContent=(ent?"Lanchonete do Zé":"Depósito Construir")+(HOR.fechada?" · FECHADA":"");
+ $("ln").textContent=(ent?(window.PA&&PA.loja?PA.loja.nome:"Lanchonete do Zé"):"Depósito Construir")+(HOR.fechada?" · FECHADA":"");
  $("sel").innerHTML=`<button class="${ent?"on":""}" onclick="perm=true;draw()">🛵 Entrega ligada</button><button class="${ent?"":"on"}" onclick="perm=false;draw()">🏪 Só retirada</button>`;
  $("sel2").innerHTML=`<div class="meta" style="width:100%;flex-basis:100%">Vencimento (simulação):</div><input type="date" value="${VENC}" onchange="VENC=this.value;draw()" style="margin:4px 0 8px"><div class="meta" style="width:100%;flex-basis:100%">Forçar estado (só no preview):</div>`+[["ativa","🟢 Ativa"],["avencer","🟡 A vencer"],["carencia","🟠 Carência"],["travada","🔴 Travada"]].map(([k,l])=>`<button class="${ST==k?"on":""}" onclick="ST='${k}';draw()">${l}</button>`).join("");
  const ep=estadoPlano();
  $("stl").innerHTML=`<span class="sl" style="${ep.cor=="rd"?"border-color:var(--rd);color:var(--rd)":ep.cor=="yl"?"border-color:var(--yl);color:var(--yl)":""}">${ep.ico} ${ep.lbl}</span>`;
- $("bn").innerHTML=trav()?`<div class="oc" style="border-color:var(--rd);border-width:2px"><b>🔒 Loja travada por falta de pagamento</b><div class="meta" style="margin:4px 0">Você não recebe pedidos novos nem envia entregas. O painel e o estoque continuam liberados. A loja volta a vender assim que o pagamento for confirmado.</div><button class="cta" onclick="toast('Exemplo: abriria o pagamento do plano')">Pagar agora</button><button class="cta b" onclick="tab='produtos';cm=null;cmMoto=null;draw()">📦 Ir para o estoque</button></div>`:"";
+ $("bn").innerHTML=trav()?`<div class="oc" style="border-color:var(--rd);border-width:2px"><b>🔒 Loja travada por falta de pagamento</b><div class="meta" style="margin:4px 0">Você não recebe pedidos novos nem envia entregas. O painel e o estoque continuam liberados. A loja volta a vender assim que o pagamento for confirmado.</div><button class="cta" onclick="PA_pagar()">Pagar agora</button><button class="cta b" onclick="tab='produtos';cm=null;cmMoto=null;draw()">📦 Ir para o estoque</button></div>`:"";
  const T=[["pedidos","Pedidos ("+ativos().length+")"],...(ent?[["diarias","Entregas ("+ORD.filter(o=>o.st=="enviado"||o.st=="emrota").length+")"]]:[]),["compart","Compartilhar"],["produtos","Produtos ("+PROD.length+")"],["caixa","Caixa"],["hist","Histórico ("+feitos().length+")"],["gestao","Gestão"],["equipe","Equipe"]];
  $("tabs").innerHTML=T.map(([k,l])=>`<button class="${tab==k?"on":""}" onclick="tab='${k}';cm=null;cmMoto=null;draw()">${l}</button>`).join("");
  $("ajb").textContent=aj?"✕ Fechar ajuda":"? Ajuda desta aba";$("ajt").innerHTML=aj?`<div class="oc"><div class="meta">${AJ[tab]}</div></div>`:"";
- const W={pedidos,produtos,diarias,gestao,caixa,compart,hist};$("v").innerHTML=(W[tab]||(()=>`<div class="oc"><div class="meta">Esta aba não mudou neste setor (exemplo).</div></div>`))()}
+ const W={pedidos,produtos,diarias,gestao,caixa,compart,hist,equipe:()=>(window.PA&&PA.equipe)?`<div class="oc"><div class="meta">Você é funcionário${PA.equipe.cargo?" ("+PA.equipe.cargo+")":""}. Só o Gerente cadastra a equipe.</div></div>`:`<div class="oc"><b>👥 Equipe da loja</b><div class="meta" style="margin:6px 0">Cadastre o e-mail Google do funcionário. Ele fica pendente até o ADM escolher o cargo e autorizar.</div><button class="cta" onclick="PA_RH.equipe()">Gerenciar equipe</button></div>`};$("v").innerHTML=(W[tab]||(()=>`<div class="oc"><div class="meta">Esta aba não mudou neste setor (exemplo).</div></div>`))()}
 draw();
 </script><script>
 /* Botão "Baixar e instalar": some depois da instalação (evento appinstalled ou app aberto instalado) */
@@ -220,9 +223,9 @@ window.baixarApp=async function(){if(dp){dp.prompt();const r=await dp.userChoice
  if(location.protocol=="file:"){inst=true;show();toast("Exemplo: instalaria o app e o botão some");return}
  toast("No menu do navegador, toque em “Instalar app” ou “Adicionar à tela inicial”")};
 show()})();
-</script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
+</script><script>window.PA_PAPEL="lojista"</script><script src="conta.js"></script><script src="rh.js"></script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
 (function(){
-const CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
+const _h=location.hostname,CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:/\.vercel\.app$/.test(_h)?location.host:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
 const PA=window.PA={ready:false,online:false,_q:[],_status(on,msg){PA.online=on;const b=document.getElementById("pa-st");if(b){b.textContent=on?"● Online · sincronizado":"○ "+(msg||"Sem conexão · modo local");b.style.color=on?"#22a559":"#e0a800"}},
  whenReady(f){PA.ready?f():PA._q.push(f)}};
 /* ids de pedido: contador no Firestore (transação) */
@@ -233,8 +236,8 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);
  const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
- await H.signInAnonymously(au);
- PA.uid=au.currentUser.uid;
+ await PA_login(H,au);
+ PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
  PA.nextId=async()=>{const r=F.doc(db,"meta","contador");return F.runTransaction(db,async t=>{const s=await t.get(r);const n=(s.exists()?s.data().n:5000)+1;t.set(r,{n});return n})};
  const cl=o=>JSON.parse(JSON.stringify(o));
  PA.setPedido=(id,patch)=>F.setDoc(F.doc(db,"pedidos",String(id)),{...cl(patch),id:Number(id),atualizadoEm:Date.now()},{merge:true});
@@ -256,18 +259,21 @@ window.PA_beep=()=>{try{navigator.vibrate&&navigator.vibrate([200,100,200])}catc
 /* ===== extras: cardápio/estado da loja ===== */
 PA.whenReady(()=>{});
 </script><script>(function(){
-const LOJA="Lanchonete do Zé",SLUG="lanchonete-do-ze";
+let LOJA="Lanchonete do Zé",SLUG="lanchonete-do-ze";
+PA.whenReady(()=>{if(PA.loja){LOJA=PA.loja.slug;SLUG=PA.loja.slug}});
+window.PA_onConta=i=>{const d=new Date(i.venc);VENC=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");ST=i.estado.k;const g=document.getElementById("sel");if(g&&g.parentNode)g.parentNode.style.display="none";try{draw()}catch(e){}};
 const sj=o=>JSON.stringify(o,Object.keys(o).sort());
 let RO={},prim=true,cfgS="";
 ORD.length=0;nextId=9000+Math.floor(Math.random()*900);
 const _d=draw;
 draw=function(){_d();push();pushCfg()};
+try{draw()}catch(e){}
 function push(){if(!PA.ready)return;
- ORD.forEach(o=>{o.loja=LOJA;const prev=RO[o.id];
+ ORD.forEach(o=>{o.loja=LOJA;if(!o.criadoEm)o.criadoEm=Date.now();o.lojaN=PA.loja?PA.loja.nome:"Lanchonete do Zé";const prev=RO[o.id];
   if(!prev){RO[o.id]=JSON.parse(sj(o));PA.setPedido(o.id,{...o}).catch(e=>{console.error(e);delete RO[o.id]});return}
   const df={};Object.keys(o).forEach(k=>{if(sj({v:o[k]})!==sj({v:prev[k]}))df[k]=o[k]});
   if(Object.keys(df).length){Object.assign(prev,JSON.parse(sj(df)));PA.setPedido(o.id,df).catch(e=>console.error(e))}})}
-function pushCfg(){if(!PA.ready)return;
+function pushCfg(){if(!PA.ready||PA.equipe)return;
  const c={m:PROD.map(p=>[p.n,p.p,!!p.ok,p.d||"",p.em||"🍽️"]),ent:!!ent,fechada:!!HOR.fechada},s=JSON.stringify(c);
  if(s!==cfgS){cfgS=s;PA.setLojaCfg(SLUG,c).catch(e=>console.error(e))}}
 PA.whenReady(()=>{

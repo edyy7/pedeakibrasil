@@ -3,7 +3,7 @@
  "name": "PedeAí Criador",
  "short_name": "Criador",
  "start_url": "./criador.html",
- "scope": "./",
+ "scope": "./criador.html",
  "display": "standalone",
  "background_color": "#0b0b0d",
  "theme_color": "#6b46c1",

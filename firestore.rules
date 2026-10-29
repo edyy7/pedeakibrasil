@@ -1,11 +1,254 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Fase piloto: qualquer pessoa autenticada (login anônimo do app) lê e escreve.
-    // Antes de abrir ao público, troque por login real + regras por papel (cliente/loja/motoboy/ADM).
-    match /pedidos/{id}      { allow read, write: if request.auth != null; }
-    match /ocorrencias/{id}  { allow read, write: if request.auth != null; }
-    match /lojas/{id}        { allow read, write: if request.auth != null; }
-    match /meta/{id}         { allow read, write: if request.auth != null; }
+    function signed() { return request.auth != null; }
+    // Único Criador: somente esta conta Google (e-mail verificado).
+    function isCriador() {
+      return signed()
+        && request.auth.token.email == 'edinaldooliveiradesouza@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    // ---------- ADM ↔ lojas ----------
+    // Vencimento atual de uma conta (igual a vencDe() em conta.js): 30 dias após a criação, ou o que o Criador definiu.
+    function vencAtual(c) {
+      return c.get('venc', c.criadoEm.toMillis() + 2592000000);
+    }
+    // A conta (resource.data) é de lojista cuja loja está vinculada a ESTE ADM (lojas/{slug}.admId == uid).
+    function admDaConta(c) {
+      return signed() && c.get('papel', '') == 'lojista' && c.get('loja', null) != null
+        && get(/databases/$(database)/documents/lojas/$(c.loja.slug)).data.get('admId', '') == request.auth.uid;
+    }
+    // Na criação da loja: ou fica no ADM padrão (sem código), ou o código tem de existir e apontar para o admId gravado.
+    function admValido(d) {
+      let a = d.get('admId', 'padrao');
+      let code = d.get('admCodigo', '');
+      return (a == 'padrao' && code == '')
+        || (code != '' && code.matches('ADM-[A-Z0-9-]+')
+            && exists(/databases/$(database)/documents/admCodigos/$(code))
+            && get(/databases/$(database)/documents/admCodigos/$(code)).data.uid == a);
+    }
+
+    // TRAVA NO SERVIDOR: pedido novo só é criado se a conta da loja estiver em dia
+    // (período grátis de 30 dias + 3 dias de carência, ou renovada pelo Criador).
+    // Prazos: 2592000000 ms = 30 dias · 259200000 ms = 3 dias (iguais a TRIAL e CAR em conta.js).
+    function lojistaGratis() {
+      let cf = /databases/$(database)/documents/meta/config;
+      return exists(cf) && get(cf).data.get('valores', {}).get('lojista', 1) == 0;
+    }
+    function contaLiberada(uid) {
+      let c = /databases/$(database)/documents/contas/$(uid + '_lojista');
+      return lojistaGratis() || (exists(c)
+        && get(c).data.get('venc', get(c).data.criadoEm.toMillis() + 2592000000) + 259200000 >= request.time.toMillis());
+    }
+    function lojaLiberada(chave) {
+      let lj = /databases/$(database)/documents/lojas/$(chave);
+      return !exists(lj)
+        || (get(lj).data.get('suspensa', false) != true
+            && get(lj).data.get('pendente', false) != true
+            && (!('dono' in get(lj).data) || contaLiberada(get(lj).data.dono)));
+    }
+
+    // ---------- Pedidos: quem pode ver ----------
+    // O pedido já guarda: uid (cliente), loja (slug) e mot (uid do motoboy que aceitou).
+    function donoDaLoja(loja) {
+      return loja != '' && exists(/databases/$(database)/documents/lojas/$(loja))
+        && get(/databases/$(database)/documents/lojas/$(loja)).data.get('dono', '') == request.auth.uid;
+    }
+    function admDaLoja(loja) {
+      return loja != '' && exists(/databases/$(database)/documents/lojas/$(loja))
+        && get(/databases/$(database)/documents/lojas/$(loja)).data.get('admId', '') == request.auth.uid;
+    }
+    // Motoboy vinculado à loja (contas/{uid}_motoboy.loja.slug, gravado só com código de convite válido).
+    function motoboyDaLoja(loja) {
+      let c = /databases/$(database)/documents/contas/$(request.auth.uid + '_motoboy');
+      return loja != '' && exists(c) && get(c).data.get('loja', {}).get('slug', '') == loja;
+    }
+    // Funcionário: só acessa a loja depois que o ADM mudou equipe/{loja}__{e-mail}.st para 'ativo'.
+    function equipeAtiva(loja) {
+      let e = /databases/$(database)/documents/equipe/$(loja + '__' + request.auth.token.email.lower());
+      return signed() && loja != '' && request.auth.token.email != null && exists(e) && get(e).data.get('st', '') == 'ativo';
+    }
+    function veLoja(p) {
+      return p.get('uid', '') == request.auth.uid      // o cliente que pediu
+        || p.get('mot', '') == request.auth.uid        // o motoboy que aceitou
+        || donoDaLoja(p.get('loja', ''))               // a loja que vende
+        || equipeAtiva(p.get('loja', ''))              // funcionário autorizado pelo ADM
+        || admDaLoja(p.get('loja', ''))                // o ADM dessa loja (faturamento/ocorrências)
+        || motoboyDaLoja(p.get('loja', ''));           // motoboys vinculados à loja (veem os "enviados" dela)
+    }
+
+    // Pedidos: criar exige loja em dia; ler só quem participa; alterar só quem participa do jeito certo.
+    // ATENÇÃO: toda consulta (query) nos apps precisa ter where('loja','==',…) ou where('mot','==',uid):
+    // regra não é filtro, e consulta ampla demais é recusada inteira.
+    match /pedidos/{id} {
+      allow read: if signed() && (isCriador() || veLoja(resource.data));
+      allow create: if signed() && lojaLiberada(request.resource.data.get('loja', 'x'));
+      allow update: if signed() && (
+        isCriador()
+        || resource.data.get('uid', '') == request.auth.uid            // cliente (cancelar, confirmar recebimento)
+        || donoDaLoja(resource.data.get('loja', ''))                   // loja (aceitar, preparar, enviar…)
+        || equipeAtiva(resource.data.get('loja', ''))                  // funcionário autorizado
+        || resource.data.get('mot', '') == request.auth.uid            // motoboy dono da corrida
+        // motoboy da loja PEGANDO uma corrida livre: só grava mot/motN, e mot = ele mesmo
+        || (motoboyDaLoja(resource.data.get('loja', ''))
+            && !('mot' in resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mot', 'motN', 'atualizadoEm'])
+            && request.resource.data.mot == request.auth.uid));
+      allow delete: if isCriador() || (signed() && donoDaLoja(resource.data.get('loja', '')));
+    }
+    // Ocorrências: piloto.
+    match /ocorrencias/{id} { allow read, write: if signed(); }
+
+    // Meta: contador aberto; cobrança só o Criador altera.
+    match /meta/contador { allow read, write: if signed(); }
+    match /meta/config {
+      allow read: if signed();
+      allow write: if isCriador();
+    }
+
+    // Contas (lojista / motoboy / adm): período grátis, vencimento e pagamento.
+    // O usuário NÃO consegue mexer no vencimento: só o Criador (venc) pode.
+    match /contas/{id} {
+      allow get: if signed() && (id.matches(request.auth.uid + '_.*') || isCriador() || admDaConta(resource.data)
+        || (resource.data.get('papel', '') == 'lojista' && resource.data.get('loja', null) != null && equipeAtiva(resource.data.loja.slug)));
+      allow list: if isCriador();
+      allow create: if signed()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.papel in ['lojista', 'motoboy', 'adm']
+        && id == request.auth.uid + '_' + request.resource.data.papel
+        && request.resource.data.criadoEm == request.time
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'nome', 'papel', 'criadoEm', 'visto']);
+      allow update: if isCriador()
+        // ADM muda o vencimento de uma loja SUA: no máximo 2 vezes, até 5 dias além do vencimento original
+        // (= 35 dias da entrada no período grátis) e nunca para o passado. O Criador zera o contador ao renovar.
+        || (admDaConta(resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['venc', 'admAlt', 'vencBase'])
+            && request.resource.data.admAlt == resource.data.get('admAlt', 0) + 1
+            && request.resource.data.admAlt <= 2
+            && request.resource.data.vencBase == resource.data.get('vencBase', vencAtual(resource.data))
+            && request.resource.data.venc <= request.resource.data.vencBase + 432000000
+            && request.resource.data.venc >= request.time.toMillis())
+        || (signed() && resource.data.uid == request.auth.uid && (
+             // ADM grava o próprio código de indicação uma única vez (o código tem de ser dele em admCodigos/)
+             (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['admCodigo'])
+              && resource.data.papel == 'adm' && !('admCodigo' in resource.data)
+              && request.resource.data.admCodigo.matches('ADM-[A-Z0-9-]+')
+              && get(/databases/$(database)/documents/admCodigos/$(request.resource.data.admCodigo)).data.uid == request.auth.uid)
+             || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visto'])
+             // Entregador: aceite do Plano Grátis (uma vez).
+             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['aceite']) && resource.data.papel == 'motoboy' && !('aceite' in resource.data))
+             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loja']) && !('loja' in resource.data))
+             // Entregador vincula-se a uma loja SÓ com um código de convite válido (convites/{código}).
+             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loja'])
+                 && resource.data.papel == 'motoboy'
+                 && exists(/databases/$(database)/documents/convites/$(request.resource.data.loja.convite))
+                 && get(/databases/$(database)/documents/convites/$(request.resource.data.loja.convite)).data.slug == request.resource.data.loja.slug)
+             // Lojista guarda o código de convite atual (a validade vem de convites/{código}).
+             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['convite']) && resource.data.papel == 'lojista')
+             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pagto']) && request.resource.data.pagto.st == 'analise')));
+    }
+
+    // Convites de entregador: só se lê por código exato (não dá para listar); só o dono da loja cria/apaga.
+    match /convites/{code} {
+      allow get: if signed();
+      allow list: if false;
+      allow create: if signed()
+        && request.resource.data.dono == request.auth.uid
+        && get(/databases/$(database)/documents/lojas/$(request.resource.data.slug)).data.get('dono', '') == request.auth.uid;
+      allow delete: if signed() && resource.data.dono == request.auth.uid;
+      allow update: if false;
+    }
+
+    // Códigos de ADM: lê-se por código exato (não dá para listar). Cada ADM cria UM código para si.
+    match /admCodigos/{code} {
+      allow get: if signed();
+      allow list: if false;
+      allow create: if signed()
+        && code.matches('ADM-[A-Z0-9-]+')
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'nome', 'criadoEm'])
+        && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_adm'))
+        && !('admCodigo' in get(/databases/$(database)/documents/contas/$(request.auth.uid + '_adm')).data);
+      allow update: if false;
+      allow delete: if isCriador();
+    }
+
+    // Convites de Gerente: criados pelo ADM; só se lê por código exato; vale uma única vez.
+    match /gerenteConvites/{t} {
+      allow get: if signed();
+      allow list: if false;
+      allow create: if signed() && t.size() >= 16
+        && request.resource.data.admId == request.auth.uid
+        && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_adm'))
+        && request.resource.data.keys().hasOnly(['admId', 'slug', 'nome', 'plano', 'usado', 'criadoEm'])
+        && request.resource.data.usado == false;
+      allow update: if signed() && resource.data.usado == false
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usado', 'uid', 'em'])
+        && request.resource.data.usado == true && request.resource.data.uid == request.auth.uid;
+      allow delete: if signed() && resource.data.admId == request.auth.uid;
+    }
+
+    // Equipe: o Gerente cadastra o e-mail (sempre 'pendente'); SÓ o ADM da loja muda para 'ativo' e define o cargo.
+    function minhaEquipe(e) { return signed() && e.get('email', '') == request.auth.token.email; }
+    function veEquipe(e) { return isCriador() || minhaEquipe(e) || (signed() && e.get('admId', '') == request.auth.uid) || donoDaLoja(e.get('slug', '')) || admDaLoja(e.get('slug', '')); }
+    match /equipe/{id} {
+      allow get, list: if veEquipe(resource.data);
+      allow create: if signed() && donoDaLoja(request.resource.data.slug)
+        && request.resource.data.st == 'pendente'
+        && id == request.resource.data.slug + '__' + request.resource.data.email
+        && request.resource.data.email == request.resource.data.email.lower()
+        && request.resource.data.admId == get(/databases/$(database)/documents/lojas/$(request.resource.data.slug)).data.get('admId', '')
+        && request.resource.data.keys().hasOnly(['slug', 'email', 'st', 'por', 'admId', 'criadoEm']);
+      allow update: if isCriador()
+        || (signed() && resource.data.get('admId', '') == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'cargo', 'cargoId', 'em']));
+      allow delete: if isCriador() || donoDaLoja(resource.data.get('slug', '')) || admDaLoja(resource.data.get('slug', ''));
+    }
+
+    // Cargos e salários: do ADM que os cadastrou.
+    match /cargos/{id} {
+      allow read: if signed() && (isCriador() || resource.data.get('admId', '') == request.auth.uid);
+      allow create, update: if signed() && request.resource.data.admId == request.auth.uid
+        && (request.method == 'create' || resource.data.admId == request.auth.uid)
+        && request.resource.data.keys().hasOnly(['admId', 'nome', 'salario'])
+        && request.resource.data.salario is number && request.resource.data.salario >= 0;
+      allow delete: if signed() && resource.data.admId == request.auth.uid;
+    }
+
+    // Lojas
+    //  · get: qualquer app logado (o cliente precisa ler o cardápio pelo link).
+    //  · list: só o Criador, o ADM da loja (admId == uid dele) ou o dono. O ADM TEM de consultar com where('admId','==',uid).
+    //  · create: o dono, com código de ADM válido (ou sem código → admId 'padrao'); nunca já criada como suspensa.
+    //  · update: o dono (sem mexer em admId/admCodigo/suspensa/suspEm — loja não se reativa sozinha),
+    //            o ADM da loja (SÓ suspensa/suspEm) e o Criador (tudo). A loja de demonstração, sem dono, segue aberta.
+    match /lojas/{slug} {
+      allow get: if signed();
+      allow list: if isCriador()
+        || (signed() && resource.data.get('admId', '') == request.auth.uid)
+        || (signed() && resource.data.get('dono', '') == request.auth.uid);
+      // Criação SÓ pelo ADM, com plano escolhido; fica 'pendente' até o 1º login do link virar Gerente.
+      allow create: if signed()
+        && request.resource.data.admId == request.auth.uid
+        && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_adm'))
+        && request.resource.data.get('pendente', false) == true
+        && !('dono' in request.resource.data) && !('suspensa' in request.resource.data)
+        && request.resource.data.plano in ['iniciante', 'mensal', 'anual', '3anos', '5anos'];
+      allow update: if isCriador()
+        // Gerente automático: o 1º que abrir o link do ADM (convite ainda não usado por outro) vira dono.
+        || (signed() && !('dono' in resource.data) && resource.data.get('pendente', false) == true
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['dono', 'pendente', 'gerenteToken'])
+            && request.resource.data.dono == request.auth.uid && request.resource.data.pendente == false
+            && get(/databases/$(database)/documents/gerenteConvites/$(request.resource.data.gerenteToken)).data.slug == slug
+            && get(/databases/$(database)/documents/gerenteConvites/$(request.resource.data.gerenteToken)).data.get('uid', '') == request.auth.uid)
+        || (signed()
+            && resource.data.get('pendente', false) != true
+            && resource.data.get('dono', request.auth.uid) == request.auth.uid
+            && request.resource.data.get('dono', request.auth.uid) == resource.data.get('dono', request.auth.uid)
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['admId', 'admCodigo', 'suspensa', 'suspEm', 'plano', 'pendente', 'gerenteToken']))
+        || (signed()
+            && resource.data.get('admId', '') == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspensa', 'suspEm']));
+    }
   }
 }

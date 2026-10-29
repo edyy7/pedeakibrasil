@@ -129,9 +129,9 @@ window.baixarApp=async function(){if(dp){dp.prompt();const r=await dp.userChoice
  if(location.protocol=="file:"){inst=true;show();toast("Exemplo: instalaria o app e o botão some");return}
  toast("No menu do navegador, toque em “Instalar app” ou “Adicionar à tela inicial”")};
 show()})();
-</script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
+</script><script>window.PA_PAPEL="criador"</script><script src="conta.js"></script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
 (function(){
-const CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
+const _h=location.hostname,CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:/\.vercel\.app$/.test(_h)?location.host:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
 const PA=window.PA={ready:false,online:false,_q:[],_status(on,msg){PA.online=on;const b=document.getElementById("pa-st");if(b){b.textContent=on?"● Online · sincronizado":"○ "+(msg||"Sem conexão · modo local");b.style.color=on?"#22a559":"#e0a800"}},
  whenReady(f){PA.ready?f():PA._q.push(f)}};
 /* ids de pedido: contador no Firestore (transação) */
@@ -142,8 +142,8 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);
  const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
- await H.signInAnonymously(au);
- PA.uid=au.currentUser.uid;
+ await PA_login(H,au);
+ PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
  PA.nextId=async()=>{const r=F.doc(db,"meta","contador");return F.runTransaction(db,async t=>{const s=await t.get(r);const n=(s.exists()?s.data().n:5000)+1;t.set(r,{n});return n})};
  const cl=o=>JSON.parse(JSON.stringify(o));
  PA.setPedido=(id,patch)=>F.setDoc(F.doc(db,"pedidos",String(id)),{...cl(patch),id:Number(id),atualizadoEm:Date.now()},{merge:true});

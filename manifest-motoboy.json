@@ -3,7 +3,7 @@
  "name": "PedeAí Entregador",
  "short_name": "Entregador",
  "start_url": "./motoboy.html",
- "scope": "./",
+ "scope": "./motoboy.html",
  "display": "standalone",
  "background_color": "#0b0b0d",
  "theme_color": "#22a559",

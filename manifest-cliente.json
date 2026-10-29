@@ -3,7 +3,7 @@
  "name": "PedeAí Cliente",
  "short_name": "Cliente",
  "start_url": "./cliente.html",
- "scope": "./",
+ "scope": "./cliente.html",
  "display": "standalone",
  "background_color": "#0b0b0d",
  "theme_color": "#d4141c",

@@ -3,7 +3,7 @@
  "name": "PedeAí Loja",
  "short_name": "Loja",
  "start_url": "./lojista.html",
- "scope": "./",
+ "scope": "./lojista.html",
  "display": "standalone",
  "background_color": "#0b0b0d",
  "theme_color": "#c99700",
