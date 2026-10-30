@@ -1,4 +1,4 @@
-const CACHE_VERSION="pedeai-v5.4.6";
+const CACHE_VERSION="pedeai-v5.4.7";
 self.addEventListener("install",e=>self.skipWaiting());
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE_VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;
