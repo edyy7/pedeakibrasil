@@ -114,7 +114,8 @@ window.PA_conta=async function(F,db,H,au){
   PA.loja=d.loja;PA.conta=d;
   const gerar=async()=>{const slug=d.loja.slug,velho=d.convite;
    const code=(slug.replace(/[^a-z]/g,"").slice(0,2).toUpperCase()||"LJ")+"-"+rnd(6);
-   await F.setDoc(F.doc(db,"convites",code),{slug,nome:d.loja.nome,dono:u.uid,criadoEm:Date.now()});
+   let vg={};if(velho){try{const os=await F.getDoc(F.doc(db,"convites",velho));if(os.exists()){const od=os.data();if(typeof od.vagas==="number")vg.vagas=od.vagas;if(od.motos)vg.motos=od.motos}}catch(e){}}
+   await F.setDoc(F.doc(db,"convites",code),{slug,nome:d.loja.nome,dono:u.uid,criadoEm:Date.now(),...vg});
    await F.setDoc(ref,{convite:code},{merge:true});
    if(velho){try{await F.deleteDoc(F.doc(db,"convites",velho))}catch(e){}}
    d={...d,convite:code};PA.conta=d;return code};
@@ -296,15 +297,15 @@ async function lojasCriador(F,db){
   o.firstChild.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">🏪 Lojas e dados</b><button data-a="x" style="background:#2a2a31;color:#f4f4f6;border:0;border-radius:8px;padding:8px 12px;font-weight:700">Fechar</button></div>'
   +'<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0;'+(novos.length?'border:2px solid #e0a800':'')+'"><b>🔔 Lojas criadas por ADMs ('+novos.length+' novas)</b>'+(EV.length?EV.slice(0,15).map(e=>'<div style="margin-top:8px"><b>'+esc(e.nome)+'</b> <span style="color:#a3a3ad">· '+esc((PLANOS[e.plano]||{}).n||e.plano)+'</span><div style="color:#a3a3ad;font-size:13px">ADM '+esc(e.admEmail)+' · '+new Date(e.criadoEm).toLocaleString("pt-BR")+(e.lido===false?' · <b style="color:#e0a800">nova</b>':'')+'</div>'+(e.lido===false?'<button data-a="lido" data-id="'+esc(e.id)+'" style="'+BTN+';background:#2a2a31;color:#f4f4f6;padding:8px;font-size:14px">Marcar como vista</button>':'')+'</div>').join(""):'<div style="color:#a3a3ad;margin-top:6px">Nenhuma loja criada por ADM ainda.</div>')+'</div>'
   +'<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0"><b>Lojas ('+LJ.length+')</b>'+(LJ.map(l=>'<div style="margin-top:10px"><b>'+esc(l.nome||l.slug)+'</b> <span style="color:#a3a3ad">· '+esc((PLANOS[l.plano||"iniciante"]||{}).n)+(l.pendente?' · aguardando gerente':'')+(l.suspensa?' · suspensa':'')+'</span><button data-a="del" data-id="'+esc(l.slug)+'" style="'+BTN+';background:transparent;color:#ff6b6b;border:1px solid #ff6b6b;padding:8px;font-size:14px">🗑️ Excluir loja e dados</button></div>').join("")||'<div style="color:#a3a3ad;margin-top:6px">Nenhuma loja.</div>')+'</div>'
-  +'<div style="background:#16161a;border:1px solid #ff6b6b;border-radius:12px;padding:12px;margin:12px 0"><b>♻️ Zerar vendas, lucros e carteira</b><div style="color:#a3a3ad;font-size:13px;margin:6px 0">Apaga todos os pedidos (vendas e lucros), as ocorrências, o histórico de pagamentos já decididos (carteira, inclusive a do Criador) e os avisos. <b>Preserva</b> usuários, contas, lojas, equipe e cardápios. Não dá para desfazer.</div><button data-a="zerar" style="'+BTN+';background:#d4141c;color:#fff;padding:10px">Zerar agora</button></div>'};
+  +'<div style="background:#16161a;border:1px solid #ff6b6b;border-radius:12px;padding:12px;margin:12px 0"><b>♻️ Zerar vendas, lucros e carteira</b><div style="color:#a3a3ad;font-size:13px;margin:6px 0">Apaga todos os pedidos (vendas e lucros), as ocorrências, todos os pagamentos (decididos e em análise: carteira, inclusive a do Criador), os avisos de lojas novas e os contatos de Leads do site. <b>Preserva</b> usuários, contas, lojas, equipe, cardápios, preços, Pix e links de pagamento. Não dá para desfazer.</div><button data-a="zerar" style="'+BTN+';background:#d4141c;color:#fff;padding:10px">Zerar agora</button></div>'};
  o.firstChild.onclick=async ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(!a)return;const id=ev.target.dataset.id;
   try{
    if(a==="x"){o.remove();return}
    if(a==="lido"){await F.setDoc(F.doc(db,"eventos",id),{lido:true},{merge:true})}
-   if(a==="zerar"){if(prompt('Isto apaga TODAS as vendas, lucros e a carteira. Digite ZERAR para confirmar:')!=="ZERAR")return;
+   if(a==="zerar"){if(prompt('Isto apaga TODAS as vendas, lucros, a carteira e os dados do Criador (pagamentos e leads). Digite ZERAR para confirmar:')!=="ZERAR")return;
     o.firstChild.innerHTML="Zerando…";let n=0;
-    n+=await apaga(F,F.collection(db,"pedidos"));n+=await apaga(F,F.collection(db,"ocorrencias"));n+=await apaga(F,F.collection(db,"eventos"));
-    const cs=await F.getDocs(F.collection(db,"contas"));for(const d of cs.docs){const p=d.data().pagto;if(p&&p.st&&p.st!=="analise"){await F.setDoc(d.ref,{pagto:F.deleteField()},{merge:true});n++}}
+    n+=await apaga(F,F.collection(db,"pedidos"));n+=await apaga(F,F.collection(db,"ocorrencias"));n+=await apaga(F,F.collection(db,"eventos"));n+=await apaga(F,F.collection(db,"leads"));
+    const cs=await F.getDocs(F.collection(db,"contas"));for(const d of cs.docs){const p=d.data().pagto;if(p&&p.st){await F.setDoc(d.ref,{pagto:F.deleteField()},{merge:true});n++}}
     await F.setDoc(F.doc(db,"meta","contador"),{n:5000});
     window.PA_toast&&PA_toast("Zerado ✔ ("+n+" registros apagados)")}
    if(a==="del"){const l=(await F.getDoc(F.doc(db,"lojas",id))).data()||{};

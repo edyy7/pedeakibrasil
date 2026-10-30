@@ -145,12 +145,15 @@ service cloud.firestore {
              || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visto'])
              // Entregador: aceite do Plano Grátis (uma vez).
              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['aceite']) && resource.data.papel == 'motoboy' && !('aceite' in resource.data))
-             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loja']) && !('loja' in resource.data))
+             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loja']) && !('loja' in resource.data) && resource.data.get('papel', '') != 'motoboy')
              // Entregador vincula-se a uma loja SÓ com um código de convite válido (convites/{código}).
              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loja'])
                  && resource.data.papel == 'motoboy'
                  && exists(/databases/$(database)/documents/convites/$(request.resource.data.loja.convite))
-                 && get(/databases/$(database)/documents/convites/$(request.resource.data.loja.convite)).data.slug == request.resource.data.loja.slug)
+                 && get(/databases/$(database)/documents/convites/$(request.resource.data.loja.convite)).data.slug == request.resource.data.loja.slug
+                 // vagas: se a loja limitou, o entregador precisa ter ocupado uma vaga em convites/{código}.motos
+                 && (!('vagas' in get(/databases/$(database)/documents/convites/$(request.resource.data.loja.convite)).data)
+                     || request.auth.uid in get(/databases/$(database)/documents/convites/$(request.resource.data.loja.convite)).data.get('motos', {}).keys()))
              // Lojista guarda o código de convite atual (a validade vem de convites/{código}).
              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['convite']) && resource.data.papel == 'lojista')
              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cad'])
@@ -167,7 +170,16 @@ service cloud.firestore {
         && request.resource.data.dono == request.auth.uid
         && get(/databases/$(database)/documents/lojas/$(request.resource.data.slug)).data.get('dono', '') == request.auth.uid;
       allow delete: if isCriador() || (signed() && resource.data.dono == request.auth.uid);
-      allow update: if false;
+      // Dono define as vagas e vê/ajusta a lista; entregador só ocupa UMA vaga para si (nunca remove outros) e nunca passa do limite.
+      allow update: if signed() && (
+        (resource.data.dono == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vagas', 'motos'])
+          && request.resource.data.get('vagas', 0) is number && request.resource.data.get('vagas', 0) >= 0 && request.resource.data.get('vagas', 0) <= 999)
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['motos'])
+          && request.auth.uid in request.resource.data.motos.keys()
+          && request.resource.data.motos.keys().hasAll(resource.data.get('motos', {}).keys())
+          && request.resource.data.motos.keys().size() <= resource.data.get('motos', {}).keys().size() + 1
+          && (!('vagas' in resource.data) || request.resource.data.motos.keys().size() <= resource.data.vagas)));
     }
 
     // Códigos de ADM: lê-se por código exato (não dá para listar). Cada ADM cria UM código para si.
@@ -209,17 +221,18 @@ service cloud.firestore {
         && id == request.resource.data.slug + '__' + request.resource.data.email
         && request.resource.data.email == request.resource.data.email.lower()
         && request.resource.data.admId == get(/databases/$(database)/documents/lojas/$(request.resource.data.slug)).data.get('admId', '')
-        && request.resource.data.keys().hasOnly(['slug', 'email', 'st', 'por', 'admId', 'criadoEm', 'nome', 'cargoInformado', 'salario', 'commission_active', 'commission_percentage'])
+        && request.resource.data.keys().hasOnly(['slug', 'email', 'st', 'por', 'admId', 'criadoEm', 'nome', 'telefone', 'cargoInformado', 'salario', 'commission_active', 'commission_percentage'])
+        && request.resource.data.get('telefone', '') is string && request.resource.data.get('telefone', '').size() <= 20
         && request.resource.data.get('commission_active', false) is bool
         && request.resource.data.get('commission_percentage', 0) is number && request.resource.data.get('commission_percentage', 0) >= 0 && request.resource.data.get('commission_percentage', 0) <= 100
         && request.resource.data.get('salario', 0) is number && request.resource.data.get('salario', 0) >= 0;
       allow update: if isCriador()
         || (signed() && resource.data.get('admId', '') == request.auth.uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'cargo', 'cargoId', 'em', 'salario', 'nome', 'cargoInformado', 'commission_active', 'commission_percentage'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'cargo', 'cargoId', 'em', 'salario', 'nome', 'telefone', 'cargoInformado', 'commission_active', 'commission_percentage'])
             && request.resource.data.get('commission_percentage', 0) is number && request.resource.data.get('commission_percentage', 0) >= 0 && request.resource.data.get('commission_percentage', 0) <= 100
             && request.resource.data.get('salario', 0) is number && request.resource.data.get('salario', 0) >= 0)
         || (donoDaLoja(resource.data.get('slug', ''))
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['salario', 'nome', 'cargoInformado', 'commission_active', 'commission_percentage'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['salario', 'nome', 'telefone', 'cargoInformado', 'commission_active', 'commission_percentage'])
             && request.resource.data.get('commission_percentage', 0) is number && request.resource.data.get('commission_percentage', 0) >= 0 && request.resource.data.get('commission_percentage', 0) <= 100
             && request.resource.data.get('salario', 0) is number && request.resource.data.get('salario', 0) >= 0);
       allow delete: if isCriador() || donoDaLoja(resource.data.get('slug', '')) || admDaLoja(resource.data.get('slug', ''));

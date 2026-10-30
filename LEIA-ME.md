@@ -216,3 +216,24 @@
 ## v5.4.3 · validação (30/10/2026)
 - Sem mudança no app. Testes em `docs/teste-navegador/` atualizados para a interface atual e novo `t5_fumaca.py` (9 telas). Para rodar tudo: `sh rodar-tudo.sh` dentro de `docs/teste-navegador` (precisa de node, python3 e playwright/chromium). Resultado desta validação: lógica 10/10 · cenário 29/29 · checkout 2/2 · Criador (taxa, pagamento, leads) ok · fumaça 9/9. Detalhes e limites no dossiê, seção 3c.
 
+## v5.4.4 · novo site de divulgação
+- `app/site.html` reescrito: foco na dor de cada perfil, vantagens e botões de instalar. APK próprio: preencha `DL.<perfil>.apk` no início do script da página. Formulário de leads inalterado. `sw.js`: `pedeai-v5.4.4`. Novo teste `docs/teste-navegador/t6_site.py` (9 checagens), incluído em `rodar-tudo.sh`.
+
+## v5.4.5 · Zerar também zera o Criador
+- `conta.js`: "Zerar agora" passa a apagar também os Leads do site e os pagamentos em análise (além dos decididos). Preços, Pix, links de pagamento, contas e lojas continuam. `sw.js`: `pedeai-v5.4.5`. Novo teste `docs/teste-navegador/t7_zerar.py` (9 checagens), incluído em `rodar-tudo.sh`.
+
+
+## v5.4.6 · App próprio do Garçom
+- Novo perfil **`app/garcom.html`** (com `manifest-garcom.json` e `icon-garcom-192/512.png`, escopo próprio, instalável separado). Abre direto na aba **🍽️ Garçom** (Nome do cliente, Mesa e Observações opcionais, cardápio, envio à cozinha, comissão) e na aba **Pedidos**. Sem Produtos, Caixa, Gestão, Equipe nem "Modo Loja".
+- Login: o mesmo do funcionário (Google). O ADM/gerente cadastra o e-mail em Equipe e o ADM autoriza com o cargo **Garçom**; nada muda em `conta.js`, regras do Firestore ou nos outros perfis. A aba Garçom dentro do Lojista continua como estava.
+- Entrada "🍽️ Garçom" em `index.html` e `PedeAi.html`. `sw.js`: `pedeai-v5.4.6`. Novo teste `docs/teste-navegador/t8_garcom.py` (6 checagens), incluído em `rodar-tudo.sh`; `t5_fumaca.py` agora cobre 10 telas.
+- **Funcionário agora tem Nome, E-mail e Telefone/WhatsApp** (obrigatório, com DDD) no cadastro de Equipe da loja; aparece na lista da loja e na tela de autorização do ADM. **Republique `firebase/firestore.rules`** (campo `telefone` liberado em equipe) ou o cadastro será recusado.
+- Resultado: lógica 10/10 · cenário 30/30 · checkout 2/2 · fumaça 10/10 · site 9/9 · zerar 9/9 · garçom 6/6 · pedido do garçom até a loja 6/6 (`t9_garcom_pedido.py`: lança mesa 7 com observação, grava no servidor, a loja recebe).
+- Ainda não feito: APK próprio do garçom (usar pwabuilder no link `/garcom.html`) e testar com celular real.
+
+## v5.4.6 · Vagas de entregadores e vínculo protegido
+- Lojista → Compartilhar → "Compartilhar link do motoboy": novo quadro **🛵 Vagas de entregadores** (campo de quantidade, "ocupadas X de Y", aviso COMPLETO e a lista de entregadores que entraram). Sem número definido = sem limite.
+- Entregador: ao confirmar o código, ocupa uma vaga; se estiver cheio, vê "Vagas de entregador desta loja esgotadas" e não entra. "Gerar novo código" mantém vagas e lista.
+- **Segurança (firestore.rules, republicar):** o servidor agora também barra o limite (não depende da tela) e fechei uma brecha: antes um entregador conseguia se vincular a qualquer loja sem convite; agora só pelo código válido (e dentro das vagas).
+- Testes novos `t10_vagas.py` (9 checagens: salvar vagas, 1º entra, 2º barrado, burla direta negada, vincular sem convite negado, passar do limite negado, lista na loja, aumentar vagas libera). Suíte: lógica 10/10 · cenário 30/30 · checkout 2/2 · fumaça 10/10 · site 9/9 · zerar 9/9 · garçom 6/6 · pedido do garçom 6/6 · vagas 9/9.
+- Ainda NÃO existe neste pacote: chave "Motoboys globais" no Criador, card "Total de Motoboys", aprovação do entregador pelo lojista, e o APK.
