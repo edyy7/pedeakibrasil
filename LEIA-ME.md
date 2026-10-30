@@ -103,3 +103,60 @@
 - Servidor: pedido novo recusado se loja vencida/suspensa/sem gerente; funcionário só acessa após `equipe.st = ativo`, que só o ADM altera.
 
 **Limites conhecidos (ver dossiê)**: regras não rodaram em emulador; leitura de `lojas/{slug}` por código exato segue aberta a qualquer login (o cliente precisa do cardápio); todos os cargos veem as mesmas telas da loja (cargo é só cadastro/folha); lojas criadas na v4 viram plano Iniciante.
+
+
+## v5.1 · Bloco 1 — sincronização de 5 s e avisos básicos
+- **Sincronização:** `conta.js` ganhou `PA_sync5`, que envolve o Firestore dos 5 apps (cliente, lojista, motoboy, adm, criador). Cada consulta que o app já fazia (mesmo escopo do perfil) é relida do servidor a cada 5 s e só repassada ao app se mudou. Nenhuma consulta nova foi criada para esse fim.
+- **Avisos:** Loja é avisada quando entra pedido novo; Motoboy (vinculado à loja, e online) é avisado quando um pedido de entrega fica **pronto**. Vibração + bipe + notificação do sistema (o navegador pede permissão no primeiro toque).
+- Motoboy: nova consulta `pedidos where st==pronto and loja==<loja vinculada>` (mesma forma da consulta de "enviados"; as regras atuais já permitem).
+- `sw.js`: versão de cache `pedeai-v5.1.0` e clique na notificação abre o app.
+- Limite: com o app totalmente fechado não chega aviso (isso exigiria push por servidor/FCM, fora deste bloco).
+
+
+## v5.2 · Parte 1 — Fase 1 (limpeza de teste, relatórios reais, limite 15/dia, Criador oculto)
+**Corrigido**
+- **cliente.html**: apagado (não oculto) o bloco "Opções de teste" com seus botões (Entrega grátis, Assistente, Marketplace, raio) e a frase "Neste exemplo as fotos são ícones". Removidas as 4 lojas fictícias do Marketplace (`MKS=[]`) e o assistente de voz simulado ficou desligado. A entrega/retirada continua vindo da configuração real da loja.
+- **adm.html**: botões do relatório agora reais — gera PDF (jsPDF via cdnjs) com resumo e balanço por loja; Visualizar, Imprimir, Salvar em PDF, Compartilhar (Share nativo, com arquivo) e Enviar ao contador (Share com arquivo ou, sem suporte, salva o PDF e abre o e-mail). Apagados os textos "15 pedidos/dia".
+- **lojista.html**: Exportar backup (.json real, também compartilhável) e Restaurar backup (valida app, tipo e loja; restaura cardápio, horários e caixa; pedidos não são sobrescritos). O texto "criptografado" foi removido porque o arquivo não é criptografado.
+- **criador.html**: removida toda a regra/tela "15 pedidos/dia" (estados Limitada/Limite atingido, botão Liberar/Travar loja).
+- **index.html / PedeAi.html**: botão do Criador removido da tela inicial. Acesso oculto: caminho `/criador` (rewrite em `vercel.json`) ou, no celular, 5 toques no título "PedeAí Brasil" → campo → digitar `criador`. O login do Criador continua restrito ao e-mail autorizado (app + regras).
+- `sw.js`: cache `pedeai-v5.2.0`.
+
+**Ainda não feito (partes seguintes)** — textos/botões "Exemplo:" que não fazem parte da Fase 1: endereço do cliente fixo, chave Pix "chave-exemplo", chats (cliente/loja/motoboy/ADM), cadastro e tema do motoboy, e as telas do Criador/ADM que ainda usam dados fictícios (lojas, Pix, mensagens, ocorrências de exemplo). Fases 2 a 4 não iniciadas.
+**Teste:** sintaxe dos 5 apps validada e fumaça em navegador (sem erros JS, bloco de teste ausente, acesso oculto funcionando). A geração do PDF depende da internet (cdnjs) e não foi exercitada aqui; teste no aparelho.
+
+
+## v5.2.1 · Parte 2 — Blocos 2, 3 e 4 (publique `firebase/firestore.rules` de novo!)
+**Bloco 2 · Som e Criador**
+- Aviso com som, vibração e notificação do sistema (`silent:false`, `requireInteraction`) agora também no ADM e no Criador (pede permissão no 1º toque).
+- Quando o ADM cria uma loja (👥 RH → Nova loja) grava `eventos/{slug}`; o Criador recebe aviso sonoro na hora e vê a lista em **🏪 Lojas e dados** (botão vermelho), com "Marcar como vista".
+- Limite: com o app **totalmente fechado** só chega aviso com push de servidor (FCM + Cloud Function), que não está neste pacote.
+
+**Bloco 3 · Zerar e Excluir (no Criador, dados reais)**
+- **Zerar** (digitar ZERAR): apaga `pedidos` (vendas e lucros), `ocorrencias`, `eventos`, o histórico de pagamentos já decididos em `contas.pagto` (carteira, inclusive a do Criador; pagamentos "em análise" ficam) e reinicia o contador de pedidos. **Preserva** contas, lojas, equipe, cargos e cardápios.
+- **Excluir loja** (digitar o nome): apaga pedidos, ocorrências, equipe, convites, eventos e a loja; apaga a conta do dono e desvincula os entregadores dela.
+
+**Bloco 4 · Equipe e salário**
+- Formulário do Gerente na ordem **Nome, Cargo, E-mail** + **Salário** (decimal). O ADM vê nome/cargo/salário informados, o cargo já vem pré-selecionado e o salário vira o da folha (se vazio, vale o do cargo).
+- Alterar `salario`: **ADM** (botão Salário na folha) e **Gerente** (botão Salário na equipe), validado nas regras (número ≥ 0). O Gerente não consegue mudar `st`/cargo oficial.
+
+**Regras novas**: `eventos` (ADM cria só o próprio; só o Criador lê/edita/apaga); Criador pode listar/apagar `convites`, `gerenteConvites`, `contas` e `lojas`; `equipe` aceita `nome`, `cargoInformado`, `salario`.
+**Não testado em emulador/produção**: regras do Firestore (só conferi chaves/parênteses) e as telas Zerar/Excluir (só sintaxe). Teste primeiro com uma loja descartável.
+**Ainda mock**: a tela antiga do `criador.html` (botão "Zerar" e lojas de exemplo) não foi religada; o painel real é o das duas bolhas flutuantes.
+
+
+## v5.3.0 · Parte 3 — Blocos 5, 6, 7 e 9 (republique `firestore.rules` e publique `storage.rules`!)
+**Bloco 5 · Pedidos e preparo (lojista)**
+- Fluxo: Novo → **Aceitar** (status "Aceito", baixa o estoque) → **Solicitar preparo** ("Em preparo" + abre a **OS em fonte grande**, com botão Imprimir) → **Liberado (cozinha)** (só marca aviso interno, não muda o status) → **Pronto** (único que dispara o aviso/visibilidade ao entregador; segue valendo o envio da loja).
+- **Histórico (timeline)** abaixo de cada pedido: botão "🕒 Histórico do pedido" com cada etapa, data/hora e quem fez (campo `hist` no pedido). Mudanças feitas pelo entregador/cliente ainda não entram no histórico.
+- Cliente: status "Aceito" aparece como "Loja aceitou e está preparando".
+
+**Bloco 6 · Cadastro do entregador**: formulário real (sem dados de exemplo) com **Rosto, CNH e Veículo obrigatórios** (foto pela câmera/galeria, reduzida a 1280px e enviada ao Firebase Storage em `entregadores/{uid}/`). Enquanto o cadastro estiver incompleto o app trava na tela de cadastro. Salvo em `contas/{uid}_motoboy.cad`.
+
+**Bloco 7 · Pagamentos (Criador)**: botão azul **🔗 Pagamentos** com CRUD de links (https obrigatório), "Usar este" e **Switch** de redirecionamento. Dados: `linksPagamento/*` (só Criador) e `meta/pagamento` (lido pelo cliente). Com o Switch ligado, o cliente que escolhe **Pix** é levado ao link logo após enviar o pedido (o pedido já fica registrado).
+
+**Bloco 9 · Menu Garçom**: aba **🍽️ Garçom** (cardápio, Nome do cliente, Mesa e Observações, todos opcionais) que envia o pedido à cozinha (aparece como "Mesa N", com garçom e observação, também na OS). Alternância **🔄 Modo Garçom / Modo Loja** para Gerente e funcionários; quem tem cargo "Garçom" fica travado no modo Garçom (só Garçom + Pedidos). Equipe ganhou `commission_active` (boolean) e `commission_percentage` (0–100): switch e % aparecem no cadastro quando o cargo é Garçom; botão **Comissão** para Gerente e ADM editarem; o garçom vê suas vendas e comissão. O garçom precisa sair e entrar de novo para ver mudança de comissão.
+
+**Antes de usar**: (1) publicar `firebase/firestore.rules`; (2) publicar `firebase/storage.rules` no Storage (ative o Storage no console) **trocando COLOQUE-O-E-MAIL-DO-CRIADOR-AQUI pelo e-mail do Criador**; (3) o link de pagamento é um redirecionamento: a confirmação do pagamento continua manual pela loja.
+**Testado em navegador**: fluxo aceitar→preparo→OS→liberado→pronto, timeline, aba Garçom/comissão/pedido com mesa, cadastro do entregador (3 fotos obrigatórias, sem "Cancelar" quando forçado), formulário de equipe. **Não testado**: upload real ao Storage, regras do Firestore/Storage, painel 🔗 Pagamentos e o redirecionamento no checkout (precisam do Firebase).
+**Fica para depois**: Bloco 8 não existe no documento; Fases 3 e 4 (app de entregas, site) e o aviso com app fechado.

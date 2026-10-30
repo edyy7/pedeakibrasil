@@ -1,0 +1,13 @@
+rules_version = '2';
+// Fotos do cadastro do entregador (rosto, CNH, veículo). Só o próprio entregador envia; ele e o Criador leem.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /entregadores/{uid}/{arq} {
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow read: if request.auth != null && (request.auth.uid == uid
+        || request.auth.token.email == 'COLOQUE-O-E-MAIL-DO-CRIADOR-AQUI');
+    }
+  }
+}

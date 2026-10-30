@@ -113,6 +113,7 @@ service cloud.firestore {
       allow get: if signed() && (id.matches(request.auth.uid + '_.*') || isCriador() || admDaConta(resource.data)
         || (resource.data.get('papel', '') == 'lojista' && resource.data.get('loja', null) != null && equipeAtiva(resource.data.loja.slug)));
       allow list: if isCriador();
+      allow delete: if isCriador();
       allow create: if signed()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.papel in ['lojista', 'motoboy', 'adm']
@@ -146,17 +147,20 @@ service cloud.firestore {
                  && get(/databases/$(database)/documents/convites/$(request.resource.data.loja.convite)).data.slug == request.resource.data.loja.slug)
              // Lojista guarda o código de convite atual (a validade vem de convites/{código}).
              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['convite']) && resource.data.papel == 'lojista')
-             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pagto']) && request.resource.data.pagto.st == 'analise')));
+             || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cad'])
+          && resource.data.get('papel', '') == 'motoboy'
+          && request.resource.data.cad.fotos.keys().hasAll(['rosto', 'cnh', 'veiculo']))
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pagto']) && request.resource.data.pagto.st == 'analise')));
     }
 
     // Convites de entregador: só se lê por código exato (não dá para listar); só o dono da loja cria/apaga.
     match /convites/{code} {
       allow get: if signed();
-      allow list: if false;
+      allow list: if isCriador();
       allow create: if signed()
         && request.resource.data.dono == request.auth.uid
         && get(/databases/$(database)/documents/lojas/$(request.resource.data.slug)).data.get('dono', '') == request.auth.uid;
-      allow delete: if signed() && resource.data.dono == request.auth.uid;
+      allow delete: if isCriador() || (signed() && resource.data.dono == request.auth.uid);
       allow update: if false;
     }
 
@@ -177,7 +181,7 @@ service cloud.firestore {
     // Convites de Gerente: criados pelo ADM; só se lê por código exato; vale uma única vez.
     match /gerenteConvites/{t} {
       allow get: if signed();
-      allow list: if false;
+      allow list: if isCriador();
       allow create: if signed() && t.size() >= 16
         && request.resource.data.admId == request.auth.uid
         && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_adm'))
@@ -186,7 +190,7 @@ service cloud.firestore {
       allow update: if signed() && resource.data.usado == false
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usado', 'uid', 'em'])
         && request.resource.data.usado == true && request.resource.data.uid == request.auth.uid;
-      allow delete: if signed() && resource.data.admId == request.auth.uid;
+      allow delete: if isCriador() || (signed() && resource.data.admId == request.auth.uid);
     }
 
     // Equipe: o Gerente cadastra o e-mail (sempre 'pendente'); SÓ o ADM da loja muda para 'ativo' e define o cargo.
@@ -199,11 +203,35 @@ service cloud.firestore {
         && id == request.resource.data.slug + '__' + request.resource.data.email
         && request.resource.data.email == request.resource.data.email.lower()
         && request.resource.data.admId == get(/databases/$(database)/documents/lojas/$(request.resource.data.slug)).data.get('admId', '')
-        && request.resource.data.keys().hasOnly(['slug', 'email', 'st', 'por', 'admId', 'criadoEm']);
+        && request.resource.data.keys().hasOnly(['slug', 'email', 'st', 'por', 'admId', 'criadoEm', 'nome', 'cargoInformado', 'salario', 'commission_active', 'commission_percentage'])
+        && request.resource.data.get('commission_active', false) is bool
+        && request.resource.data.get('commission_percentage', 0) is number && request.resource.data.get('commission_percentage', 0) >= 0 && request.resource.data.get('commission_percentage', 0) <= 100
+        && request.resource.data.get('salario', 0) is number && request.resource.data.get('salario', 0) >= 0;
       allow update: if isCriador()
         || (signed() && resource.data.get('admId', '') == request.auth.uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'cargo', 'cargoId', 'em']));
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'cargo', 'cargoId', 'em', 'salario', 'nome', 'cargoInformado', 'commission_active', 'commission_percentage'])
+            && request.resource.data.get('commission_percentage', 0) is number && request.resource.data.get('commission_percentage', 0) >= 0 && request.resource.data.get('commission_percentage', 0) <= 100
+            && request.resource.data.get('salario', 0) is number && request.resource.data.get('salario', 0) >= 0)
+        || (donoDaLoja(resource.data.get('slug', ''))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['salario', 'nome', 'cargoInformado', 'commission_active', 'commission_percentage'])
+            && request.resource.data.get('commission_percentage', 0) is number && request.resource.data.get('commission_percentage', 0) >= 0 && request.resource.data.get('commission_percentage', 0) <= 100
+            && request.resource.data.get('salario', 0) is number && request.resource.data.get('salario', 0) >= 0);
       allow delete: if isCriador() || donoDaLoja(resource.data.get('slug', '')) || admDaLoja(resource.data.get('slug', ''));
+    }
+
+    // Eventos para o Criador (ex.: ADM criou uma loja). O ADM só cria o próprio; só o Criador lê, marca e apaga.
+    match /eventos/{id} {
+      allow create: if signed() && request.resource.data.admId == request.auth.uid
+        && request.resource.data.tipo == 'loja_criada'
+        && request.resource.data.keys().hasOnly(['tipo', 'slug', 'nome', 'plano', 'admId', 'admEmail', 'criadoEm', 'lido']);
+      allow read, update, delete: if isCriador();
+    }
+
+    // Links de pagamento (CRUD só do Criador) e chave liga/desliga lida pelo checkout do cliente.
+    match /linksPagamento/{id} { allow read, write: if isCriador(); }
+    match /meta/pagamento {
+      allow read: if signed();
+      allow write: if isCriador();
     }
 
     // Cargos e salários: do ADM que os cadastrou.
@@ -227,6 +255,7 @@ service cloud.firestore {
       allow list: if isCriador()
         || (signed() && resource.data.get('admId', '') == request.auth.uid)
         || (signed() && resource.data.get('dono', '') == request.auth.uid);
+      allow delete: if isCriador();
       // Criação SÓ pelo ADM, com plano escolhido; fica 'pendente' até o 1º login do link virar Gerente.
       allow create: if signed()
         && request.resource.data.admId == request.auth.uid

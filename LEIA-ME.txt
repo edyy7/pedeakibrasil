@@ -1,0 +1,3 @@
+Teste em navegador (Chromium + Playwright) com Firestore SIMULADO e as regras portadas para JS.
+Rodar:  node server.js <pasta app>   e depois   python3 t1.py  (cenário completo, 29 checagens), t3.py (checkout), t4.py (Criador).
+LIMITE: o simulador e a porta das regras foram escritos por mim; não substituem o emulador/projeto Firebase real.
