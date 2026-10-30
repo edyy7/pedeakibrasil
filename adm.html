@@ -23,7 +23,7 @@ summary{font-weight:800;cursor:pointer;font-size:17px}.sw{border-color:var(--yl)
 table{width:100%;border-collapse:collapse;font-size:15.5px}td,th{padding:6px 4px;border-bottom:1px solid var(--br);text-align:left}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;display:none;z-index:9}
 </style><link rel="manifest" href="manifest-adm.json"><meta name="theme-color" content="#2b6cb0"><link rel="icon" href="icon-adm-192.png"><link rel="apple-touch-icon" href="icon-adm-192.png"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
-<div class="pv" id="pa-st" style="background:#111;color:#e0a800;font-size:12.5px;font-weight:700">○ Conectando… (ocorrências sincronizadas; as demais abas ainda são exemplo)</div>
+<div class="pv" id="pa-st" style="background:#111;color:#e0a800;font-size:12.5px;font-weight:700">○ Conectando…</div>
 <div class="pg" id="inst"></div>
 <div class="top" id="topn">Administração</div>
 <div class="tabs" id="tabs"></div><div class="pg" id="v"></div><div class="toast" id="t"></div>
@@ -33,7 +33,7 @@ let L=[],MYCODE=null,LOADED=false,LERR=null;const MYS=new Set(),IDS={};let SEQ=0
 const nid=s=>IDS[s]||(IDS[s]=++SEQ);
 const nmS=s=>{const x=L.find(y=>y.slug==s);return x?x.n:s};
 const OCm=()=>OCO.filter(o=>MYS.has(o.lj));
-const ACC=[["Marcos (caixa)","Lanchonete do Zé","pendente"],["Ana (atendente)","Farmácia Vida","autorizado"],["Rui (entregador da loja)","Depósito Construir","autorizado"],["Lia (recepção)","Salão Bella Vitória","pendente"]];
+const ACC=[];
 let bk=false,fc=false;
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 function som(k){try{const c=new(window.AudioContext||window.webkitAudioContext)(),seq=k=="plim"?[[1318,0],[1568,.16]]:[[440,0],[330,.22],[440,.44]];seq.forEach(([fr,t])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=fr;o.type=k=="plim"?"sine":"square";g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+t);o.stop(c.currentTime+t+.14)})}catch(e){}}
@@ -74,7 +74,7 @@ function painel(){const H=L.reduce((a,x)=>({cri:a.cri+x.h.cri,ent:a.ent+x.h.ent,
 <h2 style="margin-top:16px">📄 Planos das lojas</h2><div class="grid">${tile(C.ativa,"🟢 Ativa")}${tile(C.avencer,"🟡 A vencer")}${tile(C.carencia,"🟠 Carência")}${tile(C.travada,"🔴 Travada")}</div>
 <h2 style="margin-top:16px">🚨 Alertas</h2>
 ${OCm().filter(o=>o.st=="aberta").map(o=>`<div class="oc al"><b>⚠️ Cliente reportou problema no pedido #${o.ped} da loja ${nmS(o.lj)}</b><div class="meta">Motivo: ${o.mot}</div><button class="cta b" onclick="go('oc')">Ver ocorrência</button></div>`).join("")}
-<div class="oc"><b>Limite diário</b><div class="meta">Cada loja: até 15 pedidos por dia. Renova às 00:01.</div></div>`}
+`}
 function lj(){if(open)return det(L.find(x=>x.id==open));const sus=L.filter(x=>x.sus).length;
 return `<h2>🏪 Lojas</h2><div class="grid">${tile(L.length,"lojas no sistema")}${tile(L.length-sus,"ativas")}${tile(sus,"suspensas")}${tile(L.filter(entOn).length,"com entrega ligada")}</div>
 <div class="oc"><b>➕ Trazer uma loja</b><div class="meta" style="margin:6px 0">A loja agora é criada por você: toque em <b>👥 RH</b> na barra de cima → <b>Nova loja</b>, escolha o plano e envie o link de Gerente.</div><button class="cta" onclick="PA_RH.adm()">👥 Abrir RH e criar loja</button></div>
@@ -89,10 +89,9 @@ function det(x){const on=entOn(x),ag=x.tp=="agenda";return `<button class="back"
 function eq(){return `<h2>🔑 Acessos</h2><div class="oc"><div class="meta">Funcionários cadastrados pelos Gerentes aguardam a sua autorização. Você escolhe o cargo e libera.</div><b style="font-size:20px">${(window.PA&&PA.rhN)||0} aguardando</b><button class="cta" onclick="PA_RH.adm()">👥 Abrir RH (autorizar, cargos, folha)</button></div>`}
 function fin(){return `<h2>💰 Financeiro</h2><div class="grid">${tile(R$(L.reduce((s,x)=>s+x.fat30,0)),"faturado (30 dias)")}${tile(R$(L.reduce((s,x)=>s+x.fat,0)),"faturado (total)")}</div>
 <div class="oc"><b>Por loja</b><table><tr><th>Loja</th><th>30 dias</th><th>Total</th></tr>${L.map(x=>`<tr><td>${x.n}${x.sus?" ⛔":""}</td><td>${R$(x.fat30)}</td><td>${R$(x.fat)}</td></tr>`).join("")||`<tr><td colspan="3" class="meta">Nenhuma loja ainda.</td></tr>`}</table><div class="meta" style="margin-top:6px">Só pedidos entregues ou retirados.</div></div><button class="cta b" onclick="bk=true;go('cfg')">⬇ Relatório do contador (PDF)</button>
-<div class="oc"><b>💠 Chave Pix</b><input placeholder="Chave Pix" value="chave-exemplo@pix"><input placeholder="Nome do recebedor" value="Cooperativa Exemplo"><input placeholder="Cidade" value="Vitória"><button class="cta" onclick="toast('Exemplo: Pix salvo')">Salvar Pix</button></div>
-<div class="oc"><b>↩️ Reembolsos</b><div class="meta">Em desenvolvimento: ainda não existe no app real (só neste exemplo).</div></div>`}
-function cfg(){return `<h2>⚙️ Config</h2><div class="oc"><b>🛵 Entregas</b><div class="meta" style="margin:4px 0 8px">${ENTG?"LIGADO: os ganhos por entrega aparecem abaixo e no Financeiro.":"DESLIGADO: ganhos por entrega e repasse aos entregadores ficam escondidos. Ligue para abrir."}</div><button class="cta ${ENTG?"o":"g"}" onclick="ENTG=!ENTG;draw();toast(ENTG?'Entregas ligadas':'Entregas desligadas')">${ENTG?"Desligar entregas":"Ligar entregas"}</button></div><div class="oc"><b style="color:var(--mu)">🛍️ Marketplace</b><div class="meta" style="margin:4px 0">Desligado</div><div class="meta">Quem liga ou desliga é o Criador.</div></div><div class="oc"><b>👤 Cadastro da administração</b><input placeholder="Nome" value="Edinaldo (exemplo)"><input placeholder="E-mail" value="adm@exemplo.com"><input placeholder="WhatsApp" value="27 99999-0000"><button class="cta" onclick="toast('Exemplo: cadastro salvo')">Salvar cadastro</button></div>
-<div class="oc"><b>🚦 Limite diário por loja</b><div class="meta">Até 15 pedidos por dia por loja; renova às 00:01. Quem libera ou trava é o criador.</div></div>
+`}
+function cfg(){return `<h2>⚙️ Config</h2><div class="oc"><b>🛵 Entregas</b><div class="meta" style="margin:4px 0 8px">${ENTG?"LIGADO: os ganhos por entrega aparecem abaixo e no Financeiro.":"DESLIGADO: ganhos por entrega e repasse aos entregadores ficam escondidos. Ligue para abrir."}</div><button class="cta ${ENTG?"o":"g"}" onclick="ENTG=!ENTG;draw();toast(ENTG?'Entregas ligadas':'Entregas desligadas')">${ENTG?"Desligar entregas":"Ligar entregas"}</button></div><div class="oc"><b style="color:var(--mu)">🛍️ Marketplace</b><div class="meta" style="margin:4px 0">Desligado</div><div class="meta">Quem liga ou desliga é o Criador.</div></div>
+
 ${ENTG?`<div class="oc"><b>🛵 Ganho do entregador por distância</b><div class="meta" style="margin:4px 0 8px">O app mede a distância pelo GPS da loja e do cliente e mostra ao entregador, antes de aceitar: quanto ele ganha, quantos km são e o tempo médio da corrida (deslocamento até a loja, espera e entrega).</div>
 <div class="meta">Raio Máximo Global da Rede (km)</div><input id="erm" inputmode="decimal" value="${String(ENT.raio).replace(".",",")}"><div class="meta" style="margin-bottom:6px">Nenhuma loja pode definir um raio de entrega maior que este.</div>
 <div class="meta">Valor por km (R$)</div><input id="ekm" inputmode="decimal" value="${String(ENT.km).replace(".",",")}" oninput="sim()">
@@ -103,7 +102,7 @@ ${ENTG?`<div class="oc"><b>🛵 Ganho do entregador por distância</b><div class
 <div class="meta" style="margin-top:12px;font-weight:800">Simulador (como o entregador vai ver)</div>
 <div class="row" style="gap:8px"><div style="flex:1"><div class="meta">Entregador → loja (km)</div><input id="s1" inputmode="decimal" value="1,5" oninput="sim()"></div><div style="flex:1"><div class="meta">Loja → cliente (km)</div><input id="s2" inputmode="decimal" value="4,0" oninput="sim()"></div></div>
 <div class="oc" id="sr" style="margin-bottom:0"></div></div>`:""}
-<div class="oc"><b>💾 Backup</b><div class="meta">Relatório completo da empresa (balanço detalhado), em PDF.</div><button class="cta b" onclick="bk=!bk;draw()">Gerar backup</button>${bk?`<div class="meta" style="margin-top:8px"><b>Relatório gerado · PDF</b></div><button class="cta b" onclick="toast('Exemplo: abriria o PDF')">👁️ Visualizar</button><button class="cta b" onclick="toast('Exemplo: abriria a impressão')">🖨️ Imprimir</button><button class="cta b" onclick="toast('Exemplo: PDF salvo neste aparelho')">💾 Salvar em PDF</button><button class="cta b" onclick="toast('Exemplo: abriria o compartilhar do aparelho')">📤 Compartilhar</button><button class="cta" onclick="toast('Exemplo: PDF enviado ao contador')">📧 Enviar ao contador</button>`:""}</div>
+<div class="oc"><b>💾 Relatório da administração</b><div class="meta">Balanço das lojas vinculadas a você (pedidos, faturamento e situação do plano), em PDF.</div><button class="cta b" onclick="bk=!bk;draw()">Gerar relatório</button>${bk?`<div class="meta" style="margin-top:8px"><b>Relatório pronto · PDF</b></div><button class="cta b" onclick="bkAcao('ver')">👁️ Visualizar</button><button class="cta b" onclick="bkAcao('imp')">🖨️ Imprimir</button><button class="cta b" onclick="bkAcao('salvar')">💾 Salvar em PDF</button><button class="cta b" onclick="bkAcao('share')">📤 Compartilhar</button><input id="bkem" type="email" inputmode="email" placeholder="E-mail do contador" value="${bkMail()}"><button class="cta" onclick="bkAcao('contador')">📧 Enviar ao contador</button>`:""}</div>
 <div class="oc"><b>🤝 Indicação Comissionada</b><div class="meta" style="margin:4px 0">Para trazer uma loja use 👥 RH → Nova loja (o link de Gerente já leva o seu vínculo). O código abaixo identifica você nas indicações. Comissão de 1 nível, só sobre pagamento efetivo, repassada no ato do pagamento da loja. No período grátis ninguém recebe.</div><div class="meta">Terceiro: Por uso R$ 0,50/pedido por 3 meses · Mensal 100% do 1º mês · Anual 20% do total. Autoindicação: Por uso R$ 0,50/pedido · Mensal 50% · Anual 20%.</div><div class="oc" style="margin-bottom:0"><div class="meta">Seu código</div><b style="font-size:20px">${MYCODE||"gerando…"}</b></div><button class="cta" onclick="copiaAdm('cod')">Copiar código</button></div>
 <div class="oc"><b>🔔 Notificações sonoras</b><div class="meta" style="margin:4px 0">💰 “Plim plim” quando o pagamento é confirmado. ⚠️ Alerta (som diferente) em atraso ou carência. Tocam no ADM e no Criador.</div><div style="display:flex;gap:8px"><button class="cta b" onclick="som('plim');toast('💰 Pagamento confirmado')">Testar plim plim</button><button class="cta b" onclick="som('alerta');toast('⚠️ Atraso / carência')">Testar alerta</button></div></div>
 <div class="oc"><b>📋 Regras de cobrança</b><div class="meta" style="margin-top:4px">7 dias grátis dentro dos 30 (não somam); cancela sem pagar até o dia 7; 1º pagamento no dia 30. Quem cancela e volta paga desde o início. Carência de 3 dias após o vencimento, com 3 a 4 avisos por dia. Depois dela a loja para só de pedidos novos: pode mexer no estoque e acessar o painel, e só volta a vender pagando. Troca de plano: pagamento integral na hora, sem crédito do período não usado, dados preservados.</div></div>
@@ -118,23 +117,59 @@ function pix(){const pe=PIX.filter(p=>p.st=="pend"),an=PIX.filter(p=>p.st=="anal
  return `<h2>💠 Pix</h2><div class="meta">Pagamento em 2 etapas: o ADM confere o Pix e confirma, e a loja é liberada na hora. O Pix fica “Em análise” até o Criador bater o martelo.</div>
 <div class="oc"><b>Chave Pix do Criador</b><div style="word-break:break-all;margin-top:4px">${CHAVE_CRIADOR}</div><button class="cta" onclick="copiaPix()">📋 Copiar chave Pix do Criador</button><div class="meta" style="margin-top:6px">Passe esta chave à loja para pagar o plano.</div></div>
 <h2>Pagamentos para confirmar</h2>${pe.map(p=>`<div class="oc"><div class="row"><b>${lojaNome(p.lj)}</b><span class="tag">${p.pl} · ${R$(p.v)}</span></div><div style="margin-top:6px">${bdg(L.find(x=>x.id==p.lj))}</div><input id="pc${p.id}" placeholder="Nome de quem pagou ou nº do comprovante"><button class="cta" onclick="confPix(${p.id})">✅ Confirmar pagamento</button></div>`).join("")||`<div class="meta">Nenhum pagamento aguardando conferência.</div>`}
-<h2>Aguardando o Criador</h2>${an.map(p=>`<div class="oc"><div class="row"><b>${lojaNome(p.lj)}</b><span class="tag" style="color:var(--yl);border-color:var(--yl)">Em análise</span></div><div class="meta">${p.pl} · ${R$(p.v)}${p.por?" · pago por "+p.por:""}</div><div class="meta" style="color:var(--tx)">Loja já liberada por você. Falta o Criador confirmar no banco.</div><button class="cta b" onclick="criadorOk(${p.id})">Simular: o Criador confirmou (só no preview)</button></div>`).join("")||`<div class="meta">Nenhum pagamento em análise.</div>`}
+<h2>Aguardando o Criador</h2>${an.map(p=>`<div class="oc"><div class="row"><b>${lojaNome(p.lj)}</b><span class="tag" style="color:var(--yl);border-color:var(--yl)">Em análise</span></div><div class="meta">${p.pl} · ${R$(p.v)}${p.por?" · pago por "+p.por:""}</div><div class="meta" style="color:var(--tx)">Loja já liberada por você. Falta o Criador confirmar no banco.</div></div>`).join("")||`<div class="meta">Nenhum pagamento em análise.</div>`}
 ${ok.length?`<h2>Confirmados pelo Criador</h2>`+ok.map(p=>`<div class="oc"><div class="row"><b>${lojaNome(p.lj)}</b><span class="tag" style="color:var(--ok);border-color:var(--ok)">Confirmado</span></div><div class="meta">${p.pl} · ${R$(p.v)}</div></div>`).join(""):""}`}
 function copiaPix(){try{navigator.clipboard.writeText(CHAVE_CRIADOR)}catch(e){}toast("Chave Pix do Criador copiada")}
 function confPix(id){const p=PIX.find(x=>x.id==id),t=$("pc"+id).value.trim();if(!t){toast("Informe quem pagou ou o nº do comprovante");return}p.st="analise";p.por=t;L.find(x=>x.id==p.lj).lib=true;som("plim");draw();toast("💰 Pagamento confirmado: loja liberada na hora · Pix em análise (aguardando o Criador)")}
 function criadorOk(id){const p=PIX.find(x=>x.id==id),x=L.find(y=>y.id==p.lj);p.st="ok";x.lib=false;const b=new Date(Math.max(HOJE,new Date(x.pl.v+"T00:00:00")));b.setDate(b.getDate()+(p.pl=="Anual"?365:30));x.pl.v=iso(b);draw();toast("Criador confirmou: plano de "+x.n+" renovado")}
 /* ---------- MENSAGENS DAS LOJAS ---------- */
-let MSG=[{id:1,lj:"Lanchonete do Zé",hr:"09:12",txt:"Bom dia! Como configuro a taxa de entrega para clientes fora do raio?",lida:false,resp:"",rep:false},{id:2,lj:"Farmácia Vida",hr:"10:40",txt:"Meu plano vence em 2 dias. Como faço o pagamento pelo Pix?",lida:false,resp:"",rep:false},{id:3,lj:"Depósito Construir",hr:"ontem",txt:"Meu plano está em carência e preciso voltar a vender hoje.",lida:true,resp:"Já estamos conferindo o seu Pix.",rep:true}],rp=null;
+let MSG=[],rp=null;
 function msg(){return `<h2>📨 Mensagens</h2><div class="meta">Caixa de entrada com as mensagens das lojas que você atende.</div>${MSG.map(m=>`<div class="oc" style="${!m.lida&&!m.resp?'border-color:var(--bl)':''}"><div class="row"><b>${m.lj}</b><span class="meta">${m.hr}</span></div><div style="margin:6px 0">${m.txt}</div>${m.resp?`<div class="meta" style="color:var(--ok)">✓ Você respondeu: “${m.resp}”</div>`:""}${m.rep?`<div class="meta" style="color:var(--yl)">📤 Repassada ao Criador</div>`:""}${rp==m.id?`<input id="rpm" placeholder="Escreva a resposta à loja"><button class="cta" onclick="enviaResp(${m.id})">Enviar resposta</button>`:`<button class="cta b" onclick="rp=${m.id};draw()">Responder à loja</button>`}${m.rep?"":`<button class="cta b" onclick="repassaMsg(${m.id})">📤 Repassar ao Criador</button>`}</div>`).join("")}`}
 function enviaResp(id){const t=$("rpm").value.trim();if(!t){toast("Escreva a resposta");return}const m=MSG.find(x=>x.id==id);m.resp=t;m.lida=true;rp=null;draw();toast("Resposta enviada à loja")}
 function repassaMsg(id){const m=MSG.find(x=>x.id==id);m.rep=true;m.lida=true;draw();toast("Mensagem repassada ao Criador")}
 /* ---------- OCORRENCIAS (problemas reportados por clientes) ---------- */
-let OCO=[{id:1,ped:4826,lj:"Lanchonete do Zé",cli:"Marcos T.",mot:"Não chegou",txt:"Pedi há mais de 1 hora e o pedido não chegou.",st:"aberta",rep:false},{id:2,ped:4825,lj:"Farmácia Vida",cli:"Ana P.",mot:"Pedido errado",txt:"Veio um medicamento diferente do que eu pedi.",st:"aberta",rep:false},{id:3,ped:4801,lj:"Depósito Construir",cli:"Caio B.",mot:"Loja não responde",txt:"Tentei falar com a loja e ninguém respondeu.",st:"resolvida",rep:false}];
+let OCO=[];
 function oc(){const ab=OCm().filter(o=>o.st=="aberta"),rs=OCm().filter(o=>o.st!="aberta");
- const card=o=>`<div class="oc ${o.st=="aberta"?"al":""}"><div class="row"><b>Pedido #${o.ped} · ${nmS(o.lj)}</b><span class="tag" style="${o.st=="aberta"?"color:var(--rd);border-color:var(--rd)":"color:var(--ok);border-color:var(--ok)"}">${o.st=="aberta"?"Aberta":"Resolvida"}</span></div><div class="meta">Cliente: ${o.cli} · Motivo: <b style="color:var(--tx)">${o.mot}</b></div><div style="margin:6px 0">“${o.txt}”</div>${o.rep?`<div class="meta" style="color:var(--yl)">📤 Repassada ao Criador</div>`:""}${o.st=="aberta"?`<button class="cta b" onclick="toast('Exemplo: abre o chat com ${nmS(o.lj)}')">💬 Falar com a loja</button>${o.rep?"":`<button class="cta b" onclick="repassaOc(${o.id})">📤 Repassar ao Criador</button>`}<button class="cta" onclick="resolveOc(${o.id})">✅ Marcar como resolvida</button>`:""}</div>`;
+ const card=o=>`<div class="oc ${o.st=="aberta"?"al":""}"><div class="row"><b>Pedido #${o.ped} · ${nmS(o.lj)}</b><span class="tag" style="${o.st=="aberta"?"color:var(--rd);border-color:var(--rd)":"color:var(--ok);border-color:var(--ok)"}">${o.st=="aberta"?"Aberta":"Resolvida"}</span></div><div class="meta">Cliente: ${o.cli} · Motivo: <b style="color:var(--tx)">${o.mot}</b></div><div style="margin:6px 0">“${o.txt}”</div>${o.rep?`<div class="meta" style="color:var(--yl)">📤 Repassada ao Criador</div>`:""}${o.st=="aberta"?`${o.rep?"":`<button class="cta b" onclick="repassaOc(${o.id})">📤 Repassar ao Criador</button>`}<button class="cta" onclick="resolveOc(${o.id})">✅ Marcar como resolvida</button>`:""}</div>`;
  return `<h2>⚠️ Ocorrências</h2><div class="meta">Problemas reportados por clientes nos pedidos.</div>${ab.map(card).join("")||`<div class="oc"><div class="meta">Nenhuma ocorrência aberta.</div></div>`}${rs.length?`<h2>Resolvidas</h2>`+rs.map(card).join(""):""}`}
 function repassaOc(id){OCO.find(o=>o.id==id).rep=true;draw();toast("Ocorrência repassada ao Criador")}
 function resolveOc(id){OCO.find(o=>o.id==id).st="resolvida";draw();toast("Ocorrência marcada como resolvida")}
+/* ---------- RELATÓRIO REAL EM PDF (jsPDF) ---------- */
+const bkMail=()=>{try{return(localStorage.getItem("pa_contador")||"").replace(/"/g,"")}catch(e){return""}};
+function bkLib(){return new Promise((ok,er)=>{if(window.jspdf&&window.jspdf.jsPDF)return ok(window.jspdf.jsPDF);const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";s.onload=()=>window.jspdf&&window.jspdf.jsPDF?ok(window.jspdf.jsPDF):er(new Error("lib"));s.onerror=()=>er(new Error("net"));document.head.appendChild(s)})}
+const bkTxt=s=>String(s==null?"":s).replace(/[^\x20-\x7E\u00A0-\u00FF]/g,"");
+async function bkMonta(){
+ const J=await bkLib(),d=new J({unit:"mm",format:"a4"}),W=210,M=14;let y=18;
+ const agora=new Date(),dt=agora.toLocaleDateString("pt-BR")+" "+agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+ const quem=(window.PA&&PA.user&&(PA.user.displayName||PA.user.email))||"Administração";
+ const nova=h=>{if(y+h>285){d.addPage();y=18}};
+ const lin=(a,b,neg)=>{nova(7);d.setFont("helvetica",neg?"bold":"normal");d.setFontSize(10.5);d.text(bkTxt(a),M,y);d.text(bkTxt(b),W-M,y,{align:"right"});y+=6.5};
+ d.setFont("helvetica","bold");d.setFontSize(17);d.text("PedeAí Brasil · Relatório da administração",M,y);y+=8;
+ d.setFont("helvetica","normal");d.setFontSize(10);d.text(bkTxt("Gerado em "+dt+" · "+quem),M,y);y+=4;d.line(M,y,W-M,y);y+=8;
+ const T=L.reduce((a,x)=>({ped:a.ped+(x.ped||0),fat:a.fat+(x.fat||0),f30:a.f30+(x.fat30||0),hj:a.hj+((x.h&&x.h.cri)||0),hent:a.hent+((x.h&&x.h.ent)||0)}),{ped:0,fat:0,f30:0,hj:0,hent:0});
+ d.setFont("helvetica","bold");d.setFontSize(12);d.text("Resumo geral",M,y);y+=7;
+ lin("Lojas vinculadas",String(L.length));lin("Pedidos (total)",String(T.ped));lin("Pedidos criados hoje",String(T.hj));lin("Pedidos entregues hoje",String(T.hent));
+ lin("Faturamento (últimos 30 dias)",R$(T.f30));lin("Faturamento total",R$(T.fat),true);y+=3;
+ d.setFont("helvetica","bold");d.setFontSize(12);nova(10);d.text("Lojas",M,y);y+=7;
+ if(!L.length){d.setFont("helvetica","normal");d.setFontSize(10.5);d.text("Nenhuma loja vinculada a este ADM.",M,y);y+=7}
+ L.forEach(x=>{nova(34);const e=estadoPlano(x);
+  d.setFont("helvetica","bold");d.setFontSize(11.5);d.text(bkTxt(x.n),M,y);d.setFont("helvetica","normal");d.setFontSize(10);d.text(bkTxt((PLN[x.plano]||x.plano||"Iniciante")+" · "+e.lbl+(x.sus?" · SUSPENSA":"")),W-M,y,{align:"right"});y+=6;
+  lin("  Pedidos (total)",String(x.ped||0));lin("  Faturamento 30 dias",R$(x.fat30||0));lin("  Faturamento total",R$(x.fat||0));lin("  Entrega",x.ent===false?"desligada":"ligada");
+  d.setDrawColor(200);d.line(M,y-2,W-M,y-2);y+=2});
+ const n=d.getNumberOfPages();for(let p=1;p<=n;p++){d.setPage(p);d.setFont("helvetica","normal");d.setFontSize(8.5);d.text("Página "+p+" de "+n,W/2,291,{align:"center"})}
+ return{d,nome:"relatorio-pedeai-"+agora.toISOString().slice(0,10)+".pdf"}}
+async function bkAcao(k){
+ let r;try{toast("Gerando PDF…");r=await bkMonta()}catch(e){console.error(e);toast("Não foi possível gerar o PDF. Verifique a internet e tente de novo.");return}
+ const blob=r.d.output("blob"),url=URL.createObjectURL(blob),file=new File([blob],r.nome,{type:"application/pdf"});
+ if(k=="ver"){const w=window.open(url,"_blank");if(!w)location.href=url;return}
+ if(k=="imp"){const f=document.createElement("iframe");f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";f.src=url;f.onload=()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,"_blank")}};document.body.appendChild(f);return}
+ if(k=="salvar"){r.d.save(r.nome);toast("PDF salvo neste aparelho");return}
+ const pode=navigator.canShare&&navigator.canShare({files:[file]});
+ if(k=="share"){if(pode){try{await navigator.share({files:[file],title:"Relatório PedeAí",text:"Relatório da administração PedeAí"})}catch(e){}}else{r.d.save(r.nome);toast("Este aparelho não compartilha arquivos: o PDF foi salvo para você enviar")}return}
+ if(k=="contador"){const em=($("bkem")||{}).value?$("bkem").value.trim():"";if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){toast("Informe um e-mail válido do contador");return}
+  try{localStorage.setItem("pa_contador",em)}catch(e){}
+  if(pode){try{await navigator.share({files:[file],title:"Relatório PedeAí",text:"Segue o relatório da administração. Para: "+em})}catch(e){}return}
+  r.d.save(r.nome);location.href="mailto:"+em+"?subject="+encodeURIComponent("Relatório PedeAí")+"&body="+encodeURIComponent("Segue em anexo o relatório (arquivo "+r.nome+" salvo neste aparelho).");toast("PDF salvo: anexe-o no e-mail que abriu")}}
 const V={painel,lj,pix,msg,oc,eq,fin,cfg};
 function sw(id){const x=L.find(y=>y.id==id);x.ent=!entOn(x);draw();toast(x.ent?"Entrega ligada":"Entrega desligada: só retirada")}
 function go(t){tab=t;open=null;draw()}
@@ -148,7 +183,7 @@ function show(){box.innerHTML=(inst||stand())?"":`<div style="background:var(--c
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;show()});
 window.addEventListener("appinstalled",()=>{inst=true;dp=null;show()});
 window.baixarApp=async function(){if(dp){dp.prompt();const r=await dp.userChoice;if(r&&r.outcome=="accepted"){inst=true;dp=null}else toast("Instalação cancelada");show();return}
- if(location.protocol=="file:"){inst=true;show();toast("Exemplo: instalaria o app e o botão some");return}
+ 
  toast("No menu do navegador, toque em “Instalar app” ou “Adicionar à tela inicial”")};
 show()})();
 </script><script>window.PA_PAPEL="adm"</script><script src="conta.js"></script><script src="rh.js"></script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
@@ -162,7 +197,7 @@ PA.strip=strip;
 if(window.PA_MOCK){window.PA_MOCK(PA);return}
 (async()=>{try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
- const [A,F,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);
+ const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
  const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
  await PA_login(H,au);
  PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);

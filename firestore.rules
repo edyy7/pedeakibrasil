@@ -51,6 +51,12 @@ service cloud.firestore {
 
     // ---------- Pedidos: quem pode ver ----------
     // O pedido já guarda: uid (cliente), loja (slug) e mot (uid do motoboy que aceitou).
+    function lojaAdmin(loja) {
+      return signed()
+        && exists(/databases/$(database)/documents/lojas/$(loja))
+        && (get(/databases/$(database)/documents/lojas/$(loja)).data.get('dono', '') == request.auth.uid
+            || get(/databases/$(database)/documents/lojas/$(loja)).data.get('admId', '') == request.auth.uid);
+    }
     function donoDaLoja(loja) {
       return loja != '' && exists(/databases/$(database)/documents/lojas/$(loja))
         && get(/databases/$(database)/documents/lojas/$(loja)).data.get('dono', '') == request.auth.uid;
@@ -250,6 +256,53 @@ service cloud.firestore {
     //  · create: o dono, com código de ADM válido (ou sem código → admId 'padrao'); nunca já criada como suspensa.
     //  · update: o dono (sem mexer em admId/admCodigo/suspensa/suspEm — loja não se reativa sozinha),
     //            o ADM da loja (SÓ suspensa/suspEm) e o Criador (tudo). A loja de demonstração, sem dono, segue aberta.
+    // Leads do site (formulário público): só o Criador lê.
+    match /leads/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['nome', 'tel', 'email', 'msg', 'tipo', 'criadoEm'])
+        && request.resource.data.nome is string && request.resource.data.nome.size() >= 2 && request.resource.data.nome.size() <= 80
+        && request.resource.data.tel is string && request.resource.data.tel.size() >= 8 && request.resource.data.tel.size() <= 20
+        && request.resource.data.email is string && request.resource.data.email.size() >= 5 && request.resource.data.email.size() <= 120
+        && request.resource.data.msg is string && request.resource.data.msg.size() >= 5 && request.resource.data.msg.size() <= 1000
+        && request.resource.data.tipo in ['site', 'apk'];
+      allow read, update, delete: if isCriador();
+    }
+
+    // Serviços do mini-site de agendamento (leitura pública).
+    match /servicos/{id} {
+      allow read: if true;
+      allow create, update: if isCriador()
+        || (request.resource.data.keys().hasOnly(['loja', 'nome', 'min', 'preco', 'criadoEm']) && lojaAdmin(request.resource.data.loja));
+      allow delete: if isCriador() || lojaAdmin(resource.data.loja);
+    }
+
+    // Horários ocupados (sem dados pessoais): permite mostrar o que já foi reservado.
+    match /ocupados/{id} {
+      allow read: if true;
+      allow create: if signed()
+        && request.resource.data.keys().hasOnly(['loja', 'data', 'hora'])
+        && id == request.resource.data.loja + '__' + request.resource.data.data + '__' + request.resource.data.hora.split(':')[0] + request.resource.data.hora.split(':')[1];
+      allow delete: if signed();
+    }
+
+    // Agendamentos: o cliente cria o próprio; o horário é único pelo ID; a loja e o Criador gerenciam.
+    match /agendamentos/{id} {
+      allow create: if signed()
+        && request.resource.data.keys().hasOnly(['loja', 'servicoId', 'servicoNome', 'data', 'hora', 'uid', 'nomeCli', 'telCli', 'pgto', 'status', 'criadoEm'])
+        && request.resource.data.uid == request.auth.uid
+        && ((request.resource.data.pgto == 'local' && request.resource.data.status == 'confirmado')
+            || (request.resource.data.pgto == 'pix' && request.resource.data.status == 'aguardando_confirmacao')
+            || (request.resource.data.pgto == 'gateway' && request.resource.data.status == 'aguardando_pagamento'))
+        && id == request.resource.data.loja + '__' + request.resource.data.data + '__' + request.resource.data.hora.split(':')[0] + request.resource.data.hora.split(':')[1]
+        && get(/databases/$(database)/documents/lojas/$(request.resource.data.loja)).data.get('modulos', {}).get('agenda', false) == true;
+      allow read: if isCriador()
+        || (signed() && resource.data.uid == request.auth.uid)
+        || lojaAdmin(resource.data.loja);
+      allow update: if isCriador()
+        || (lojaAdmin(resource.data.loja)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'confirmadoEm']));
+      allow delete: if isCriador() || lojaAdmin(resource.data.loja);
+    }
+
     match /lojas/{slug} {
       allow get: if signed();
       allow list: if isCriador()
@@ -274,7 +327,7 @@ service cloud.firestore {
             && resource.data.get('pendente', false) != true
             && resource.data.get('dono', request.auth.uid) == request.auth.uid
             && request.resource.data.get('dono', request.auth.uid) == resource.data.get('dono', request.auth.uid)
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['admId', 'admCodigo', 'suspensa', 'suspEm', 'plano', 'pendente', 'gerenteToken']))
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['admId', 'admCodigo', 'suspensa', 'suspEm', 'plano', 'pendente', 'gerenteToken', 'modulos', 'valorModulos']))
         || (signed()
             && resource.data.get('admId', '') == request.auth.uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspensa', 'suspEm']));

@@ -28,11 +28,11 @@ input,select,textarea{width:100%;margin-top:6px;padding:11px;border-radius:10px;
 .seg{display:flex;gap:6px;margin:8px 0}.seg button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--br);background:var(--cd);color:var(--tx);font:inherit}.seg .on{border-color:var(--ac);color:var(--ac);font-weight:800}
 .step{display:flex;gap:10px;align-items:center;padding:8px 0;color:var(--mu)}.step i{width:22px;height:22px;border-radius:50%;border:2px solid var(--br);flex:none;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:13.5px}.step.d{color:var(--tx);font-weight:700}.step.d i{background:var(--ok);border-color:var(--ok);color:#fff}.step.n{color:var(--ac);font-weight:800}.step.n i{border-color:var(--ac)}
 .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#000;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;display:none;z-index:20}
-</style><link rel="manifest" href="manifest-cliente.json"><meta name="theme-color" content="#d4141c"><link rel="icon" href="icon-cliente-192.png"><link rel="apple-touch-icon" href="icon-cliente-192.png"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
+</style><link rel="manifest" href="manifest-cliente.json"><meta name="theme-color" content="#d4141c"><link rel="icon" href="icon-cliente-192.png"><link rel="apple-touch-icon" href="icon-cliente-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><script src="marca.js"></script></head><body>
 <div class="pv" id="pa-st" style="background:#111;color:#e0a800;font-size:12.5px;font-weight:700">○ Conectando…</div>
 <div class="pg" id="inst"></div>
 <div class="top"><div class="logo"><span style="color:#d4141c">Esse aplicativo pode ser</span> <span style="color:#c99700">seu</span></div><div id="ad"></div></div>
-<div class="pg"><div class="sel" id="sel"></div><div id="v"></div></div>
+<div class="pg"><div id="v"></div></div>
 <div id="bar"></div><div id="sheet"></div><div class="toast" id="t"></div>
 <script>
 const $=i=>document.getElementById(i),toast=m=>{const t=$("t");t.textContent=m;t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",2200)};
@@ -41,13 +41,7 @@ const nz=t=>t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").repl
 /* Só existe UMA loja: o cliente vê apenas o cardápio (sem Marketplace, sem opções soltas de Entrega/Retirada, sem link da loja) */
 let X={n:"Lanchonete do Zé",c:"Lanches",ic:"🍔",r:"4,8",t:"25–35 min",m:[["X-Burger",18,true,"Pão, hambúrguer, queijo e salada","🍔"],["Suco de laranja",8,true,"300 ml, natural","🥤"],["Batata frita",12,false,"Porção média","🍟"],["Pastel de carne",9,true,"Recheio caseiro","🥟"]]};
 const X0=X;
-/* MARKETPLACE (liga/desliga só pelo Criador). OFF = só a loja do link · ON = todas as lojas aprovadas. Cada loja tem 20 produtos de exemplo editáveis */
-const mk=s=>s.split(";").map((t,i)=>{const[n,p,e]=t.split("|");return[n,+p,i!=6,"Exemplo editável",e]});
-const MKS=[
-{n:"Farmácia Vida",c:"Farmácia",tp:"prod",ic:"💊",r:"4,7",t:"20–30 min",m:mk("Dipirona 500 mg|8.9|💊;Paracetamol 750 mg|9.5|💊;Ibuprofeno 400 mg|14.9|💊;Vitamina C efervescente|18|🍊;Soro fisiológico 500 ml|7.5|💧;Álcool em gel 500 ml|12|🧴;Protetor solar FPS 50|42|🧴;Shampoo anticaspa|24.9|🧴;Sabonete líquido|11.9|🧼;Fralda M (pacote)|39.9|👶;Escova de dente|9.9|🪥;Creme dental|6.9|🦷;Fio dental|8.5|🦷;Curativo (caixa)|10.9|🩹;Termômetro digital|29.9|🌡️;Máscara descartável (caixa)|19.9|😷;Absorvente (pacote)|9.9|🩸;Repelente|21.9|🦟;Colírio lubrificante|23.9|👁️;Multivitamínico|34.9|💊")},
-{n:"Salão Bella Vitória",c:"Salão / Consultório",tp:"agenda",ic:"💇",r:"4,9",t:"Agendamento",m:mk("Corte feminino|80|💇‍♀️;Corte masculino|45|💈;Barba|30|🧔;Escova|50|💇;Hidratação|70|💆;Coloração|150|🎨;Mechas|280|✨;Manicure|35|💅;Pedicure|40|🦶;Manicure + pedicure|70|💅;Design de sobrancelha|35|👁️;Henna|45|🌿;Depilação axila|20|🪒;Depilação perna|60|🪒;Limpeza de pele|110|🧖;Massagem relaxante|120|💆;Progressiva|250|💇‍♀️;Penteado|130|👰;Maquiagem|100|💄;Cauterização|140|🔥")},
-{n:X0.n,c:"Lanchonete / Restaurante",tp:"prod",ic:X0.ic,r:X0.r,t:X0.t,m:[...X0.m,...mk("Hambúrguer duplo|26|🍔;X-Salada|20|🥪;X-Bacon|24|🥓;Cachorro-quente|14|🌭;Pastel de queijo|9|🧀;Coxinha|8|🍗;Pão de queijo|6|🧀;Misto quente|11|🥪;Porção de calabresa|28|🍖;Onion rings|16|🧅;Refrigerante lata|6|🥤;Água mineral|4|💧;Milk-shake|16|🥛;Açaí 300 ml|15|🍇;Pudim|9|🍮;Brigadeiro|4|🍫")]},
-{n:"Depósito Construir",c:"Depósito / Construção",tp:"prod",ic:"🧱",r:"4,6",t:"40–60 min",m:mk("Cimento 50 kg|38|🧱;Areia fina (saco)|12|🏖️;Tijolo (cento)|85|🧱;Tinta branca 18 L|219|🎨;Rolo de pintura|14|🖌️;Trena 5 m|16|📏;Martelo|29|🔨;Chave de fenda|11|🪛;Alicate|27|🔧;Furadeira|189|🛠️;Serra manual|24|🪚;Parafusos (caixa)|9|🔩;Fita isolante|6|⚡;Fio elétrico 2,5 mm (rolo)|135|🔌;Lâmpada LED|12|💡;Torneira|32|🚰;Registro|28|🚿;Cano PVC 3 m|19|🪠;Luva de proteção|9|🧤;Capacete|22|⛑️")}];
+const MKS=[];
 let MKT=false,cur=null;
 function mercado(){return `<h2>🛍️ Marketplace</h2><div class="meta">Todas as lojas aprovadas. Escolha onde pedir.</div>`+MKS.map((s,i)=>`<button class="card" onclick="abre(${i})"><div class="thumb">${s.ic}</div><div style="flex:1"><b>${s.n}</b><div class="meta"><span class="star">★ ${s.r}</span> · ${s.c} · ${s.t}</div><div class="meta">${s.m.length} ${s.tp=="agenda"?"serviços":"produtos"}</div></div>›</button>`).join("")}
 function abre(i){cur=MKS[i];X=cur;cart=[];draw()}
@@ -72,8 +66,14 @@ ${ag.dia&&ag.hr?`<div class="oc"><b>Resumo</b><div class="meta">${p[0]} · ${brd
 function agConf(){const a=AG[AG.length-1];return `<div class="panel"><b style="font-size:20px">✅ Agendamento confirmado</b><div class="oc" style="border-color:var(--ok)"><b>${a.serv}</b><div class="meta">${a.loja}</div><div class="meta" style="color:var(--tx);font-weight:800">${brd(a.dia)} às ${a.hr} · ${R$(a.v)}</div></div><div class="meta">A loja foi avisada. Você pode ver ou cancelar em Meus agendamentos.</div><button class="cta c" onclick="sh='mag';draw()">Ir para Meus agendamentos</button><button class="cta b c" onclick="sh=null;ag=null;draw()">Voltar aos serviços</button></div>`}
 function agMeus(){return `<div class="panel"><b style="font-size:20px">📅 Meus agendamentos</b>${AG.map(a=>`<div class="oc"><div class="row"><b>${a.serv}</b><span class="tag" style="color:var(--ok)">Confirmado</span></div><div class="meta">${a.loja}</div><div class="meta" style="color:var(--tx);font-weight:800">${brd(a.dia)} às ${a.hr} · ${R$(a.v)}</div><button class="cta o c" onclick="agCancela(${a.id})">Cancelar agendamento</button></div>`).join("")||`<div class="meta" style="margin:8px 0">Você ainda não tem agendamentos.</div>`}<button class="cta c" onclick="sh=null;ag=null;draw()">Voltar aos serviços</button></div>`}
 /* AUT = o que o ADM autoriza para esta loja */
-let TS=0,AUT="ambas",taxa=false,cart=[],sh=null,pg="din",troco="",tipo="ent",pedido=null,st=0,asn="Lariquinha",vr="",pq=0,pnome="";
+let TS=0,AUT="ambas",taxa=false,cart=[],sh=null,pg="din",troco="",tipo="ent",pedido=null,st=0,asn="",vr="",pq=0,pnome="";
 const TAXA=5;
+const hx=s=>String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+let PIXK="",ENDR=(()=>{try{return JSON.parse(localStorage.getItem("pa_end")||"{}")}catch(e){return{}}})();
+function svEnd(){try{localStorage.setItem("pa_end",JSON.stringify(ENDR))}catch(e){}}
+function pedeEnd(){const r=(prompt("Rua e número:",ENDR.rua||"")||"").trim();if(!r)return;const b=(prompt("Bairro:",ENDR.bairro||"")||"").trim();ENDR={...ENDR,rua:r,bairro:b};svEnd();draw()}
+function usaGps(){if(!navigator.geolocation){toast("Este aparelho não informa a localização");return}navigator.geolocation.getCurrentPosition(p=>{ENDR.lat=p.coords.latitude;ENDR.lng=p.coords.longitude;svEnd();toast(ENDR.rua?"Localização salva junto com o endereço":"Localização salva. Informe também a rua e o número");draw()},()=>toast("Não foi possível obter a localização"),{enableHighAccuracy:true,timeout:10000})}
+function copiaPix(b){const k=b.dataset.k||"";try{navigator.clipboard.writeText(k).then(()=>toast("Chave Pix copiada"))}catch(e){toast("Copie a chave manualmente")}}
 /* Fora do raio: KMC = distância do cliente até a loja · RAIO = limite da loja · TX = taxa extra que a loja define ao aceitar · xs: 0 nada · 1 perguntou · 2 loja aceitou · 3 loja recusou */
 let fora=false,xs=0;const KMC=7.4,RAIO=5,TX=4;
 const ent=()=>AUT=="ambas",ret=()=>AUT=="ambas"||AUT=="ret",nada=()=>AUT=="nada";
@@ -81,7 +81,7 @@ function avisos(){if(nada())return `<div class="oc" style="border-color:var(--rd
  return `<div class="oc">${ent()?`<div class="row"><b>🛵 Entrega disponível</b><span class="${taxa?"":"free"}">${taxa?"Taxa "+R$(TAXA):"Entrega grátis"}</span></div>`:""}${ret()?`<div class="row"><b>🏪 Retirada no local</b><span class="meta">${ent()?"também disponível":"só retirada"}</span></div>`:""}</div>`}
 function pontoLoja(){return `<div class="card" style="cursor:default"><div class="thumb">${X.ic}</div><div style="flex:1"><b style="font-size:19px">${X.n}</b><div class="meta"><span class="star">★ ${X.r}</span> · ${X.c} · ${X.t}</div></div></div>`}
 const foto=(p,z)=>`<div style="width:${z}px;height:${z}px;border-radius:14px;background:linear-gradient(135deg,var(--bg),var(--br));display:flex;align-items:center;justify-content:center;font-size:${Math.round(z*.52)}px;flex:none;overflow:hidden" role="img" aria-label="Foto de ${p[0]}">${p[4]||"🍽️"}</div>`;
-function cardapio(){return avisos()+`<h2>Cardápio</h2><div class="meta" style="margin:-2px 0 6px">Neste exemplo as fotos são ícones; no app real aparece a foto que a loja enviou.</div>`+X.m.map((p,i)=>`<div class="oc"><div style="display:flex;gap:12px;align-items:center"><div style="position:relative">${foto(p,88)}${!p[2]?`<div style="position:absolute;inset:0;border-radius:14px;background:rgba(0,0,0,.55);color:#fff;font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center">Esgotado</div>`:""}</div><div style="flex:1;min-width:0"><b>${p[0]}</b>${p[3]?`<div class="meta">${p[3]}</div>`:""}<div class="row" style="margin-top:6px"><b>${R$(p[1])}</b>${nada()?`<button class="add" disabled>Indisponível</button>`:p[2]?`<button class="add" onclick="add(${i})">Adicionar</button>`:`<button class="add" disabled>Esgotado</button>`}</div></div></div></div>`).join("")+assist()}
+function cardapio(){return avisos()+`<h2>Cardápio</h2>`+X.m.map((p,i)=>`<div class="oc"><div style="display:flex;gap:12px;align-items:center"><div style="position:relative">${foto(p,88)}${!p[2]?`<div style="position:absolute;inset:0;border-radius:14px;background:rgba(0,0,0,.55);color:#fff;font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center">Esgotado</div>`:""}</div><div style="flex:1;min-width:0"><b>${p[0]}</b>${p[3]?`<div class="meta">${p[3]}</div>`:""}<div class="row" style="margin-top:6px"><b>${R$(p[1])}</b>${nada()?`<button class="add" disabled>Indisponível</button>`:p[2]?`<button class="add" onclick="add(${i})">Adicionar</button>`:`<button class="add" disabled>Esgotado</button>`}</div></div></div></div>`).join("")+assist()}
 function assist(){if(!asn||nada())return"";return `<div class="oc"><b>🎙️ ${asn}, sua atendente por voz</b><div class="meta" style="margin:4px 0">No celular você toca no botão e fala o pedido. Aqui, digite o que falaria: “quero dois x-burger”, “um suco”, “desfazer”, “é só isso”.</div><button class="cta b c" onclick="alert('Preview: em Chrome/Android este botão abre o microfone. Use a caixa de texto abaixo.')">🎙️ Falar com ${asn}</button><input id="vt" placeholder="Digite o que você falaria"><button class="cta c" onclick="fala($('vt').value)">Enviar</button><div class="meta" style="margin-top:8px">${vr}</div></div>`}
 function add(i){cart.push({n:X.m[i][0],p:X.m[i][1]});draw();toast("Adicionado: "+X.m[i][0])}
 function fala(txt){const t=" "+nz(txt)+" ";
@@ -95,25 +95,25 @@ const LB=["Pedido enviado à loja","Loja aceitou e está preparando","Pronto: pr
 const LBR=["Pedido enviado à loja","Loja aceitou e está preparando","Pronto para retirada","Retirado"];
 function home(){const fin=pedido&&(pedido.tipo=="ret"?st>=3:st>=5)?`<button class="card" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ok)">✅</div><div><b>Pedido #${pedido.id} · ${pedido.tipo=="ret"?"Retirado":"Entregue"}</b><div class="meta">Ver detalhes ou reportar um problema</div></div></button>`:"";const trk=pedido&&(pedido.tipo=="ret"?st<3:st<5)?`<button class="card" style="border-color:var(--ac)" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ac)">${pedido.tipo=="ret"?"🏪":"🛵"}</div><div><b>Acompanhar pedido #${pedido.id}</b><div class="meta">${(pedido.tipo=="ret"?LBR:LB)[st]}</div></div></button>`:"";if(MKT&&!cur)return trk+fin+mercado();return (MKT?`<button class="back" onclick="cur=null;X=X0;cart=[];draw()">‹ Marketplace</button>`:"")+trk+fin+pontoLoja()+(X.tp=="agenda"?agenda():cardapio())}
 const sub=()=>cart.reduce((t,i)=>t+i.p,0);
-function sacola(){const m={};cart.forEach(i=>{m[i.n]=m[i.n]||{...i,q:0};m[i.n].q++});const it=Object.values(m),tt=sub();
+function sacola(){const SIMPLES=!(window.PA_brand&&window.PA_brand.checkoutSimples===false);const m={};cart.forEach(i=>{m[i.n]=m[i.n]||{...i,q:0};m[i.n].q++});const it=Object.values(m),tt=sub();
  if(!ent())tipo="ret";const fr=tipo=="ent"&&taxa?TAXA:0,blk=tipo=="ent"&&fora&&xs!=2,ex=tipo=="ent"&&fora&&xs==2?TX:0,tot=tt+fr+ex+TS;
  const opc=nada()?`<div class="oc" style="border-color:var(--rd)"><b>Sem forma de recebimento disponível</b><div class="meta">Esta loja não tem entrega nem retirada liberadas. Não é possível finalizar o pedido.</div></div>`:
  `<div class="meta" style="margin-top:12px;font-weight:800">Como receber</div><div class="seg">${ent()?`<button class="${tipo=="ent"?"on":""}" onclick="tipo='ent';draw()">🛵 Entrega</button>`:""}<button class="${tipo=="ret"?"on":""}" onclick="tipo='ret';draw()">🏪 Retirar na loja</button></div>`+
- (!ent()?`<div class="oc" style="border-color:var(--yl)"><b>⚠️ Esta loja não faz entrega.</b><div class="meta" style="color:var(--tx)">Você deverá ir até a loja para retirar seu pedido.</div></div>`:tipo=="ent"?`<div class="meta">Entregar em: Rua das Flores, 120 · Jardim da Penha</div><button class="cta b c" onclick="toast('Exemplo: usaria o GPS do aparelho')">📍 Usar minha localização atual</button>${fora?foraBox():""}`:`<div class="meta">Você vai até a loja e informa o número do pedido para retirar.</div>`);
- return `<div class="panel"><b style="font-size:20px">Sua sacola · ${X.n}</b>${it.map(i=>{const pr=X.m.find(m=>m[0]==i.n);return `<div class="line" style="align-items:center"><span style="display:flex;gap:10px;align-items:center">${pr?foto(pr,40):""}${i.q}x ${i.n}</span><b>${R$(i.p*i.q)}</b></div>`}).join("")}${opc}<div class="meta" style="margin-top:12px;font-weight:800">Pagamento</div><div class="seg"><button class="${pg=="din"?"on":""}" onclick="pg='din';draw()">💵 Dinheiro</button><button class="${pg=="pix"?"on":""}" onclick="pg='pix';draw()">💠 Pix</button><button class="${pg=="car"?"on":""}" onclick="pg='car';draw()">💳 ${tipo=="ret"?"Na loja":"Na entrega"}</button></div>${pg=="din"&&tipo=="ent"?`<input inputmode="decimal" placeholder="Troco para quanto? (opcional)" value="${troco}" oninput="troco=this.value">`:""}<div class="line" style="margin-top:12px"><span>Subtotal</span><b>${R$(tt)}</b></div>${tipo=="ent"?`<div class="line"><span>Taxa de entrega</span><b class="${fr?"":"free"}">${fr?R$(fr):"Grátis"}</b></div>`:""}${ex?`<div class="line"><span>Taxa extra (fora do raio)</span><b>${R$(ex)}</b></div>`:""}${TS?`<div class="line"><span>Taxa de Serviço</span><b>${R$(TS)}</b></div>`:""}<div class="line"><b>Total</b><b>${R$(tot)}</b></div><button class="cta" ${nada()||blk?"disabled":""} onclick="fazer()"><span>${tipo=="ret"?"Fazer pedido para retirada":"Fazer pedido"}</span><span>${R$(tot)}</span></button><button class="cta b c" onclick="cart=[];sh=null;draw()">Esvaziar sacola</button><button class="cta b c" onclick="sh=null;draw()">Voltar ao cardápio</button></div>`}
+ (!ent()?`<div class="oc" style="border-color:var(--yl)"><b>⚠️ Esta loja não faz entrega.</b><div class="meta" style="color:var(--tx)">Você deverá ir até a loja para retirar seu pedido.</div></div>`:tipo=="ent"?`<div class="meta">Entregar em: ${ENDR.rua?hx(ENDR.rua)+(ENDR.bairro?" · "+hx(ENDR.bairro):""):"endereço não informado"}</div><button class="cta b c" onclick="pedeEnd()">✏️ ${ENDR.rua?"Trocar":"Informar"} endereço</button><button class="cta b c" onclick="usaGps()">📍 Usar minha localização atual</button>${fora?foraBox():""}`:`<div class="meta">Você vai até a loja e informa o número do pedido para retirar.</div>`);
+ return `<div class="panel"><b style="font-size:20px">Sua sacola · ${X.n}</b>${it.map(i=>{const pr=X.m.find(m=>m[0]==i.n);return `<div class="line" style="align-items:center"><span style="display:flex;gap:10px;align-items:center">${pr?foto(pr,40):""}${i.q}x ${i.n}</span><b>${R$(i.p*i.q)}</b></div>`}).join("")}${opc}<div class="meta" style="margin-top:12px;font-weight:800">Pagamento</div><div class="seg"><button class="${pg=="din"?"on":""}" onclick="pg='din';draw()">💵 Dinheiro</button><button class="${pg=="pix"?"on":""}" onclick="pg='pix';draw()">💠 Pix</button><button class="${pg=="car"?"on":""}" onclick="pg='car';draw()">💳 ${tipo=="ret"?"Na loja":"Na entrega"}</button></div>${pg=="din"&&tipo=="ent"?`<input inputmode="decimal" placeholder="Troco para quanto? (opcional)" value="${troco}" oninput="troco=this.value">`:""}<div class="line" style="margin-top:12px"><span>Subtotal</span><b>${R$(tt)}</b></div>${SIMPLES?(tipo=="ent"?`<div class="line"><span>Entrega</span><b class="free">${fr||ex||TS?"Incluída no total":"Frete Grátis"}</b></div>`:""):`${tipo=="ent"?`<div class="line"><span>Taxa de entrega</span><b class="${fr?"":"free"}">${fr?R$(fr):"Grátis"}</b></div>`:""}${ex?`<div class="line"><span>Taxa extra (fora do raio)</span><b>${R$(ex)}</b></div>`:""}${TS?`<div class="line"><span>Taxa de Serviço</span><b>${R$(TS)}</b></div>`:""}`}<div class="line"><b>Total</b><b>${R$(tot)}</b></div><button class="cta" ${nada()||blk?"disabled":""} onclick="fazer()"><span>${tipo=="ret"?"Fazer pedido para retirada":"Fazer pedido"}</span><span>${R$(tot)}</span></button><button class="cta b c" onclick="cart=[];sh=null;draw()">Esvaziar sacola</button><button class="cta b c" onclick="sh=null;draw()">Voltar ao cardápio</button></div>`}
 function fazer(){if(!cart.length||nada())return;if(tipo=="ent"&&fora&&xs!=2){toast("Fora do raio: pergunte à loja se entrega no seu endereço");return}const fr=tipo=="ent"&&taxa?TAXA:0,ex=tipo=="ent"&&fora&&xs==2?TX:0;pedido={id:window.__nid||4833,tt:sub()+fr+ex+TS,tipo,pg,codRet:String(1000+Math.floor(Math.random()*9000)),codEnt:String(1000+Math.floor(Math.random()*9000))};cart=[];st=0;pq=0;pnome="";sh="trk";draw();toast("Pedido enviado!")}
 function trk(){const p=pedido,rt=p.tipo=="ret",S=rt?LBR:LB,fim=rt?3:5;
  if(st>=fim)p.em=p.em||new Date().toLocaleString("pt-BR");
  const succ=st>=fim&&!rt?`<div class="oc" style="border:3px solid var(--ok);text-align:center;padding:22px"><div style="font-size:64px">✅</div><b style="font-size:26px">Pedido entregue!</b><div style="margin-top:6px">Pedido #${p.id} · ${X.n}</div><div class="meta">${p.em}</div><b class="free" style="font-size:20px;display:block;margin-top:6px">ENTREGUE</b><div class="meta" style="margin-top:6px">Mostre esta tela ao entregador se ele pedir a foto.</div></div>`:"";
  return `<div class="panel"><b style="font-size:20px">Pedido #${p.id}</b><div class="meta">${R$(p.tt)} · ${p.pg=="pix"?"Pix":p.pg=="din"?"Dinheiro":rt?"Na loja":"Na entrega"} · ${rt?"Retirada na loja":"Entrega"}</div>
-${st==0?`<button class="cta o c" onclick="sh='cancelar';draw()">❌ Cancelar pedido</button>`:""}${succ}<div style="margin:10px 0">${S.map((s,i)=>`<div class="step ${i<st?"d":i==st?"n":""}"><i>${i<st?"✓":""}</i><span>${s}</span></div>`).join("")}</div>
- ${p.pg=="pix"&&st<2?`<div class="oc"><b>💠 Pague com Pix</b><div class="meta">Chave: chave-exemplo@pix · ${R$(p.tt)}</div><button class="cta b c" onclick="toast('Exemplo: Pix copia e cola copiado')">Copiar Pix copia e cola</button><div class="meta" style="margin-top:6px">O app não confirma o pagamento; a loja confere no banco.</div></div><div class="meta" style="margin:-4px 0 8px">Sem confirmação do pagamento em 10 min, o pedido é cancelado e você é avisado.</div>`:""}
+${window.PAYG&&pedido&&pedido.pg==="pix"?`<div class="oc"><b>Pague com Pix para a loja</b><div class="meta">Copie o código ou leia o QR no app do banco.</div>${window.PAYG.img?`<img src="data:image/png;base64,${window.PAYG.img}" alt="QR Pix" style="width:200px;max-width:100%;display:block;margin:8px auto">`:""}<textarea readonly rows="3" onclick="this.select()" style="width:100%">${window.PAYG.payload}</textarea></div>`:""}${st==0?`<button class="cta o c" onclick="sh='cancelar';draw()">❌ Cancelar pedido</button>`:""}${succ}<div style="margin:10px 0">${S.map((s,i)=>`<div class="step ${i<st?"d":i==st?"n":""}"><i>${i<st?"✓":""}</i><span>${s}</span></div>`).join("")}</div>
+ ${p.pg=="pix"&&st<2?`<div class="oc"><b>💠 Pague com Pix</b>${PIXK?`<div class="meta">Valor: ${R$(p.tt)} · Chave Pix da loja:</div><b style="word-break:break-all">${hx(PIXK)}</b><button class="cta b c" data-k="${hx(PIXK)}" onclick="copiaPix(this)">Copiar chave Pix</button>`:`<div class="meta">Valor: ${R$(p.tt)}. A loja ainda não cadastrou a chave Pix: combine o pagamento com a loja.</div>`}<div class="meta" style="margin-top:6px">O app não confirma o pagamento; a loja confere no banco.</div></div><div class="meta" style="margin:-4px 0 8px">Sem confirmação do pagamento em 10 min, o pedido é cancelado e você é avisado.</div>`:""}
  ${p.pg=="pix"&&pq>=1?`<div class="oc" style="border-color:var(--yl)"><b>❓ A loja não encontrou seu Pix</b><div class="meta" style="color:var(--tx);margin:4px 0">O Pix foi pago por terceiros ou por você mesmo?</div>${pq==1?`<div class="seg"><button onclick="pq=2;draw()">Fui eu mesmo</button><button onclick="pq=3;draw()">Foi um terceiro</button></div>`:pq==3?`<input id="pnm" placeholder="Nome completo de quem pagou" value="${pnome}"><button class="cta c" onclick="pnome=$('pnm').value.trim();if(!pnome){toast('Informe o nome completo');return}pq=4;draw()">Enviar à loja</button>`:`<div class="meta" style="color:var(--ok);font-weight:800">✓ Resposta enviada: ${pq==2?"Fui eu mesmo":"Foi um terceiro · "+pnome}. A loja vai conferir o extrato.</div>`}</div>`:""}
  ${rt&&st<3?`<div class="oc" style="border-color:${st==2?"var(--ok)":"var(--br)"}"><b>${st==2?"🔔 Seu pedido está pronto para retirada.":"🏪 Retirada na loja"}</b><div class="meta" style="color:var(--tx);margin:4px 0">${st==2?"Dirija-se à loja e informe o código abaixo.":"Guarde este código: você vai informá-lo na loja ao retirar."}</div><div class="meta">Código de retirada</div><b style="font-size:34px;letter-spacing:.2em">${p.codRet}</b><div class="meta" style="margin-top:6px">Pedido #${p.id}</div></div>`:""}
- ${!rt&&st>=4&&st<5?`<div class="oc" style="border-color:var(--ok)"><div class="meta">Código de confirmação (diga ao entregador só na hora da entrega)</div><b style="font-size:34px;letter-spacing:.2em">${p.codEnt||"1234"}</b></div><button class="cta c" onclick="st=5;draw();toast('✅ Você confirmou o recebimento. Pedido entregue.')">✅ Recebi meu pedido</button>
-<button class="cta b c" onclick="toast('Exemplo: chat com o entregador')">Falar com entregador</button>`:""}
- ${st>=fim?`<div class="oc"><b>✅ ${rt?"Retirado":"Entregue"}</b><div class="meta">Status final registrado no sistema.</div>${p.av?`<div class="meta" style="margin-top:8px">⭐ Avaliação enviada. Obrigado!</div>`:`<b style="display:block;margin-top:8px">⭐ Avalie</b><div style="font-size:28px">☆☆☆☆☆</div>${rt?"":`<input placeholder="Gorjeta para o entregador (opcional)" inputmode="decimal">`}<button class="cta c" onclick="toast('Exemplo: avaliação enviada');pedido.av=true;sh=null;draw()">Enviar avaliação</button>`}</div>`:""}
- ${st<fim?``:""}<button class="cta b c" onclick="toast('Exemplo: chat com a loja')">💬 Falar com a loja</button>
+ ${!rt&&st>=4&&st<5?`<div class="oc" style="border-color:var(--ok)"><div class="meta">Código de confirmação (diga ao entregador só na hora da entrega)</div><b style="font-size:34px;letter-spacing:.2em">${p.codEnt||""}</b></div><button class="cta c" onclick="st=5;draw();toast('✅ Você confirmou o recebimento. Pedido entregue.')">✅ Recebi meu pedido</button>
+`:""}
+ ${st>=fim?`<div class="oc"><b>✅ ${rt?"Retirado":"Entregue"}</b><div class="meta">Status final registrado no sistema.</div>${p.av?`<div class="meta" style="margin-top:8px">⭐ Avaliação enviada. Obrigado!</div>`:`<b style="display:block;margin-top:8px">⭐ Avalie</b><div style="font-size:28px">☆☆☆☆☆</div>${rt?"":`<input placeholder="Gorjeta para o entregador (opcional)" inputmode="decimal">`}<button class="cta c" onclick="toast('Obrigado pela avaliação!');pedido.av=true;sh=null;draw()">Enviar avaliação</button>`}</div>`:""}
+ ${st<fim?``:""}
 <button class="cta o c" onclick="sh='reportar';draw()">⚠️ Reportar problema</button>
 <button class="cta b c" onclick="sh=null;draw()">Fechar</button></div>`}
 function foraBox(){const k=KMC.toFixed(1).replace(".",",");
@@ -121,7 +121,7 @@ function foraBox(){const k=KMC.toFixed(1).replace(".",",");
  if(xs==3)return `<div class="oc" style="border-color:var(--rd)"><b>A loja não entrega no seu endereço.</b><div class="meta" style="color:var(--tx)">Escolha "Retirar na loja" para fazer o pedido.</div><button class="cta b c" onclick="xs=0;draw()">Perguntar de novo</button></div>`;
  return `<div class="oc" style="border-color:var(--yl)"><b>📍 Fora do raio de entrega</b><div class="meta" style="color:var(--tx)">Seu endereço fica a ${k} km da loja (raio de ${RAIO} km). A entrega automática está bloqueada.</div>${xs==1?`<div class="meta" style="color:var(--ok);font-weight:800;margin-top:6px">✓ Pergunta enviada. Aguardando a resposta da loja.</div>`:`<button class="cta b c" onclick="sh='chatx';draw()">💬 Perguntar à loja</button>`}</div>`}
 function chatx(){const k=KMC.toFixed(1).replace(".",",");
- return `<div class="panel"><b style="font-size:20px">💬 Chat com a loja</b><div class="meta">${X.n}</div><div class="oc"><div class="meta">Mensagem pronta (você pode editar):</div><textarea id="mx" rows="4">Olá, gostaria de saber se entregam no meu endereço. Ele fica a ${k} km da loja (fora do raio de ${RAIO} km). Endereço: Rua das Flores, 120</textarea></div><button class="cta c" onclick="xs=1;sh='bag';draw();toast('Mensagem enviada à loja')">Enviar à loja</button><button class="cta b c" onclick="sh='bag';draw()">Voltar à sacola</button></div>`}
+ return `<div class="panel"><b style="font-size:20px">💬 Chat com a loja</b><div class="meta">${X.n}</div><div class="oc"><div class="meta">Mensagem pronta (você pode editar):</div><textarea id="mx" rows="4">Olá, gostaria de saber se entregam no meu endereço. Ele fica a ${k} km da loja (fora do raio de ${RAIO} km). Endereço: ${ENDR.rua||"(informe seu endereço)"}</textarea></div><button class="cta c" onclick="xs=1;sh='bag';draw();toast('Mensagem enviada à loja')">Enviar à loja</button><button class="cta b c" onclick="sh='bag';draw()">Voltar à sacola</button></div>`}
 let reportMotivo="",reportTxt="";
 function reportar(){
  return `<div class="panel"><b style="font-size:20px">⚠️ Reportar problema</b>
@@ -142,10 +142,8 @@ function cancelar(){
  <button class="cta b c" onclick="cancMotivo='';sh='trk';draw()">Voltar</button></div>`;
 }
 function draw(){
- const B=(k,l)=>`<button class="${AUT==k?"on":""}" onclick="AUT='${k}';tipo='${k=="ret"?"ret":"ent"}';draw()">${l}</button>`;
- $("sel").innerHTML=`<div class="meta" style="width:100%">Opções de teste (o ADM ainda não está ligado a esta tela). O Marketplace só o Criador liga:</div>`+B("ambas","🛵 Entrega + 🏪 Retirada")+B("ret","🏪 Só retirada")+B("nada","⛔ Nenhuma")+`<button class="${taxa?"on":""}" onclick="taxa=!taxa;draw()">${taxa?"Entrega com taxa":"Entrega grátis"}</button><button class="${asn?"on":""}" onclick="asn=asn?'':'Lariquinha';draw()">${asn?"🎙️ Assistente ligado":"🎙️ Assistente desligado"}</button><button class="${fora?"on":""}" onclick="fora=!fora;xs=0;draw()">${fora?"📍 Endereço fora do raio":"📍 Endereço dentro do raio"}</button><button class="${MKT?"on":""}" onclick="MKT=!MKT;cur=null;X=X0;cart=[];draw()">${MKT?"🛍️ Marketplace ligado":"🛍️ Marketplace desligado"}</button>`;
- $("ad").innerHTML=ent()?`<button class="addr" onclick="toast('Exemplo: trocaria o endereço de entrega')"><small>Entregar em</small><b>Rua das Flores, 120 · Jardim da Penha ▾</b></button>`:"";
- $("v").innerHTML=home();
+ $("ad").innerHTML=ent()?`<button class="addr" onclick="pedeEnd()"><small>Entregar em</small><b>${ENDR.rua?hx(ENDR.rua)+(ENDR.bairro?" · "+hx(ENDR.bairro):"")+" ▾":"Informar endereço ▾"}</b></button>`:"";
+ $("v").innerHTML=MARCA.html(window.PA_brand||{},X0.n)+(window.PA_modLoja&&window.PA_modLoja.loja===false?'<div class="oc"><b>Esta loja não está aceitando pedidos online agora.</b></div>':"")+home();
  const n=cart.length;$("bar").innerHTML=n&&!sh?`<div class="bar"><button class="cta" onclick="sh='bag';draw()"><span>Ver sacola (${n})</span><span>${R$(sub())}</span></button></div>`:"";
  $("sheet").innerHTML=sh?`<div class="sheet" onclick="if(event.target===this){sh=null;draw()}">${sh=="bag"?sacola():sh=="agd"?agSheet():sh=="agok"?agConf():sh=="mag"?agMeus():sh=="reportar"?reportar():sh=="cancelar"?cancelar():sh=="chatx"?chatx():trk()}</div>`:""}
 draw();
@@ -157,7 +155,7 @@ function show(){box.innerHTML=(inst||stand())?"":`<div style="background:var(--c
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;show()});
 window.addEventListener("appinstalled",()=>{inst=true;dp=null;show()});
 window.baixarApp=async function(){if(dp){dp.prompt();const r=await dp.userChoice;if(r&&r.outcome=="accepted"){inst=true;dp=null}else toast("Instalação cancelada");show();return}
- if(location.protocol=="file:"){inst=true;show();toast("Exemplo: instalaria o app e o botão some");return}
+ 
  toast("No menu do navegador, toque em “Instalar app” ou “Adicionar à tela inicial”")};
 show()})();
 </script><script>window.PA_PAPEL="cliente"</script><script src="conta.js"></script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
@@ -171,7 +169,7 @@ PA.strip=strip;
 if(window.PA_MOCK){window.PA_MOCK(PA);return}
 (async()=>{try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
- const [A,F,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);
+ const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
  const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
  await PA_login(H,au);
  PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
@@ -184,6 +182,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.watchEnviados=cb=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("st","==","enviado")),s=>cb(s.docs.map(d=>strip(d.data()))));
  PA.watchMoto=(mid,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("mot","==",mid)),s=>cb(s.docs.map(d=>strip(d.data()))));
  PA.setOco=(id,o)=>F.setDoc(F.doc(db,"ocorrencias",String(id)),{...cl(o),id:Number(id)},{merge:true});
+ PA.watchPay=cb=>F.onSnapshot(F.doc(db,"meta","pagamento"),s=>cb(s.exists()?s.data():null),()=>cb(null));
  PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
  PA.getCfg=()=>F.getDoc(F.doc(db,"meta","config"));
  PA.setLojaCfg=(slug,d)=>F.setDoc(F.doc(db,"lojas",slug),{...cl(d),atualizadoEm:Date.now()},{merge:true});
@@ -200,8 +199,8 @@ PA.whenReady(()=>{const L=new URLSearchParams(location.search).get("loja");if(!L
 const _q=new URLSearchParams(location.search).get("loja"),SLUG=_q||"lanchonete-do-ze",LOJA=_q||X0.n;
 let unw=null,rs=null,lastPq=pq,prim=true;
 const pgLabel=(p,t)=>p=="din"?"Dinheiro":p=="pix"?"Pix":(t=="ret"?"Pagar na loja":"Cartão na entrega");
-const st2=d=>{if(d.tp=="ret")return({novo:0,preparo:1,pronto:2,retirado:3})[d.st]??0;
- switch(d.st){case"novo":return 0;case"preparo":return 1;case"pronto":return 2;case"enviado":return d.mot?3:2;case"emrota":case"devolucao":return 4;case"aguardando":case"entregue":return 5;default:return 0}};
+const st2=d=>{if(d.tp=="ret")return({novo:0,aceito:1,preparo:1,pronto:2,retirado:3})[d.st]??0;
+ switch(d.st){case"novo":return 0;case"aceito":case"preparo":return 1;case"pronto":return 2;case"enviado":return d.mot?3:2;case"emrota":case"devolucao":return 4;case"aguardando":case"entregue":return 5;default:return 0}};
 function fim(){localStorage.removeItem("pa_pedido");if(unw){unw();unw=null}}
 function watch(id){if(unw){unw();unw=null}prim=true;
  unw=PA.watchDoc(id,d=>{if(!d)return;
@@ -217,9 +216,22 @@ const _d=draw;
 draw=function(){_d();if(!pedido||!PA.ready)return;
  if(st===5&&rs!==5&&pedido.tipo!="ret"){rs=5;PA.setPedido(pedido.id,{st:"entregue",recebidoCli:true,entregueEm:Date.now()})}
  if(pq!==lastPq){lastPq=pq;PA.setPedido(pedido.id,{pq,pnome})}};
+PA.whenReady(()=>{try{PA.watchPay(d=>{PA.payLink=d})}catch(e){}});
 const _f=fazer;
+window.PAYG=null;
+async function gatewayPedido(id){
+ try{const cpf=(prompt("Para gerar o Pix da loja, informe seu CPF ou CNPJ:")||"").replace(/\D/g,"");
+  if(cpf.length<11){toast("Pix não gerado: CPF inválido. Você pode pagar na loja.");return}
+  const tok=await au.currentUser.getIdToken();
+  const r=await fetch("/api/asaas",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({tipo:"pedido",id:String(id),cpf})});
+  const j=await r.json();if(!r.ok){toast(j.erro||"Não foi possível gerar o Pix");return}
+  window.PAYG={payload:j.payload,img:j.img};draw()}
+ catch(e){console.error(e);toast("Não foi possível gerar o Pix")}}
 fazer=async function(){
  if(!cart.length||nada())return;
+ if(window.PA_modLoja&&window.PA_modLoja.loja===false){toast("Esta loja não está aceitando pedidos online agora");return}
+ window.PAYG=null;
+ if(tipo=="ent"&&!ENDR.rua){toast("Informe o endereço de entrega");pedeEnd();if(!ENDR.rua)return}
  if(!PA.ready){toast("Sem conexão com o servidor. Tente de novo em instantes.");return}
  let nome=localStorage.getItem("pa_nome");
  if(!nome){nome=(prompt("Seu nome (a loja vai ver):")||"").trim();if(!nome){toast("Informe seu nome para fazer o pedido");return}localStorage.setItem("pa_nome",nome)}
@@ -228,14 +240,14 @@ fazer=async function(){
  window.__nid=id;_f();
  if(!pedido||pedido===antes)return;
  const m={};snap.forEach(i=>m[i.n]=(m[i.n]||0)+1);
- const d={ts:TS,id:pedido.id,loja:LOJA,lojaN:X0.n,it:Object.entries(m).map(([n,q])=>q+"x "+n).join(", "),v:pedido.tt,pg:pgLabel(pgc,tp),pgc,tp,st:"novo",cli:nome,bairro:"Jardim da Penha",rua:"Rua das Flores, 120",dl:0,dc:ex?KMC:3.5,volta:false,maq:pgc=="car"&&tp=="ent",troco:pgc=="din"&&tp=="ent"&&!!String(tr).trim(),trocoPara:String(tr||""),paid:false,ps:0,codRet:pedido.codRet,codEnt:pedido.codEnt,criadoEm:Date.now(),uid:PA.uid};
+ const d={ts:TS,id:pedido.id,loja:LOJA,lojaN:X0.n,it:Object.entries(m).map(([n,q])=>q+"x "+n).join(", "),v:pedido.tt,pg:pgLabel(pgc,tp),pgc,tp,st:"novo",cli:nome,bairro:ENDR.bairro||"",rua:ENDR.rua||"",geo:ENDR.lat?{lat:ENDR.lat,lng:ENDR.lng}:null,dl:0,dc:ex?KMC:3.5,volta:false,maq:pgc=="car"&&tp=="ent",troco:pgc=="din"&&tp=="ent"&&!!String(tr).trim(),trocoPara:String(tr||""),paid:false,ps:0,codRet:pedido.codRet,codEnt:pedido.codEnt,criadoEm:Date.now(),uid:PA.uid};
  rs=0;lastPq=0;
- PA.setPedido(d.id,d).then(()=>{localStorage.setItem("pa_pedido",d.id);watch(d.id)}).catch(e=>{console.error(e);pedido=null;st=0;sh=null;draw();toast(e&&e.code==="permission-denied"?"Esta loja está indisponível no momento. Tente mais tarde.":"Não foi possível enviar o pedido. Tente de novo.")})};
+ PA.setPedido(d.id,d).then(()=>{localStorage.setItem("pa_pedido",d.id);watch(d.id);if(pgc=="pix"&&window.PA_gw)gatewayPedido(d.id);const L=PA.payLink;if(pgc=="pix"&&!window.PA_gw&&L&&L.ligado===true&&/^https:\/\//i.test(L.url||"")){toast("Abrindo o pagamento…");setTimeout(()=>{location.href=L.url},900)}}).catch(e=>{console.error(e);pedido=null;st=0;sh=null;draw();toast(e&&e.code==="permission-denied"?"Esta loja está indisponível no momento. Tente mais tarde.":"Não foi possível enviar o pedido. Tente de novo.")})};
 window.PA_cancelCli=(p,m)=>{PA.setPedido(p.id,{st:"cancelado_cli",motivoCancel:m});fim()};
 window.PA_report=(p,m,t)=>{PA.setOco(Date.now(),{ped:p?p.id:0,lj:LOJA,cli:localStorage.getItem("pa_nome")||"Cliente",mot:m,txt:t||"",st:"aberta",rep:false,criadoEm:Date.now()})};
 /* cardápio e entrega/retirada vindos da loja */
-PA.whenReady(()=>{PA.watchLojaCfg(SLUG,c=>{if(!c)return;
- if(c.nome){X0.n=c.nome;document.title=c.nome}
+PA.whenReady(()=>{PA.watchLojaCfg(SLUG,c=>{if(!c)return;window.PA_modLoja=c.modulos||{};window.PA_brand=c.brand||{};window.PA_gw=!!c.asaasWalletId;MARCA.aplica(window.PA_brand);draw();
+ if(c.nome){X0.n=c.nome;document.title=c.nome}  PIXK=typeof c.pix==="string"?c.pix:"";
  if(c.m&&c.m.length){X0.m.length=0;c.m.forEach(p=>X0.m.push(p))}
  if(c.ent===false&&AUT=="ambas"){AUT="ret";tipo="ret"}else if(c.ent===true&&AUT=="ret"){AUT="ambas"}
  if(c.fechada||c.suspensa||c.pendente===true){AUT="nada"}else if(AUT=="nada"){AUT=c.ent===false?"ret":"ambas"}

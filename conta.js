@@ -1,3 +1,42 @@
+/* PedeAí v5.1 · BLOCO 1 · (a) sincronização a cada 5 s em todos os perfis · (b) avisos (loja: pedido novo; motoboy: pedido pronto) */
+(function(){
+const SYNC_MS=5000;
+/* (a) Envolve o Firestore: cada onSnapshot que o app já usa (mesma consulta, mesmo escopo do perfil) ganha uma
+   releitura do servidor a cada 5 s. Só repassa ao app se o resultado for diferente do último recebido. */
+window.PA_sync5=function(F0){
+ const F=Object.assign({},F0);
+ F.onSnapshot=function(ref,next,err){
+  if(typeof next!=="function"||!ref||!F0.getDocsFromServer||!F0.getDocFromServer)return F0.onSnapshot.apply(F0,arguments);
+  const isDoc=ref.type==="document";
+  let last=null,ver=0,pend=false,busy=false,dead=false;
+  const sig=s=>{try{return isDoc?(s.exists()?JSON.stringify(s.data()):"-"):s.docs.map(d=>d.id+JSON.stringify(d.data())).join("|")}catch(e){return null}};
+  const un=F0.onSnapshot(ref,s=>{ver++;pend=!!(s.metadata&&s.metadata.hasPendingWrites);last=sig(s);next(s)},err);
+  const t=setInterval(()=>{
+   if(dead||busy||pend||navigator.onLine===false)return;
+   busy=true;const v0=ver;
+   (isDoc?F0.getDocFromServer(ref):F0.getDocsFromServer(ref)).then(s=>{
+    if(dead||v0!==ver||pend)return;            /* chegou algo mais novo pelo ouvinte em tempo real: descarta */
+    const g=sig(s);if(g!==null&&g!==last){last=g;next(s)}
+   }).catch(()=>{}).then(()=>{busy=false})},SYNC_MS);
+  return ()=>{dead=true;clearInterval(t);un()}};
+ return F};
+/* (b) Aviso: vibra + toca bipe + notificação do sistema (se a pessoa permitiu) */
+window.PA_aviso=function(titulo,corpo,tag){if(localStorage.getItem("pa_avisos")==="0")return;
+ try{navigator.vibrate&&navigator.vibrate([300,120,300,120,300])}catch(e){}
+ try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){const c=window.__pa_ac||(window.__pa_ac=new AC());if(c.state==="suspended")c.resume();
+  [0,.22,.44].forEach((t,i)=>{const o=c.createOscillator(),g=c.createGain(),T=c.currentTime+t;o.type="sine";o.frequency.value=i==2?1100:880;
+   g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(.4,T+.02);g.gain.exponentialRampToValueAtTime(.0001,T+.18);
+   o.connect(g);g.connect(c.destination);o.start(T);o.stop(T+.2)})}}catch(e){}
+ try{if("Notification"in window&&Notification.permission==="granted"){
+  const op={body:corpo,tag:tag||"pedeai",renotify:true,silent:false,requireInteraction:true,vibrate:[300,120,300],icon:"icon-"+(window.PA_PAPEL||"lojista")+"-192.png"};
+  const f=()=>{try{new Notification(titulo,op)}catch(e){}};
+  if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification(titulo,op)).catch(f);else f()}}catch(e){}};
+/* pede permissão de notificação (e libera o som) no primeiro toque — só Loja e Motoboy */
+if(["lojista","motoboy","adm","criador"].includes(window.PA_PAPEL)){
+ const ask=()=>{try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){const c=window.__pa_ac||(window.__pa_ac=new AC());c.resume&&c.resume()}}catch(e){}
+  try{if("Notification"in window&&Notification.permission==="default")Notification.requestPermission()}catch(e){}};
+ document.addEventListener("pointerdown",ask,{once:true})}
+})();
 /* PedeAí · login Google + contas + período grátis + cobrança (compartilhado pelos apps) */
 (function(){
 const DIA=864e5,TRIAL=30,CAR=3,CRIADOR_EMAIL="edinaldooliveiradesouza@gmail.com";
@@ -228,7 +267,129 @@ async function criador(F,db,u,cfg){
   o.onclick=()=>PA.logout();return}
  const bt=document.createElement("button");bt.textContent="💳 Contas e pagamentos";
  bt.style.cssText="position:fixed;right:12px;bottom:12px;z-index:9999;background:#22a559;color:#fff;border:0;border-radius:24px;padding:12px 16px;font:700 14px system-ui;box-shadow:0 4px 14px #0008;cursor:pointer";
- bt.onclick=()=>painel(F,db,cfg);document.body.appendChild(bt)}
+ bt.onclick=()=>painel(F,db,cfg);document.body.appendChild(bt);
+ const b2=document.createElement("button");b2.textContent="🏪 Lojas e dados";
+ b2.style.cssText="position:fixed;right:12px;bottom:64px;z-index:9999;background:#d4141c;color:#fff;border:0;border-radius:24px;padding:12px 16px;font:700 14px system-ui;box-shadow:0 4px 14px #0008;cursor:pointer";
+ b2.onclick=()=>lojasCriador(F,db);document.body.appendChild(b2);
+ const b3=document.createElement("button");b3.textContent="🔗 Pagamentos";
+ b3.style.cssText="position:fixed;right:12px;bottom:116px;z-index:9999;background:#2563eb;color:#fff;border:0;border-radius:24px;padding:12px 16px;font:700 14px system-ui;box-shadow:0 4px 14px #0008;cursor:pointer";
+ b3.onclick=()=>pagCriador(F,db);document.body.appendChild(b3);
+ /* painel do Criador: a tela inicial chama estas ações; as bolhas ficam escondidas */
+ window.PA_criadorAcoes={contas:()=>bt.onclick(),lojas:()=>b2.onclick(),pag:()=>b3.onclick(),mod:()=>modulosCriador(F,db),leads:()=>leadsCriador(F,db)};
+ /* contador de leads novos (aparece no painel) */
+ F.onSnapshot(F.collection(db,"leads"),s=>{const n=s.docs.filter(d=>!d.data().lido).length;window.PA_onLeads&&PA_onLeads(n)},()=>{});
+ [bt,b2,b3].forEach(x=>x.style.display="none");
+ try{new MutationObserver(()=>{window.PA_onBt&&PA_onBt(bt.textContent)}).observe(bt,{childList:true,characterData:true,subtree:true});window.PA_onBt&&PA_onBt(bt.textContent)}catch(e){}
+ /* Bloco 2: avisa (som + vibração + notificação) quando um ADM cria uma loja */
+ let prim=true;F.onSnapshot(F.collection(db,"eventos"),s=>{const nl=s.docs.filter(d=>d.data().lido===false);b2.textContent="🏪 Lojas e dados"+(nl.length?" ("+nl.length+")":"");try{window.PA_onEventos&&PA_onEventos(nl.length)}catch(e){}
+  if(!prim)s.docChanges().forEach(ch=>{if(ch.type==="added"&&ch.doc.data().lido===false){const e=ch.doc.data();PA_aviso("🏪 Nova loja criada",(e.nome||e.slug)+" · ADM "+(e.admEmail||"?")+" · plano "+((PLANOS[e.plano]||{}).n||e.plano),"loja-"+ch.doc.id);window.PA_toast&&PA_toast("🏪 Nova loja: "+(e.nome||e.slug))}});
+  prim=false},e=>console.error("eventos:",e))}
+
+/* Bloco 3: Criador — lojas, eventos, Zerar (vendas/lucros/carteira) e Excluir loja */
+async function apaga(F,q){const s=await F.getDocs(q);let n=0;for(const d of s.docs){await F.deleteDoc(d.ref);n++}return n}
+async function lojasCriador(F,db){
+ const o=ov('<div id="lc">Carregando…</div>');o.firstChild.style.maxWidth="440px";
+ const draw=async()=>{
+  const [ls,ev]=await Promise.all([F.getDocs(F.collection(db,"lojas")),F.getDocs(F.collection(db,"eventos"))]);
+  const LJ=ls.docs.map(d=>({slug:d.id,...d.data()})).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR")),EV=ev.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.criadoEm-a.criadoEm);
+  const novos=EV.filter(e=>e.lido===false);
+  o.firstChild.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">🏪 Lojas e dados</b><button data-a="x" style="background:#2a2a31;color:#f4f4f6;border:0;border-radius:8px;padding:8px 12px;font-weight:700">Fechar</button></div>'
+  +'<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0;'+(novos.length?'border:2px solid #e0a800':'')+'"><b>🔔 Lojas criadas por ADMs ('+novos.length+' novas)</b>'+(EV.length?EV.slice(0,15).map(e=>'<div style="margin-top:8px"><b>'+esc(e.nome)+'</b> <span style="color:#a3a3ad">· '+esc((PLANOS[e.plano]||{}).n||e.plano)+'</span><div style="color:#a3a3ad;font-size:13px">ADM '+esc(e.admEmail)+' · '+new Date(e.criadoEm).toLocaleString("pt-BR")+(e.lido===false?' · <b style="color:#e0a800">nova</b>':'')+'</div>'+(e.lido===false?'<button data-a="lido" data-id="'+esc(e.id)+'" style="'+BTN+';background:#2a2a31;color:#f4f4f6;padding:8px;font-size:14px">Marcar como vista</button>':'')+'</div>').join(""):'<div style="color:#a3a3ad;margin-top:6px">Nenhuma loja criada por ADM ainda.</div>')+'</div>'
+  +'<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0"><b>Lojas ('+LJ.length+')</b>'+(LJ.map(l=>'<div style="margin-top:10px"><b>'+esc(l.nome||l.slug)+'</b> <span style="color:#a3a3ad">· '+esc((PLANOS[l.plano||"iniciante"]||{}).n)+(l.pendente?' · aguardando gerente':'')+(l.suspensa?' · suspensa':'')+'</span><button data-a="del" data-id="'+esc(l.slug)+'" style="'+BTN+';background:transparent;color:#ff6b6b;border:1px solid #ff6b6b;padding:8px;font-size:14px">🗑️ Excluir loja e dados</button></div>').join("")||'<div style="color:#a3a3ad;margin-top:6px">Nenhuma loja.</div>')+'</div>'
+  +'<div style="background:#16161a;border:1px solid #ff6b6b;border-radius:12px;padding:12px;margin:12px 0"><b>♻️ Zerar vendas, lucros e carteira</b><div style="color:#a3a3ad;font-size:13px;margin:6px 0">Apaga todos os pedidos (vendas e lucros), as ocorrências, o histórico de pagamentos já decididos (carteira, inclusive a do Criador) e os avisos. <b>Preserva</b> usuários, contas, lojas, equipe e cardápios. Não dá para desfazer.</div><button data-a="zerar" style="'+BTN+';background:#d4141c;color:#fff;padding:10px">Zerar agora</button></div>'};
+ o.firstChild.onclick=async ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(!a)return;const id=ev.target.dataset.id;
+  try{
+   if(a==="x"){o.remove();return}
+   if(a==="lido"){await F.setDoc(F.doc(db,"eventos",id),{lido:true},{merge:true})}
+   if(a==="zerar"){if(prompt('Isto apaga TODAS as vendas, lucros e a carteira. Digite ZERAR para confirmar:')!=="ZERAR")return;
+    o.firstChild.innerHTML="Zerando…";let n=0;
+    n+=await apaga(F,F.collection(db,"pedidos"));n+=await apaga(F,F.collection(db,"ocorrencias"));n+=await apaga(F,F.collection(db,"eventos"));
+    const cs=await F.getDocs(F.collection(db,"contas"));for(const d of cs.docs){const p=d.data().pagto;if(p&&p.st&&p.st!=="analise"){await F.setDoc(d.ref,{pagto:F.deleteField()},{merge:true});n++}}
+    await F.setDoc(F.doc(db,"meta","contador"),{n:5000});
+    window.PA_toast&&PA_toast("Zerado ✔ ("+n+" registros apagados)")}
+   if(a==="del"){const l=(await F.getDoc(F.doc(db,"lojas",id))).data()||{};
+    if((prompt('Excluir a loja "'+(l.nome||id)+'" e TODOS os dados dela (pedidos, equipe, convites, conta do dono)? Digite o nome da loja para confirmar:')||"").trim()!==String(l.nome||id))return;
+    o.firstChild.innerHTML="Excluindo…";
+    await apaga(F,F.query(F.collection(db,"pedidos"),F.where("loja","==",id)));
+    await apaga(F,F.query(F.collection(db,"ocorrencias"),F.where("lj","==",id)));
+    await apaga(F,F.query(F.collection(db,"equipe"),F.where("slug","==",id)));
+    await apaga(F,F.query(F.collection(db,"convites"),F.where("slug","==",id)));
+    await apaga(F,F.query(F.collection(db,"gerenteConvites"),F.where("slug","==",id)));
+    await apaga(F,F.query(F.collection(db,"eventos"),F.where("slug","==",id)));
+    const cs=await F.getDocs(F.query(F.collection(db,"contas"),F.where("loja.slug","==",id)));
+    for(const d of cs.docs){if(d.data().papel==="lojista")await F.deleteDoc(d.ref);else await F.setDoc(d.ref,{loja:F.deleteField()},{merge:true})}
+    await F.deleteDoc(F.doc(db,"lojas",id));
+    window.PA_toast&&PA_toast("Loja excluída ✔")}
+   await draw()}catch(e){console.error(e);alert("Erro: "+(e.code||e.message));try{await draw()}catch(_){}}};
+ try{await draw()}catch(e){o.firstChild.innerHTML='<div style="color:#ff6b6b">Erro ao carregar ('+esc(e.code||e.message)+')</div>'}}
+
+/* Bloco 7: Criador — CRUD de links de pagamento + chave liga/desliga lida pelo checkout do cliente */
+async function pagCriador(F,db){
+ const o=ov('<div>Carregando…</div>');o.firstChild.style.maxWidth="440px";
+ const IN2='width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #2a2a31;background:#0b0b0d;color:#f4f4f6;font:inherit;margin-top:6px';
+ const okUrl=u=>{try{const x=new URL(u);return x.protocol==="https:"}catch(e){return false}};
+ const draw=async()=>{
+  const [ls,cf]=await Promise.all([F.getDocs(F.collection(db,"linksPagamento")),F.getDoc(F.doc(db,"meta","pagamento"))]);
+  const LK=ls.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.criadoEm||0)-(b.criadoEm||0)),C=cf.exists()?cf.data():{ligado:false};
+  o.firstChild.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">🔗 Links de pagamento</b><button data-a="x" style="background:#2a2a31;color:#f4f4f6;border:0;border-radius:8px;padding:8px 12px;font-weight:700">Fechar</button></div>'
+  +'<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0"><label style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:800"><span>Redirecionar o cliente ao link ao pagar com Pix</span><input id="ptg" type="checkbox" data-a="tog" '+(C.ligado?'checked ':'')+'style="width:28px;height:28px"></label><div style="color:#a3a3ad;font-size:13px;margin-top:6px">'+(C.ligado?'LIGADO: o cliente que escolher Pix é levado para <b>'+esc(C.nome||"")+'</b> logo após enviar o pedido.':'DESLIGADO: o checkout segue o fluxo normal (Pix pela loja).')+'</div></div>'
+  +'<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0"><b>Links ('+LK.length+')</b>'+(LK.map(l=>'<div style="margin-top:10px;padding-top:10px;border-top:1px solid #2a2a31"><b>'+esc(l.nome)+'</b>'+(C.linkId===l.id?' <span style="color:#22a559">● em uso</span>':'')+'<div style="color:#a3a3ad;font-size:12.5px;word-break:break-all">'+esc(l.url)+'</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+(C.linkId===l.id?'':'<button data-a="use" data-id="'+esc(l.id)+'" style="'+BTN+';width:auto;background:#22a559;color:#fff;padding:8px 12px;font-size:14px">Usar este</button>')+'<button data-a="edit" data-id="'+esc(l.id)+'" style="'+BTN+';width:auto;background:#2a2a31;color:#f4f4f6;padding:8px 12px;font-size:14px">Editar</button><button data-a="del" data-id="'+esc(l.id)+'" style="'+BTN+';width:auto;background:transparent;color:#ff6b6b;border:1px solid #ff6b6b;padding:8px 12px;font-size:14px">Excluir</button></div></div>').join("")||'<div style="color:#a3a3ad;margin-top:6px">Nenhum link cadastrado.</div>')+'</div>'
+  +'<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0"><b>Novo link</b><input id="pn" maxlength="40" placeholder="Nome (ex.: Mercado Pago)" style="'+IN2+'"><input id="pu" type="url" placeholder="https://…" style="'+IN2+'"><button data-a="add" style="'+BTN+';background:#2563eb;color:#fff;padding:10px;margin-top:8px">Adicionar</button></div>'};
+ const grava=async(l)=>{await F.setDoc(F.doc(db,"meta","pagamento"),l,{merge:true})};
+ o.firstChild.onclick=async ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(!a)return;const id=ev.target.dataset.id;
+  if(a==="tog"){return}
+  try{
+   if(a==="x"){o.remove();return}
+   if(a==="add"){const n=o.firstChild.querySelector("#pn").value.trim(),u=o.firstChild.querySelector("#pu").value.trim();if(n.length<2){alert("Informe o nome.");return}if(!okUrl(u)){alert("Informe um link válido que comece com https://");return}
+    const ref=F.doc(F.collection(db,"linksPagamento"));await F.setDoc(ref,{nome:n,url:u,criadoEm:Date.now()});const cf=await F.getDoc(F.doc(db,"meta","pagamento"));if(!cf.exists()||!cf.data().linkId)await grava({linkId:ref.id,nome:n,url:u,ligado:false})}
+   if(a==="use"){const l=(await F.getDoc(F.doc(db,"linksPagamento",id))).data();await grava({linkId:id,nome:l.nome,url:l.url})}
+   if(a==="edit"){const l=(await F.getDoc(F.doc(db,"linksPagamento",id))).data(),n=prompt("Nome:",l.nome);if(n===null)return;const u=prompt("Link (https://…):",l.url);if(u===null)return;if(n.trim().length<2||!okUrl(u.trim())){alert("Nome ou link inválido.");return}
+    await F.setDoc(F.doc(db,"linksPagamento",id),{nome:n.trim(),url:u.trim()},{merge:true});const cf=await F.getDoc(F.doc(db,"meta","pagamento"));if(cf.exists()&&cf.data().linkId===id)await grava({nome:n.trim(),url:u.trim()})}
+   if(a==="del"){if(!confirm("Excluir este link?"))return;await F.deleteDoc(F.doc(db,"linksPagamento",id));const cf=await F.getDoc(F.doc(db,"meta","pagamento"));if(cf.exists()&&cf.data().linkId===id)await grava({linkId:"",nome:"",url:"",ligado:false})}
+   await draw()}catch(e){console.error(e);alert("Erro: "+(e.code||e.message));try{await draw()}catch(_){}}};
+ /* o switch grava no próprio clique (change) */
+ o.firstChild.addEventListener("change",async ev=>{if(!ev.target||ev.target.id!=="ptg")return;const on=ev.target.checked;
+  try{const cf=await F.getDoc(F.doc(db,"meta","pagamento"));if(on&&!(cf.exists()&&cf.data().url)){alert("Cadastre e escolha um link (Usar este) antes de ligar.");ev.target.checked=false;return}
+   await grava({ligado:on});await draw()}catch(e){console.error(e);alert("Erro: "+(e.code||e.message));ev.target.checked=!on}});
+ try{await draw()}catch(e){o.firstChild.innerHTML='<div style="color:#ff6b6b">Erro ao carregar ('+esc(e.code||e.message)+')</div>'}}
+
+/* Módulos por loja e preço total (Gestão R$ 49 · Loja Virtual R$ 50 · Agendamento R$ 30) */
+const MOD_PRECO={gestao:49,loja:50,agenda:30};
+const MOD_NOME={gestao:"Gestão",loja:"Loja Virtual",agenda:"Agendamento"};
+const MOD_DESC={gestao:"Pedidos com aviso sonoro, preparo com ordem de serviço, caixa, histórico, equipe e salários.",loja:"Link público do cardápio para o cliente pedir pelo navegador, sem baixar app, com Pix.",agenda:"Mini-site com foto, bio e serviços, e agenda para o cliente marcar horário (sinal por Pix ou pagamento no local)."};
+const modOn=(m,k)=>k==="agenda"?m.agenda===true:m[k]!==false;
+const modTotal=m=>Object.keys(MOD_PRECO).filter(k=>modOn(m,k)).reduce((s,k)=>s+MOD_PRECO[k],0);
+async function modulosCriador(F,db){
+ const o=ov('<div>Carregando…</div>');o.firstChild.style.maxWidth="460px";
+ const draw=async()=>{
+  const s=await F.getDocs(F.collection(db,"lojas"));
+  const LJ=s.docs.map(d=>({slug:d.id,...d.data()})).sort((a,b)=>String(a.nome||"").localeCompare(String(b.nome||""),"pt-BR"));
+  o.firstChild.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">🧩 Módulos e preço</b><button data-a="x" style="background:#2a2a31;color:#f4f4f6;border:0;border-radius:8px;padding:8px 12px;font-weight:700">Fechar</button></div>'
+  +(LJ.map(l=>{const m=l.modulos||{gestao:true,loja:true,agenda:false},t=modTotal(m);
+   return '<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0"><b>'+esc(l.nome||l.slug)+'</b><div style="margin-top:8px">'+Object.keys(MOD_PRECO).map(k=>'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0"><label style="display:flex;align-items:center;gap:10px;font-weight:700"><input type="checkbox" data-a="mod" data-slug="'+esc(l.slug)+'" data-k="'+k+'" '+(modOn(m,k)?"checked":"")+' style="width:24px;height:24px"> '+MOD_NOME[k]+' <span style="color:#a3a3ad;font-weight:400">R$ '+MOD_PRECO[k]+'</span></label><button data-a="info" data-k="'+k+'" style="background:#2a2a31;color:#f4f4f6;border:0;border-radius:50%;width:30px;height:30px;font-weight:800">i</button></div>').join("")+'</div><div style="margin-top:8px;font-weight:800">Total desta loja: R$ '+t+'</div></div>'}).join("")||'<div style="color:#a3a3ad">Nenhuma loja cadastrada.</div>');
+ };
+ o.firstChild.onclick=ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(a==="x"){o.remove()}else if(a==="info"){alert(MOD_NOME[ev.target.dataset.k]+": "+MOD_DESC[ev.target.dataset.k])}};
+ o.firstChild.addEventListener("change",async ev=>{const t=ev.target;if(!t||t.dataset.a!=="mod")return;
+  try{const ref=F.doc(db,"lojas",t.dataset.slug);const s=await F.getDoc(ref);const cur=(s.data()||{}).modulos||{gestao:true,loja:true,agenda:false};
+   const nm={...cur,[t.dataset.k]:t.checked};
+   await F.setDoc(ref,{modulos:{gestao:nm.gestao!==false,loja:nm.loja!==false,agenda:nm.agenda===true},valorModulos:modTotal(nm)},{merge:true});
+   await draw();window.PA_toast&&PA_toast("Módulos salvos")}
+  catch(e){console.error(e);alert("Erro: "+(e.code||e.message));t.checked=!t.checked}});
+ await draw();
+}
+async function leadsCriador(F,db){
+ const o=ov('<div>Carregando…</div>');o.firstChild.style.maxWidth="460px";
+ const draw=async()=>{
+  const s=await F.getDocs(F.collection(db,"leads"));
+  const L=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0));
+  await Promise.all(L.filter(l=>!l.lido).map(l=>F.setDoc(F.doc(db,"leads",l.id),{lido:true},{merge:true})));
+  o.firstChild.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">📩 Leads do site ('+L.length+')</b><button data-a="x" style="background:#2a2a31;color:#f4f4f6;border:0;border-radius:8px;padding:8px 12px;font-weight:700">Fechar</button></div>'
+  +(L.map(l=>'<div style="margin-top:10px;padding-top:10px;border-top:1px solid #2a2a31"><b>'+esc(l.nome)+'</b> <span style="color:#a3a3ad">· '+(l.tipo==="apk"?"APK próprio":"Site personalizado")+'</span><div style="color:#a3a3ad;font-size:13px">'+esc(l.tel)+' · '+esc(l.email)+' · '+new Date(l.criadoEm).toLocaleString("pt-BR")+'</div><div style="margin-top:6px;white-space:pre-wrap">'+esc(l.msg)+'</div><button data-a="del" data-id="'+esc(l.id)+'" style="'+BTN+';width:auto;margin-top:6px;background:transparent;color:#ff6b6b;border:1px solid #ff6b6b;padding:8px 12px;font-size:14px">Excluir</button></div>').join("")||'<div style="color:#a3a3ad;margin-top:6px">Nenhum lead ainda.</div>');
+ };
+ o.firstChild.onclick=async ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(a==="x"){o.remove();return}
+  if(a==="del"&&confirm("Excluir este contato?")){try{await F.deleteDoc(F.doc(db,"leads",ev.target.dataset.id));await draw()}catch(e){alert("Erro: "+(e.code||e.message))}}};
+ await draw();
+}
 
 async function painel(F,db,cfg){
  const o=ov('<div id="pc">Carregando…</div>');o.firstChild.style.maxWidth="440px";

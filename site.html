@@ -1,0 +1,61 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>PedeAí Brasil · Sistema para lojas</title>
+<style>
+:root{--ac:#d4141c;--on:#fff;--bg:#0b0b0d;--tx:#f4f4f6;--card:#16161a;--br:#2a2a31;--mu:#a3a3ad}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:20px}h1{font-size:30px;margin:12px 0}h2{font-size:20px;margin:28px 0 8px}
+.card{background:var(--card);border:1px solid var(--br);border-radius:14px;padding:16px;margin:12px 0}.meta{color:var(--mu);font-size:14px}
+.btn{display:block;width:100%;padding:15px;border:0;border-radius:12px;background:var(--ac);color:var(--on);font:800 16px system-ui;cursor:pointer;margin-top:10px;text-align:center;text-decoration:none}
+.btn.b{background:#2a2a31;color:var(--tx)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;justify-content:center;z-index:50}.modal.on{display:flex}
+.box{background:var(--card);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:20px;max-height:92vh;overflow:auto}
+input,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid var(--br);background:#0b0b0d;color:var(--tx);font:inherit;margin-top:6px}
+label{display:block;margin-top:10px;font-weight:700}.ok{color:#22a559;font-weight:800}
+</style></head><body><div class="wrap">
+<h1>PedeAí Brasil</h1>
+<p>Um sistema para a sua loja, salão ou consultório: cardápio online, gestão de pedidos e agendamento de horários, tudo no seu nome e com a sua marca.</p>
+<div class="grid">
+ <div class="card"><b>📋 Gestão</b><div class="meta">Pedidos em tempo real com aviso sonoro, preparo com ordem de serviço, caixa, histórico e equipe com salários.</div></div>
+ <div class="card"><b>🛒 Loja virtual</b><div class="meta">Um link público de cardápio: o cliente pede pelo navegador, sem baixar app, e paga por Pix.</div></div>
+ <div class="card"><b>📅 Agendamento</b><div class="meta">Mini-site com foto, bio e serviços, e agenda para o cliente marcar horário. Você escolhe cobrar sinal por Pix ou no local.</div></div>
+ <div class="card"><b>🎨 Sua marca</b><div class="meta">Logo e uma cor principal. O texto se ajusta sozinho para ficar legível.</div></div>
+</div>
+<h2>Quanto custa</h2>
+<div class="card"><div class="meta">Você liga só o que precisa. Os valores são por loja:</div>
+ <div class="grid" style="margin-top:8px"><div><b>Gestão</b> · R$ 49</div><div><b>Loja Virtual</b> · R$ 50</div><div><b>Agendamento</b> · R$ 30</div></div></div>
+<h2>Quer algo sob medida?</h2>
+<div class="grid">
+ <button class="btn" onclick="abre('site')">Quero criar um site personalizado</button>
+ <button class="btn b" onclick="abre('apk')">Quero ser dono do meu próprio APK</button>
+</div>
+<p class="meta" style="margin-top:24px">Já tem acesso? <a href="index.html" style="color:var(--tx)">Entrar no sistema</a></p>
+</div>
+<div class="modal" id="m"><div class="box">
+ <div style="display:flex;justify-content:space-between;align-items:center"><b id="mt" style="font-size:20px"></b><button onclick="fecha()" style="background:none;border:0;color:var(--tx);font-size:22px">✕</button></div>
+ <div id="fm"><label>Nome</label><input id="ln" maxlength="80" autocomplete="name">
+ <label>Telefone (com DDD)</label><input id="lt" type="tel" maxlength="20" inputmode="tel">
+ <label>E-mail</label><input id="le" type="email" maxlength="120" autocomplete="email">
+ <label>Mensagem</label><textarea id="lm" rows="4" maxlength="1000" placeholder="Conte o que você precisa"></textarea>
+ <button class="btn" id="enviar" onclick="envia()">Enviar</button><div class="meta" id="err" style="color:#ff6b6b;margin-top:8px"></div></div>
+ <div id="fok" style="display:none"><p class="ok">Recebido! Entraremos em contato em breve.</p><button class="btn b" onclick="fecha()">Fechar</button></div>
+</div></div>
+let TIPO="site";
+function abre(t){TIPO=t;document.getElementById("mt").textContent=t==="apk"?"Meu próprio APK":"Site personalizado";document.getElementById("m").classList.add("on")}
+function fecha(){document.getElementById("m").classList.remove("on");document.getElementById("err").textContent="";document.getElementById("fm").style.display="";document.getElementById("fok").style.display="none";["ln","lt","le","lm"].forEach(i=>document.getElementById(i).value="")}
+async function envia(){
+ const v=id=>document.getElementById(id).value.trim(),nome=v("ln"),tel=v("lt"),email=v("le"),msg=v("lm"),err=t=>document.getElementById("err").textContent=t;
+ if(nome.length<2)return err("Informe seu nome.");if(tel.replace(/\D/g,"").length<8)return err("Informe um telefone válido.");
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return err("Informe um e-mail válido.");if(msg.length<5)return err("Escreva uma mensagem (mínimo 5 letras).");
+ if(typeof window.salvaLead!=="function")return err("Sem conexão com o servidor agora. Tente de novo em instantes.");
+ const b=document.getElementById("enviar");b.disabled=true;b.textContent="Enviando…";
+ try{await window.salvaLead({nome,tel,email,msg,tipo:TIPO});document.getElementById("fm").style.display="none";document.getElementById("fok").style.display="block"}
+ catch(e){console.error(e);err("Não foi possível enviar. Tente de novo em instantes.")}
+ b.disabled=false;b.textContent="Enviar"}
+</script>
+<script type="module">
+import * as A from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import * as F from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+const CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5",measurementId:"G-KYQRSY9V5H"};
+const db=F.getFirestore(A.initializeApp(CFG));
+window.salvaLead=d=>F.addDoc(F.collection(db,"leads"),{...d,criadoEm:Date.now()});
+</script>
+</body></html></body></html>

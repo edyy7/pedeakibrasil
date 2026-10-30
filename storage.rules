@@ -1,5 +1,6 @@
 rules_version = '2';
-// Fotos do cadastro do entregador (rosto, CNH, veículo). Só o próprio entregador envia; ele e o Criador leem.
+// Fotos do cadastro do entregador: só o próprio entregador envia; ele e o Criador leem.
+// Logos e fotos das lojas: o dono da loja (ou o ADM) envia; são públicos.
 service firebase.storage {
   match /b/{bucket}/o {
     match /entregadores/{uid}/{arq} {
@@ -7,7 +8,15 @@ service firebase.storage {
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
       allow read: if request.auth != null && (request.auth.uid == uid
-        || request.auth.token.email == 'COLOQUE-O-E-MAIL-DO-CRIADOR-AQUI');
+        || request.auth.token.email == 'edinaldooliveiradesouza@gmail.com');
+    }
+    match /lojas/{slug}/{arq} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.resource.size < 3 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+        && (firestore.get(/databases/(default)/documents/lojas/$(slug)).data.dono == request.auth.uid
+            || firestore.get(/databases/(default)/documents/lojas/$(slug)).data.admId == request.auth.uid);
     }
   }
 }

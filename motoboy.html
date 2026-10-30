@@ -42,7 +42,7 @@ input,select{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1p
 </style><script>(function(){let id=localStorage.getItem("pa_mid"),n=localStorage.getItem("pa_mnome");if(!id){id="m"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);localStorage.setItem("pa_mid",id)}if(!n){n="Entregador"}window.ME={id:id,n:n}})();</script><link rel="manifest" href="manifest-motoboy.json"><meta name="theme-color" content="#22a559"><link rel="icon" href="icon-motoboy-192.png"><link rel="apple-touch-icon" href="icon-motoboy-192.png"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
 <div class="pv" id="pa-st" style="background:#111;color:#e0a800;font-size:12.5px;font-weight:700">○ Conectando…</div>
 <div class="pg" id="inst"></div>
-<div class="top"><span>Motoboy · João (exemplo)</span><button onclick="sh='menu';draw()">☰ Menu</button></div>
+<div class="top"><span>Motoboy</span><button onclick="sh='menu';draw()">☰ Menu</button></div>
 <div class="pg">
   <div id="v"></div>
 </div>
@@ -68,10 +68,10 @@ let on=true,et="disp",sh=null;
 let DISP=[];
 let AC=[],EM=[];
 const OK=[];
-const DIA=[{id:1,t:"Janta",d:"Qui 29/10",h:"18:00 às 23:00",v:90,l:"Lanchonete do Zé",ob:"Refeição inclusa"},{id:2,t:"Almoço",d:"Sex 30/10",h:"11:00 às 15:00",v:70,l:"Farmácia Vida",ob:""}];
+const DIA=[];
 let MINHAS=[];
 const ganhos=()=>OK.reduce((t,o)=>t+o.g,0);
-const chat=(rota)=>`<div style="display:flex;gap:8px"><button class="cta b" style="flex:1" onclick="toast('Exemplo: chat com a loja')">Falar com a loja</button>${rota?`<button class="cta b" style="flex:1" onclick="toast('Exemplo: chat com o cliente')">Falar com cliente</button>`:""}</div>`;
+const chat=(rota)=>``;
 function disp(){
  if(window.PA&&PA.ready&&!PA.vinculo)return `<div class="empty">Você ainda não está vinculado a nenhuma loja.<br>Peça o código de convite ao lojista.<br><button class="cta" style="margin-top:12px" onclick="sh='vinc';draw()">🔗 Vincular à loja</button></div>`;
  if(!on)return `<div class="empty">Você está offline.<br>Fique online no menu para ver as entregas disponíveis.</div>`;
@@ -200,14 +200,32 @@ function dia(){return `<div class="panel"><b style="font-size:20px">🗓️ Diá
 const dc=(d,b)=>`<div class="oc"><div class="row"><b>${d.t} · ${d.d}</b><span class="tag">${MINHAS.some(x=>x.id==d.id)?"Aceita":"Aberta"}</span></div><div class="meta" style="font-size:16px"><b>${d.h}</b> · ${R$(d.v)}</div><div class="meta">Loja: ${d.l}</div>${d.ob?`<div class="meta">• ${d.ob}</div>`:""}${b}</div>`;
 function pegar(id){const d=DIA.find(x=>x.id==id);DIA.splice(DIA.indexOf(d),1);MINHAS.push(d);draw();toast("Diária aceita")}
 function ind(){return `<div class="panel"><b style="font-size:20px">🤝 Indicações</b><div class="oc"><b>Indicação Comissionada</b><div class="meta" style="margin:4px 0">Indique lojas, entregadores ou colegas com o seu link. Ele é único e não gera dois cadastros. Quem entra por ele já vem identificado e só preenche nome e chave Pix. A comissão é de 1 nível, só sobre pagamento efetivo, repassada no ato do pagamento da loja.</div><div class="meta">Como terceiro, você recebe: Por uso R$ 0,50/pedido por 3 meses (contados do 1º pagamento) · Mensal 100% do 1º mês · Anual (1/3/5 anos) 20% do total. No período grátis ninguém recebe.</div></div><div class="oc"><div class="meta">Seu link já gerado</div><b style="word-break:break-all;font-size:15px">https://meudelivery-six.vercel.app/#indica=JOAO-4821</b></div><button class="cta" onclick="try{navigator.clipboard.writeText('https://meudelivery-six.vercel.app/#indica=JOAO-4821')}catch(e){};toast('Link de indicação copiado')">Copiar link</button><div class="line" style="margin-top:12px"><span>Ana (entregadora)<br><small class="meta">12/50 no 1º mês · bônus R$ 0,00</small></span><b>R$ 0,00/mês</b></div>${fechar()}</div>`}
-function edr(){return `<div class="panel"><b style="font-size:20px">Meu cadastro</b><div class="meta" style="margin-bottom:8px">Preencha seus dados para receber entregas. A loja e o cliente veem seu nome, veículo e placa.</div><input placeholder="Nome completo" value="João da Silva (exemplo)"><input placeholder="Telefone / WhatsApp (com DDD)" value="(27) 99999-0000"><input type="email" placeholder="E-mail" value="joao@exemplo.com"><div class="meta" style="margin-top:10px;font-weight:800">Endereço</div><input placeholder="CEP" value="29000-000"><input placeholder="Rua e número" value="Rua das Palmeiras, 45"><input placeholder="Bairro" value="Praia do Canto"><input placeholder="Cidade" value="Vitória"><div class="meta" style="margin-top:10px;font-weight:800">Veículo</div><select><option>Moto</option><option>Bicicleta</option><option>Carro</option></select><input placeholder="Placa (se houver)" value="ABC1D23"><button class="cta" onclick="toast('Exemplo: cadastro salvo');sh=null;draw()">Salvar cadastro</button><button class="cta b" onclick="sh=null;draw()">Cancelar</button></div>`}
-function cfg(){return `<div class="panel"><b style="font-size:20px">⚙️ Configurações</b><div class="oc"><div class="row"><b>🔔 Avisos de nova corrida</b><button class="sw on" onclick="this.classList.toggle('on')"><i></i></button></div><div class="meta">Som e vibração mesmo com o app em segundo plano.</div></div><div class="oc"><div class="row"><b>🔊 Som</b><button class="sw on" onclick="this.classList.toggle('on')"><i></i></button></div></div><button class="cta" onclick="toast('Exemplo: tema alternado')">🌙 Usar tema escuro</button><button class="cta b" onclick="sh='edr';draw()">Editar meu cadastro</button><button class="cta o" onclick="toast('Exemplo: a conta não é excluída')">Excluir minha conta</button>${fechar()}</div>`}
+let CAD={nome:"",tel:"",email:"",cep:"",rua:"",bairro:"",cidade:"",veic:"Moto",placa:"",fotos:{}},CADF={},CADFORCE=false,CADSAVING=false;
+const cadOk=c=>!!(c&&c.nome&&c.tel&&c.fotos&&c.fotos.rosto&&c.fotos.cnh&&c.fotos.veiculo);
+const hx=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function cadSet(k,v){CAD[k]=v}
+function cadFoto(tipo,inp){const f=inp.files&&inp.files[0];if(!f)return;if(!/^image\//.test(f.type)){toast("Escolha uma imagem");return}CADF[tipo]=f;draw()}
+function cadRedim(f){return new Promise((ok,er)=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{const k=Math.min(1,1280/Math.max(im.width,im.height)),cv=document.createElement("canvas");cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);cv.toBlob(b=>b?ok(b):er(new Error("img")),"image/jpeg",.82);URL.revokeObjectURL(u)};im.onerror=()=>er(new Error("img"));im.src=u})}
+async function cadSalva(){if(CADSAVING)return;const c=CAD;
+ if(!c.nome.trim()||c.nome.trim().length<5){toast("Informe o nome completo");return}if(!c.tel.trim()){toast("Informe o telefone / WhatsApp");return}
+ for(const [k,l] of [["rosto","Rosto"],["cnh","CNH"],["veiculo","Veículo"]])if(!CADF[k]&&!(c.fotos&&c.fotos[k])){toast("Foto obrigatória: "+l);return}
+ if(!PA.ready||!PA.upFoto){toast("Sem conexão com o servidor");return}
+ CADSAVING=true;toast("Enviando fotos…");
+ try{const fotos={...(c.fotos||{})};for(const k of Object.keys(CADF)){fotos[k]=await PA.upFoto(k,await cadRedim(CADF[k]))}
+  const out={...c,nome:c.nome.trim(),fotos,atualizadoEm:Date.now()};await PA.salvaCad(out);CAD=out;CADF={};CADFORCE=false;sh=null;toast("Cadastro salvo ✔")}
+ catch(e){console.error(e);toast("Não foi possível salvar. Verifique a internet e tente de novo.")}
+ CADSAVING=false;draw()}
+function edr(){const IN=(id,ph,k,ty)=>`<input id="${id}" ${ty?`type="${ty}" `:""}placeholder="${ph}" value="${hx(CAD[k])}" oninput="cadSet('${k}',this.value)">`;
+ const ft=(k,l,cap)=>{const url=CADF[k]?URL.createObjectURL(CADF[k]):(CAD.fotos&&CAD.fotos[k]);return `<div class="oc"><b>${l} <span style="color:var(--rd)">*</span></b>${url?`<div style="margin:8px 0"><img src="${url}" alt="" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px"></div>`:`<div class="meta" style="margin:6px 0">Obrigatória</div>`}<input type="file" accept="image/*" capture="${cap}" onchange="cadFoto('${k}',this)"></div>`};
+ return `<div class="panel"><b style="font-size:20px">Meu cadastro</b><div class="meta" style="margin-bottom:8px">${CADFORCE?"Para receber entregas, complete o cadastro e envie as 3 fotos.":"A loja e o cliente veem seu nome, veículo e placa."}</div>${IN("cdn","Nome completo","nome")}${IN("cdt","Telefone / WhatsApp (com DDD)","tel","tel")}${IN("cde","E-mail","email","email")}<div class="meta" style="margin-top:10px;font-weight:800">Endereço</div>${IN("cdc","CEP","cep")}${IN("cdr","Rua e número","rua")}${IN("cdb","Bairro","bairro")}${IN("cdi","Cidade","cidade")}<div class="meta" style="margin-top:10px;font-weight:800">Veículo</div><select onchange="cadSet('veic',this.value)">${["Moto","Bicicleta","Carro"].map(v=>`<option ${CAD.veic==v?"selected":""}>${v}</option>`).join("")}</select>${IN("cdp","Placa (se houver)","placa")}<div class="meta" style="margin-top:10px;font-weight:800">Fotos obrigatórias</div>${ft("rosto","📸 Rosto (selfie)","user")}${ft("cnh","🪪 CNH","environment")}${ft("veiculo","🏍️ Veículo","environment")}<button class="cta" ${CADSAVING?"disabled":""} onclick="cadSalva()">${CADSAVING?"Enviando…":"Salvar cadastro"}</button>${CADFORCE?"":`<button class="cta b" onclick="sh=null;draw()">Cancelar</button>`}</div>`}
+const _dm=draw;draw=function(){if(CADFORCE&&sh!="edr")sh="edr";const ids=["cdn","cdt","cde","cdc","cdr","cdb","cdi","cdp"],a=document.activeElement&&document.activeElement.id,p=document.activeElement&&document.activeElement.selectionStart;_dm();if(ids.includes(a)){const e=document.getElementById(a);if(e){e.focus();try{e.setSelectionRange(p,p)}catch(_){}}}};
+function cfg(){return `<div class="panel"><b style="font-size:20px">⚙️ Configurações</b><div class="oc"><div class="row"><b>🔔 Avisos de nova corrida</b><button class="sw ${localStorage.getItem('pa_avisos')!=='0'?'on':''}" onclick="this.classList.toggle('on');try{localStorage.setItem('pa_avisos',this.classList.contains('on')?'1':'0')}catch(e){}"><i></i></button></div><div class="meta">Som e vibração mesmo com o app em segundo plano.</div></div><div class="oc"><div class="row"><b>🔊 Som</b><button class="sw ${localStorage.getItem('pa_som')!=='0'?'on':''}" onclick="this.classList.toggle('on');try{localStorage.setItem('pa_som',this.classList.contains('on')?'1':'0')}catch(e){}"><i></i></button></div></div><button class="cta b" onclick="sh='edr';draw()">Editar meu cadastro</button>${fechar()}</div>`}
 const fechar=()=>`<button class="cta b" style="margin-top:14px" onclick="sh=null;draw()">Fechar</button>`;
 function vinc(){const v=window.PA&&PA.vinculo;return `<div class="panel"><b style="font-size:20px">🔗 Vincular à Loja</b>${v?`<div class="oc"><b>✅ Entregador da ${v.nome}</b><div class="meta">Você vê só os pedidos desta loja. Para trocar, use um novo código abaixo.</div></div>`:`<div class="meta" style="margin:8px 0">Cole o código de convite que o lojista enviou.</div>`}<input id="cvinc" value="${window.__cv||""}" maxlength="12" placeholder="Ex.: ZE-4X9K7M" style="width:100%;box-sizing:border-box;padding:14px;border-radius:12px;border:1px solid var(--bd,#2a2a31);background:transparent;color:var(--tx);font-size:18px;text-transform:uppercase"><button class="cta" onclick="vincular()">Confirmar</button><button class="cta b" onclick="sh=null;draw()">Fechar</button></div>`}
 async function vincular(){const c=($("cvinc").value||"").trim().toUpperCase();if(!c){toast("Digite o código");return}if(!PA.ready||!PA.buscaConvite){toast("Sem conexão com o servidor");return}
  try{const lj=await PA.buscaConvite(c);if(!lj){toast("Código não encontrado");return}await PA.vincular(c,lj);toast("✅ Você agora é entregador da "+lj.nome);setTimeout(()=>{history.replaceState(null,"",location.pathname);location.reload()},1400)}catch(e){console.error(e);toast("Não foi possível vincular. Confira o código.")}}
 function menu(){const mi=(k,i,t)=>`<button class="mi" onclick="mi('${k}')"><span>${i}</span><span>${t}</span></button>`;return `<div class="drawer"><div style="text-align:right"><button style="font-size:24px;border:0;background:none;color:var(--tx)" onclick="sh=null;draw()">✕</button></div><div class="av">${ME.n.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase()}</div><div style="text-align:center;font-size:22px;font-weight:800">${ME.n}</div><div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:16px 0 8px"><b style="font-size:20px;color:${on?"var(--ok)":"var(--rd)"}">${on?"Online":"Offline"}</b><button class="sw ${on?"on":""}" onclick="on=!on;draw()"><i></i></button></div><div style="margin-top:10px">${mi("disp","📍","Entregas Disponíveis")}${mi("dia","🗓️","Diárias Disponíveis")}${mi("cart","👛","Carteira")}${mi("ind","🤝","Indicações")}${mi("edr","✏️","Editar meu cadastro")}${mi("vinc","🔗","Vincular à Loja")}${mi("cfg","⚙️","Configurações")}</div><div style="margin-top:auto;padding-top:20px">${mi("sair","🚪","Sair")}</div></div>`}
-function mi(k){if(k=="disp"){et="disp";sh=null}else if(k=="sair"){sh=null;if(window.PA&&PA.logout)PA.logout();else toast("Exemplo: sairia e limparia a sessão")}else sh=k;draw()}
+function mi(k){if(k=="disp"){et="disp";sh=null}else if(k=="sair"){sh=null;if(window.PA&&PA.logout)PA.logout();else location.reload()}else sh=k;draw()}
 function draw(){
  const h0=OK.filter(o=>o.d==HJ()).reduce((t,o)=>t+o.g,0),na=AC.length+EM.length;
  $("v").innerHTML=`<div class="hero"><div class="hrow"><div><div class="hi">Olá, ${ME.n.split(" ")[0]}</div><div class="hs">Boas entregas!</div></div><button class="pill ${on?"on":""}" onclick="on=!on;draw()"><i></i>${on?"Online":"Offline"}</button></div><div class="stats"><div><small>Hoje</small><b>${R$(h0)}</b></div><div><small>Ganhos</small><b>${R$(ganhos())}</b><small>${OK.length} entregas</small></div><div><small>Nota</small><b>★ 4,9</b></div></div></div>
@@ -222,7 +240,7 @@ function show(){box.innerHTML=(inst||stand())?"":`<div style="background:var(--c
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;show()});
 window.addEventListener("appinstalled",()=>{inst=true;dp=null;show()});
 window.baixarApp=async function(){if(dp){dp.prompt();const r=await dp.userChoice;if(r&&r.outcome=="accepted"){inst=true;dp=null}else toast("Instalação cancelada");show();return}
- if(location.protocol=="file:"){inst=true;show();toast("Exemplo: instalaria o app e o botão some");return}
+ 
  toast("No menu do navegador, toque em “Instalar app” ou “Adicionar à tela inicial”")};
 show()})();
 </script><script>window.PA_PAPEL="motoboy"</script><script src="conta.js"></script><script>/* ===== PedeAí · camada de sincronização (Firebase Firestore) ===== */
@@ -236,7 +254,7 @@ PA.strip=strip;
 if(window.PA_MOCK){window.PA_MOCK(PA);return}
 (async()=>{try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
- const [A,F,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);
+ const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
  const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
  await PA_login(H,au);
  PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
@@ -247,8 +265,12 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.watchDoc=(id,cb)=>F.onSnapshot(F.doc(db,"pedidos",String(id)),s=>cb(s.exists()?strip(s.data()):null));
  PA.watchLoja=(loja,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("loja","==",loja)),s=>cb(s.docs.map(d=>strip(d.data()))));
  PA.watchEnviados=(slug,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("st","==","enviado"),F.where("loja","==",slug)),s=>cb(s.docs.map(d=>strip(d.data()))));
+ PA.watchProntos=(slug,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("st","==","pronto"),F.where("loja","==",slug)),s=>cb(s.docs.map(d=>strip(d.data()))));
  PA.buscaConvite=async c=>{const s=await F.getDoc(F.doc(db,"convites",c));return s.exists()?s.data():null};
  PA.vincular=(c,lj)=>F.setDoc(F.doc(db,"contas",PA.uid+"_motoboy"),{loja:{nome:lj.nome,slug:lj.slug,convite:c}},{merge:true});
+ PA.getCad=async()=>{const s=await F.getDoc(F.doc(db,"contas",PA.uid+"_motoboy"));return s.exists()?(s.data().cad||null):null};
+ PA.salvaCad=cad=>F.setDoc(F.doc(db,"contas",PA.uid+"_motoboy"),{cad:cl(cad)},{merge:true});
+ PA.upFoto=async(tipo,blob)=>{const S=await import(B+"firebase-storage.js"),st=S.getStorage(app),r=S.ref(st,"entregadores/"+PA.uid+"/"+tipo+"-"+Date.now()+".jpg");await S.uploadBytes(r,blob,{contentType:"image/jpeg"});return S.getDownloadURL(r)};
  PA.watchMoto=(mid,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("mot","==",mid)),s=>cb(s.docs.map(d=>strip(d.data()))));
  PA.setOco=(id,o)=>F.setDoc(F.doc(db,"ocorrencias",String(id)),{...cl(o),id:Number(id)},{merge:true});
  PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
@@ -288,9 +310,12 @@ function rebuild(){
    OK.push({id:d.id,loja:d.loja,g:Number(g.toFixed(2)),d:hoje(d.fimEm),st:s})});
  prim=false;draw()}
 PA.whenReady(()=>{
+ PA.getCad().then(c=>{if(c)CAD={...CAD,...c,fotos:c.fotos||{}};if(!PA.email_ok&&PA.user&&!CAD.email)CAD.email=PA.user.email||"";if(!cadOk(c)){CADFORCE=true;sh="edr"}draw()}).catch(e=>console.error("cad:",e));
  ME.id=PA.uid;if(PA.user&&PA.user.displayName)ME.n=PA.user.displayName;
  {const tp=document.querySelector(".top span");if(tp)tp.textContent="Motoboy · "+ME.n+(PA.vinculo?" · "+PA.vinculo.nome:"")}
  if(PA.vinculo)PA.watchEnviados(PA.vinculo.slug,l=>{ENV=l;rebuild()});
+ if(PA.vinculo&&PA.watchProntos){const PRON=new Set();let primP=true;PA.watchProntos(PA.vinculo.slug,l=>{const nv=l.filter(d=>d.tp=="ent"&&!d.mot&&!PRON.has(d.id)&&!REC.has(d.id));l.forEach(d=>PRON.add(d.id));
+  if(!primP&&on&&nv.length)PA_aviso("📦 Pedido pronto na loja","Pedido #"+nv.map(d=>d.id).join(", #")+" pronto para retirar"+(PA.vinculo.nome?" · "+PA.vinculo.nome:""),"pedido-pronto");primP=false})}
  PA.watchMoto(ME.id,l=>{MINE=l;rebuild()});
  const q=new URLSearchParams(location.search).get("convite");if(q&&!PA.vinculo){window.__cv=q.toUpperCase();sh="vinc";draw()}});
 aceitarGrupo=async function(key){

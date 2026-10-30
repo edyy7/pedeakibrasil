@@ -160,3 +160,59 @@
 **Antes de usar**: (1) publicar `firebase/firestore.rules`; (2) publicar `firebase/storage.rules` no Storage (ative o Storage no console) **trocando COLOQUE-O-E-MAIL-DO-CRIADOR-AQUI pelo e-mail do Criador**; (3) o link de pagamento é um redirecionamento: a confirmação do pagamento continua manual pela loja.
 **Testado em navegador**: fluxo aceitar→preparo→OS→liberado→pronto, timeline, aba Garçom/comissão/pedido com mesa, cadastro do entregador (3 fotos obrigatórias, sem "Cancelar" quando forçado), formulário de equipe. **Não testado**: upload real ao Storage, regras do Firestore/Storage, painel 🔗 Pagamentos e o redirecionamento no checkout (precisam do Firebase).
 **Fica para depois**: Bloco 8 não existe no documento; Fases 3 e 4 (app de entregas, site) e o aviso com app fechado.
+
+
+## v5.3.1 · Auditoria de erros e incoerências (corrige o v5.3.0)
+**Bugs corrigidos**
+- A loja **sobrescrevia** o liga/desliga de entrega do ADM (gravava `ent:true` sempre). Agora a loja só lê o flag do ADM.
+- Endereço do cliente era fixo ("Rua das Flores, 120") em todo pedido. Agora o cliente informa rua/bairro (e GPS opcional), o endereço vai no pedido e é exigido para entrega.
+- Código de retirada/entrega `1234` e dica "use 1234" removidos; pedido de mesa e pedido sem código têm botão "Entregue na mesa / ao cliente".
+- Modo Garçom estava escondido no fim da barra de abas: agora a aba **🍽️ Garçom** fica logo depois de Pedidos.
+**Dados de teste / botões falsos removidos**
+- Loja: painel "Troque acima para ver como a loja muda…" (simulação de entrega/vencimento), chat fictício "Carlos P. / fora do raio", conversas e chats de mentira, "Simular: um motoboy aceitou", assistente de voz simulado, "Leitura de notificação Pix" e "Falar com o ADM" (não enviavam nada), motoboys, pedidos e assistente "Lariquinha" de exemplo.
+- Cliente: chat de mentira, chave Pix "chave-exemplo" (agora a loja cadastra a chave em Gestão → 💠 Chave Pix, e o cliente copia de verdade).
+- ADM: mensagens/autorizações/ocorrências de exemplo, cards de Pix e Cadastro fictícios, "Simular: o Criador confirmou", chat de mentira.
+- Motoboy: nome "João (exemplo)", diárias de exemplo, chat de mentira, "tema escuro" e "Excluir minha conta" (não faziam nada). Os interruptores de aviso e som agora gravam e valem de verdade.
+- Criador: a tela com lojas/Pix/mensagens inventadas virou um painel real com 3 botões (💳 Contas, 🏪 Lojas e dados, 🔗 Links de pagamento).
+**Cache**: `pedeai-v5.3.1`.
+**Pendente (não implementado)**: chats reais (cliente/loja/entregador/ADM), "enviar só para um entregador escolhido" (precisa listar entregadores reais), avaliação do cliente (não é gravada), foto de entrega do motoboy, e todo o app de entregas e o site (Fases 3 e 4).
+
+
+## v5.4.0 · Escopo Fase 1 (6 itens) — entregas ficam fora desta versão
+**1. Painel do Criador · Módulos e preço**: botão "🧩 Módulos e preço por loja". Liga/desliga Gestão (R$ 49), Loja Virtual (R$ 50) e Agendamento (R$ 30) por loja; o total muda na tela; botão "i" explica cada módulo. Grava `lojas/{slug}.modulos` e `valorModulos`. Só o Criador altera (o dono é bloqueado nas regras).
+  - Lojas antigas sem `modulos`: Gestão e Loja Virtual ligadas, Agendamento desligado.
+  - Gestão desligada esconde Caixa, Histórico, Gestão e Equipe. Loja Virtual desligada esconde Compartilhar e bloqueia pedidos no cliente. Pedidos, Produtos e Garçom ficam sempre.
+**2. App de Gestão**: sincronização em tempo real (Firestore `onSnapshot`, mais rápida que 5 s) e aviso sonoro de pedido novo já existiam. Equipe com Nome, Cargo, E-mail e Salário (ADM e Gerente editam). Fluxo Solicitar preparo → Liberado (cozinha) → Pronto e Menu Garçom (nome, mesa, observações) já estavam implementados.
+**3. Loja Virtual**: link público `cliente.html?loja=SLUG`, sem app. Checkout simplificado: o cliente vê Entrega e Total; se não houver taxa, aparece "Frete Grátis"; se houver, aparece "Incluída no total". Para voltar à conta detalhada: `checkoutSimples: false` em `lojas/{slug}.brand`.
+  - **Pix com split (Asaas)**: se a loja tiver `asaasWalletId`, o Pix do pedido é gerado no servidor (`/api/asaas`) com split: a loja recebe (100 − CRIADOR_PERCENT)% e o Criador o resto. O webhook `/api/asaas-webhook` marca o pedido como pago.
+**4. Agendamento**: aba **Agenda** na loja (bio, foto, 3 formas de pagamento, chave Pix, horário, intervalo, serviços, lista de agendamentos com "Recebi o Pix" e "Cancelar"). Mini-site público `agendar.html?loja=SLUG` (exige login Google). Horário único por ID (`loja__data__HHMM`) e registro público `ocupados` sem dados pessoais.
+  - Opção 1 (Pix automático): usa `/api/asaas` + webhook. Opção 2 (Pix direto): cliente paga na chave, a loja confirma. Opção 3: grátis, paga no local.
+**5. Marca**: cor principal (texto preto ou branco pelo contraste WCAG, automático) e logo (horizontal centralizado, vertical à esquerda). Arquivos: `app/marca.js`, Storage `lojas/{slug}/`.
+**6. Site**: `app/site.html` com apresentação dos módulos e os botões "Quero criar um site personalizado" e "Quero ser dono do meu próprio APK", ambos com formulário (Nome, Telefone, E-mail, Mensagem) que grava em `leads`. O Criador vê os contatos em "📩 Leads do site". O índice ganhou o link "Conheça o sistema".
+
+**Variáveis de ambiente (Vercel, projeto em `app/`)**
+- `FIREBASE_SERVICE_ACCOUNT` (JSON da conta de serviço do Firebase)
+- `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, `CRIADOR_PERCENT` (ex.: 10), `ASAAS_SANDBOX` ("1" para testar)
+- No painel do Asaas, cadastre o webhook em `https://SEU-DOMINIO/api/asaas-webhook` com o mesmo token.
+
+**Antes de usar**
+1. Publicar `firebase/firestore.rules` e `firebase/storage.rules` (ative o Storage). O e-mail do Criador já está correto nos dois.
+2. Criar o índice automático que o Firestore sugerir no console, se aparecer erro de índice na listagem de agendamentos.
+3. Cadastrar a conta de recebimento Asaas de cada loja (walletId) em Agenda → "ID de recebimento Asaas".
+
+**Limitações conhecidas**
+- O valor do pedido ainda é calculado no navegador e gravado no pedido. O servidor cobra esse valor. Para impedir alteração de preço, o cálculo precisa ir para uma Cloud Function (não feito).
+- O cadastro de leads é público (sem login), com validação de tamanho e tipo nas regras. Pode receber spam; se acontecer, exija login ou adicione reCAPTCHA.
+- Avaliação do cliente ainda não é gravada (mostra só a mensagem).
+- Entregas (app do motoboy) fora desta versão, conforme combinado.
+- Não testado com Firebase/Asaas reais (sem rede aqui): regras, webhook e cobrança precisam de teste no ambiente de vocês (usar `ASAAS_SANDBOX=1` primeiro).
+
+## v5.4.2
+- Leads do site: ao abrir "📩 Leads do site", os contatos novos são marcados como lidos e o contador deixa de contar os já vistos.
+
+## v5.4.3
+- Regras do Firestore: removido o fatiamento de texto nas regras de `ocupados` e `agendamentos` (trocado por `split`), para não correr risco de erro ao publicar.
+
+## v5.4.3 · validação (30/10/2026)
+- Sem mudança no app. Testes em `docs/teste-navegador/` atualizados para a interface atual e novo `t5_fumaca.py` (9 telas). Para rodar tudo: `sh rodar-tudo.sh` dentro de `docs/teste-navegador` (precisa de node, python3 e playwright/chromium). Resultado desta validação: lógica 10/10 · cenário 29/29 · checkout 2/2 · Criador (taxa, pagamento, leads) ok · fumaça 9/9. Detalhes e limites no dossiê, seção 3c.
+
