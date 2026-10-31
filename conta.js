@@ -288,6 +288,35 @@ async function criador(F,db,u,cfg){
 
 /* Bloco 3: Criador — lojas, eventos, Zerar (vendas/lucros/carteira) e Excluir loja */
 async function apaga(F,q){const s=await F.getDocs(q);let n=0;for(const d of s.docs){await F.deleteDoc(d.ref);n++}return n}
+/* Reset Total (estado de fábrica) — 3 camadas de segurança: aviso, confirmação e digitar ZERAR */
+function resetTotal(F,db,depois){
+ const o=ov('<div></div>'),box=o.firstChild;box.style.maxWidth="440px";
+ const P='background:#16161a;border:2px solid #ff4d55;border-radius:12px;padding:14px;margin:12px 0',B2=BTN+';background:#2a2a31;color:#f4f4f6',B1=BTN+';background:#d4141c;color:#fff';
+ const passo=n=>{
+  if(n===1)box.innerHTML='<div style="'+P+'"><b style="color:#ff4d55;font-size:20px">⚠️ Reset Total · 1 de 3</b><div style="margin-top:10px;font-size:18px;font-weight:700">Atenção, isso apagará todos os dados. Continuar?</div><div style="color:#a3a3ad;font-size:14px;margin-top:8px">Lojas, ADMs, vendas, entregadores e as configurações do Criador.</div></div><button data-a="p2" style="'+B1+'">Continuar</button><button data-a="x" style="'+B2+'">Cancelar</button>';
+  if(n===2)box.innerHTML='<div style="'+P+'"><b style="color:#ff4d55;font-size:20px">⚠️ Reset Total · 2 de 3</b><div style="margin-top:10px;font-size:18px;font-weight:700">Tem certeza? O sistema voltará ao estado de fábrica.</div><div style="color:#a3a3ad;font-size:14px;margin-top:8px">Não dá para desfazer.</div></div><button data-a="p3" style="'+B1+'">Sim, tenho certeza</button><button data-a="x" style="'+B2+'">Cancelar</button>';
+  if(n===3)box.innerHTML='<div style="'+P+'"><b style="color:#ff4d55;font-size:20px">🛑 Reset Total · 3 de 3</b><div style="margin-top:10px;font-size:17px;font-weight:700">Para liberar o botão final, digite a palavra ZERAR:</div><input id="rtz" autocomplete="off" autocapitalize="characters" placeholder="ZERAR" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #ff4d55;background:#0b0b0d;color:#f4f4f6;font:inherit;margin-top:10px"></div><button id="rtgo" data-a="go" disabled style="'+B1+';opacity:.35">☢️ Apagar tudo agora</button><button data-a="x" style="'+B2+'">Cancelar</button>';
+ };
+ passo(1);
+ box.addEventListener("input",e=>{if(e.target.id!=="rtz")return;const b=box.querySelector("#rtgo"),ok=e.target.value==="ZERAR";b.disabled=!ok;b.style.opacity=ok?"1":".35"});
+ box.addEventListener("click",async ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(!a)return;
+  if(a==="x"){o.remove();return}
+  if(a==="p2")return passo(2);if(a==="p3"){passo(3);const i=box.querySelector("#rtz");i&&i.focus();return}
+  if(a==="go"){const i=box.querySelector("#rtz");if(!i||i.value!=="ZERAR")return;
+   box.innerHTML='<div style="'+P+'"><b>Apagando…</b><div id="rtlog" style="color:#a3a3ad;font-size:14px;margin-top:8px">Não feche esta tela.</div></div>';
+   try{let n=0;const log=m=>{const l=box.querySelector("#rtlog");if(l)l.textContent=m};
+    log("Lendo contas…");const cs=await F.getDocs(F.collection(db,"contas"));
+    for(const d of cs.docs){const c=d.data().admCodigo;if(c){try{await F.deleteDoc(F.doc(db,"admCodigos",c));n++}catch(e){console.error("admCodigos:",e)}}}
+    for(const c of ["pedidos","ocorrencias","eventos","leads","agendamentos","ocupados","servicos","equipe","convites","gerenteConvites","cargos","linksPagamento","lojaDados","lojas","contas"]){log("Apagando "+c+"…");n+=await apaga(F,F.collection(db,c))}
+    log("Zerando configurações do Criador…");
+    for(const m of ["config","pagamento"]){try{await F.deleteDoc(F.doc(db,"meta",m));n++}catch(e){console.error("meta/"+m+":",e)}}
+    await F.setDoc(F.doc(db,"meta","contador"),{n:5000});
+    box.innerHTML='<div style="'+P+';border-color:#22a559"><b style="color:#22a559;font-size:20px">✅ Sistema em estado de fábrica</b><div style="color:#a3a3ad;font-size:14px;margin-top:8px">'+n+' registros apagados. As fotos enviadas ao Storage não são apagadas por aqui.</div></div><button data-a="x" style="'+B2+'">Fechar</button>';
+    window.PA_toast&&PA_toast("Reset Total concluído ✔");
+    try{depois&&depois()}catch(e){}
+   }catch(e){console.error(e);box.innerHTML='<div style="'+P+'"><b>Erro ao apagar</b><div style="color:#ff6b6b;font-size:14px;margin-top:8px">'+esc(e.code||e.message)+'</div><div style="color:#a3a3ad;font-size:13px;margin-top:6px">Parte dos dados pode ter sido apagada. Republique firebase/firestore.rules e tente de novo.</div></div><button data-a="x" style="'+B2+'">Fechar</button>'}}
+ });
+}
 async function lojasCriador(F,db){
  const o=ov('<div id="lc">Carregando…</div>');o.firstChild.style.maxWidth="440px";
  const draw=async()=>{
@@ -297,10 +326,12 @@ async function lojasCriador(F,db){
   o.firstChild.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">🏪 Lojas e dados</b><button data-a="x" style="background:#2a2a31;color:#f4f4f6;border:0;border-radius:8px;padding:8px 12px;font-weight:700">Fechar</button></div>'
   +'<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0;'+(novos.length?'border:2px solid #e0a800':'')+'"><b>🔔 Lojas criadas por ADMs ('+novos.length+' novas)</b>'+(EV.length?EV.slice(0,15).map(e=>'<div style="margin-top:8px"><b>'+esc(e.nome)+'</b> <span style="color:#a3a3ad">· '+esc((PLANOS[e.plano]||{}).n||e.plano)+'</span><div style="color:#a3a3ad;font-size:13px">ADM '+esc(e.admEmail)+' · '+new Date(e.criadoEm).toLocaleString("pt-BR")+(e.lido===false?' · <b style="color:#e0a800">nova</b>':'')+'</div>'+(e.lido===false?'<button data-a="lido" data-id="'+esc(e.id)+'" style="'+BTN+';background:#2a2a31;color:#f4f4f6;padding:8px;font-size:14px">Marcar como vista</button>':'')+'</div>').join(""):'<div style="color:#a3a3ad;margin-top:6px">Nenhuma loja criada por ADM ainda.</div>')+'</div>'
   +'<div style="background:#16161a;border-radius:12px;padding:12px;margin:12px 0"><b>Lojas ('+LJ.length+')</b>'+(LJ.map(l=>'<div style="margin-top:10px"><b>'+esc(l.nome||l.slug)+'</b> <span style="color:#a3a3ad">· '+esc((PLANOS[l.plano||"iniciante"]||{}).n)+(l.pendente?' · aguardando gerente':'')+(l.suspensa?' · suspensa':'')+'</span><button data-a="del" data-id="'+esc(l.slug)+'" style="'+BTN+';background:transparent;color:#ff6b6b;border:1px solid #ff6b6b;padding:8px;font-size:14px">🗑️ Excluir loja e dados</button></div>').join("")||'<div style="color:#a3a3ad;margin-top:6px">Nenhuma loja.</div>')+'</div>'
-  +'<div style="background:#16161a;border:1px solid #ff6b6b;border-radius:12px;padding:12px;margin:12px 0"><b>♻️ Zerar vendas, lucros e carteira</b><div style="color:#a3a3ad;font-size:13px;margin:6px 0">Apaga todos os pedidos (vendas e lucros), as ocorrências, todos os pagamentos (decididos e em análise: carteira, inclusive a do Criador), os avisos de lojas novas e os contatos de Leads do site. <b>Preserva</b> usuários, contas, lojas, equipe, cardápios, preços, Pix e links de pagamento. Não dá para desfazer.</div><button data-a="zerar" style="'+BTN+';background:#d4141c;color:#fff;padding:10px">Zerar agora</button></div>'};
+  +'<div style="background:#16161a;border:1px solid #ff6b6b;border-radius:12px;padding:12px;margin:12px 0"><b>♻️ Zerar vendas, lucros e carteira</b><div style="color:#a3a3ad;font-size:13px;margin:6px 0">Apaga todos os pedidos (vendas e lucros), as ocorrências, todos os pagamentos (decididos e em análise: carteira, inclusive a do Criador), os avisos de lojas novas e os contatos de Leads do site. <b>Preserva</b> usuários, contas, lojas, equipe, cardápios, preços, Pix e links de pagamento. Não dá para desfazer.</div><button data-a="zerar" style="'+BTN+';background:#d4141c;color:#fff;padding:10px">Zerar agora</button></div>'
+  +'<div style="background:#16161a;border:2px solid #ff4d55;border-radius:12px;padding:12px;margin:12px 0"><b>☢️ Reset Total (estado de fábrica)</b><div style="color:#a3a3ad;font-size:13px;margin:6px 0">Apaga <b>tudo</b>: lojas, ADMs, vendas, entregadores, equipe, convites, leads e as configurações do Criador (preços, Pix e links de pagamento). Exige 3 confirmações. Não dá para desfazer.</div><button data-a="resettotal" style="'+BTN+';background:transparent;color:#ff4d55;border:2px solid #ff4d55;padding:10px">Reset Total…</button></div>'};
  o.firstChild.onclick=async ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(!a)return;const id=ev.target.dataset.id;
   try{
    if(a==="x"){o.remove();return}
+   if(a==="resettotal"){resetTotal(F,db,()=>{try{draw()}catch(e){}});return}
    if(a==="lido"){await F.setDoc(F.doc(db,"eventos",id),{lido:true},{merge:true})}
    if(a==="zerar"){if(prompt('Isto apaga TODAS as vendas, lucros, a carteira e os dados do Criador (pagamentos e leads). Digite ZERAR para confirmar:')!=="ZERAR")return;
     o.firstChild.innerHTML="Zerando…";let n=0;

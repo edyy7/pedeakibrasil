@@ -247,3 +247,34 @@ Alterado SOMENTE o que o comando listava; o resto do pacote ficou igual.
 - `sw.js`: `pedeai-v5.4.7`.
 - **Limites (honestos):** o app não tem GPS, então "mais próximos" = mesmo bairro do cadastro; o prazo de 6 min usa a hora da última atualização do pedido (`atualizadoEm`); o cartão mostra a inicial da loja, não a logo (o pedido não carrega logo). `criador.html` não foi alterado (já tinha a entrada de Módulos). Não rodei a suíte de navegador (sem rede/playwright aqui): só conferi a sintaxe de todos os scripts. Teste no celular.
 - **Gaveta (não feito):** comissões/indicação, Marketplace unificado, backup no Google Drive, PedeAqui Solidário.
+
+## v5.5.0 · Site, Reset Total, Cozinha, Pedido do Salão
+- **Site:** `index.html` agora é a landing page de vendas (antigo `site.html`, apagado). Botão "Acesso Criador" no topo → `criador.html`. O hub de apps continua em `PedeAi.html`.
+- **Reset Total (Criador → Lojas e dados):** apaga lojas, ADMs, entregadores, equipe, convites, cargos, vendas, ocorrências, leads e as configurações do Criador (preços/Pix, pagamento, links); contador volta a 5000. Três camadas: aviso, "Tem certeza?" e digitar `ZERAR`. Não apaga fotos do Storage. **Republique `firebase/firestore.rules`** (o Criador agora pode apagar `cargos`).
+- **Cozinha (`cozinha.html`):** app novo (manifest e ícone próprios). Funcionário com cargo contendo "Cozinha", autorizado pelo ADM. Fila do mais antigo para o mais novo (pedidos em "preparo" + pedidos do garçom recém-enviados); mostra mesa, itens, observação em destaque e quem enviou; PRONTO muda o status na hora (Loja e Garçom veem); som a cada pedido novo (toque em "Ativar som" uma vez).
+- **Garçom:** "Minhas mesas" com Compartilhar no WhatsApp, Fechar Mesa / Receber (Dinheiro, Cartão, Pix) e Imprimir Recibo (`window.print()` + `@media print`). Aviso quando o pedido da mesa fica pronto.
+- **Loja:** a aba que era "Garçom" virou **Pedido do Salão** (monitoramento em tempo real; botão para lançar pedido como garçom). O nome do garçom abre o histórico de vendas (mesa, itens, pagamento, valor) com **Valor Total**.
+- **Sincronização:** já era `onSnapshot` em tempo real (o reler a cada 5 s é só reserva). Faixa verde "● Online · sincronizado" em todos os apps.
+- Testes novos: `t11_salao_cozinha.py` (22) e `t12_reset_total.py` (17). `sw.js`: `pedeai-v5.5.0`.
+
+## v5.6.0 · Lista de 27 itens (Resumo, Caixa real, Estoque, Patrimônio, Entrega, Dossiê)
+**Republique `firebase/firestore.rules`** (novas: coleção `lojaDados`, campo `perm` em `equipe`, Criador apaga `cargos`).
+- **Loja:** abre no **Resumo** (pedidos novos/em preparo/prontos, vendas, mesas abertas e alertas: estoque baixo, assinatura perto de vencer, caixa aberto há muito tempo, diferença no fechamento, entrega sem tipo). Novas abas **Estoque** (insumos por categoria, mínimo, data/hora de cada entrada) e **Patrimônio**.
+- **Caixa real e salvo na nuvem** (`lojaDados/{loja}`): abertura com valor inicial + data/hora + login; **Gerar Saída** (valor, descrição, data, login de quem autorizou); fechamento com valor contado, data/hora, login e diferença. O fechamento antigo tinha horário fixo "23:05": corrigido.
+- **Entrega:** em Gestão, a Loja libera/bloqueia as entregas e escolhe obrigatoriamente **Grátis** (loja paga; motoboy vê KM) ou **Cobrada** (cliente paga; motoboy vê R$ e KM). O pedido carrega `entTipo`.
+- **Motoboy:** aba **Histórico** (Pagas pela Loja = KM; Pagas pelo Cliente = R$) com resumo (quantidade e total de KM). Envio de fotos do cadastro não fica mais preso em "Enviando…" (limite de tempo + mensagem). Logo da loja no topo.
+- **Cliente:** card da loja mais abaixo; botão **Histórico de Endereços** (últimos 10 endereços, usar/apagar). Respeita "entregas bloqueadas" pela loja.
+- **Módulos:** a Loja liga/desliga Vitrine, Gestão, Garçom, Cozinha e Motoboy (escolha em `modLoja`; o que o ADM desligou não pode ser religado pela loja).
+- **Permissões por funcionário:** na aba Equipe, checkboxes (Pedidos, Produtos, Estoque, Caixa, Salão, Histórico, Gestão). Desmarcado = a aba some para ele.
+- **Pedido do Salão:** filtros por garçom e data e rendimento (total + comissão estimada). **Imprimir comanda** na Loja, no Garçom e na Cozinha.
+- **Relatório do Contador** (Gestão): receitas por forma de pagamento, despesas (saídas), folha e comissões, em PDF (imprimir/salvar, funciona offline) e Excel (.csv).
+- **ADM:** nova aba **Dossiê** com saídas de caixa, fechamentos, estoque e patrimônio de cada loja.
+- **Filtros rápidos** em Pedidos, Histórico, Estoque e Pedido do Salão.
+- Testes novos: `t13_v56.py` (24) e `t14_adm_motoboy.py` (7).
+
+## v5.6.0 · Lista de 27 itens (o que entrou)
+- **Cliente:** card da loja mais abaixo; "📚 Histórico de Endereços" (últimos 10, usar/apagar); pedido leva `entTipo` (grátis/cobrada); respeita "entregas liberadas" da loja.
+- **Loja:** abre no **📊 Resumo** (pedidos novos/preparo/prontos, vendas, mesas abertas e alertas: estoque baixo, assinatura vencendo, caixa aberto há muito tempo, diferença no fechamento, entrega sem tipo). Abas **Estoque** (insumos por categoria, data/hora de entrada, mínimo) e **Patrimônio**. **Caixa real**: abertura/fechamento com valor, data/hora e login; **Gerar Saída** (valor, descrição, data, login) que vai para o **Dossiê do ADM**. **Gestão:** entrega liberada + Grátis/Cobrada (obrigatório), módulos da loja, Relatório do Contador (PDF e Excel/CSV). **Equipe:** checkboxes de permissões por funcionário. Filtros rápidos em Pedidos, Histórico, Estoque e Pedido do Salão (por garçom e data, com rendimento e comissão estimada). Imprimir comanda (Loja, Garçom, Cozinha).
+- **Motoboy:** grátis = KM; cobrada = R$ + KM; aba **Histórico** (Pagas pela Loja / Pagas pelo Cliente) com resumo (entregas, KM, R$). Envio de fotos no cadastro com tempo limite (não fica preso em "Enviando…").
+- **Dados:** coleção `lojaDados/{slug}` (caixa, saídas, estoque, patrimônio). **Republique `firebase/firestore.rules`.** O campo `modulos` continua sendo do Criador/ADM; a escolha da loja fica em `modulosLoja`.
+- **Não coberto (precisa de app nativo/dispositivo):** gerar APK, permissão "Sobrepor outros apps" do Android, teste em celulares reais.

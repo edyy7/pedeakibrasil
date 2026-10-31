@@ -228,14 +228,21 @@ service cloud.firestore {
         && request.resource.data.get('salario', 0) is number && request.resource.data.get('salario', 0) >= 0;
       allow update: if isCriador()
         || (signed() && resource.data.get('admId', '') == request.auth.uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'cargo', 'cargoId', 'em', 'salario', 'nome', 'telefone', 'cargoInformado', 'commission_active', 'commission_percentage'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'cargo', 'cargoId', 'em', 'salario', 'nome', 'telefone', 'cargoInformado', 'commission_active', 'commission_percentage', 'perm'])
             && request.resource.data.get('commission_percentage', 0) is number && request.resource.data.get('commission_percentage', 0) >= 0 && request.resource.data.get('commission_percentage', 0) <= 100
             && request.resource.data.get('salario', 0) is number && request.resource.data.get('salario', 0) >= 0)
         || (donoDaLoja(resource.data.get('slug', ''))
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['salario', 'nome', 'telefone', 'cargoInformado', 'commission_active', 'commission_percentage'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['salario', 'nome', 'telefone', 'cargoInformado', 'commission_active', 'commission_percentage', 'perm'])
             && request.resource.data.get('commission_percentage', 0) is number && request.resource.data.get('commission_percentage', 0) >= 0 && request.resource.data.get('commission_percentage', 0) <= 100
             && request.resource.data.get('salario', 0) is number && request.resource.data.get('salario', 0) >= 0);
       allow delete: if isCriador() || donoDaLoja(resource.data.get('slug', '')) || admDaLoja(resource.data.get('slug', ''));
+    }
+
+    // Dados da loja (caixa, saídas, estoque, patrimônio). Dono e equipe ativa gravam; o ADM da loja lê (dossiê).
+    match /lojaDados/{slug} {
+      allow get: if isCriador() || (signed() && (donoDaLoja(slug) || equipeAtiva(slug) || admDaLoja(slug)));
+      allow create, update: if isCriador() || (signed() && (donoDaLoja(slug) || equipeAtiva(slug)));
+      allow delete: if isCriador();
     }
 
     // Eventos para o Criador (ex.: ADM criou uma loja). O ADM só cria o próprio; só o Criador lê, marca e apaga.
@@ -260,7 +267,7 @@ service cloud.firestore {
         && (request.method == 'create' || resource.data.admId == request.auth.uid)
         && request.resource.data.keys().hasOnly(['admId', 'nome', 'salario'])
         && request.resource.data.salario is number && request.resource.data.salario >= 0;
-      allow delete: if signed() && resource.data.admId == request.auth.uid;
+      allow delete: if isCriador() || (signed() && resource.data.admId == request.auth.uid);
     }
 
     // Lojas

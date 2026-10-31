@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="marca.js"></script>
 <title>Motoboy · PedeAí Brasil</title>
 <style>
 :root{--bg:#0b0b0d;--cd:#16161a;--br:#2a2a31;--tx:#f4f4f6;--mu:#a3a3ad;--ac:#d4141c;--gd:#c99700;--ok:#22a559;--rd:#ff4d55;--yl:#e0a800}
@@ -63,6 +63,7 @@ const tipoGrupo=itens=>new Set(itens.map(o=>o.bairro)).size>1?"mesma direção":
 const mi_=(km)=>Math.round(km/REG.vel*60);
 const tempo=o=>(o.dl||0)>0?mi_(o.dl)+REG.esp+mi_(o.dc):REG.esp+mi_(o.dc);
 const kmf=n=>n.toFixed(1).replace(".",",")+" km";
+const vv=o=>(o.et==="gratis"?"📏 "+kmf(Number(o.dc)||0)+" · paga pela loja":R$(ganho(o))+" · "+kmf(Number(o.dc)||0));
 let on=true,et="disp",sh=null;
 /* disp = corridas disponíveis; ac = aceitas (retirar na loja); em = em rota */
 let DISP=[];
@@ -87,7 +88,7 @@ function cardGrupoDisp(itens,key){
  <div class="meta">🏪 ${loja}</div>
  <div class="meta">📍 ${bairrosGrupo(itens)}</div>
  ${avisos.map(a=>`<div class="meta">${a}</div>`).join("")}
- ${itens.length>1?`<div style="margin-top:6px">${itens.map(o=>`<div class="itl"><span>#${o.id} · ${o.cli}</span><span>${R$(ganho(o))}</span></div>`).join("")}</div>`:""}
+ ${itens.length>1?`<div style="margin-top:6px">${itens.map(o=>`<div class="itl"><span>#${o.id} · ${o.cli}</span><span>${vv(o)}</span></div>`).join("")}</div>`:""}
  <button class="cta" onclick="aceitarGrupo('${key}')">${itens.length>1?"Aceitar grupo inteiro":"Aceitar entrega"}</button>
  <button class="cta o" onclick="recusarGrupo('${key}')">${itens.length>1?"Recusar grupo inteiro":"Recusar"}</button></div>`;
 }
@@ -146,10 +147,10 @@ function cardEm(idx){
  if(o.estado==="descartado"){
   return `<div class="oc"><div class="row"><b style="font-size:18px">#${o.id} · ${o.lojaN||o.loja}</b><span class="tag" style="color:var(--rd)">🗑️ Descartado pela loja</span></div>
   <div class="meta">Pedido descartado. Você recebe o valor da entrega.</div>
-  <button class="cta" onclick="descartarEm(${idx})">✅ Finalizar (ganho ${R$(ganho(o))})</button></div>`;
+  <button class="cta" onclick="descartarEm(${idx})">✅ Finalizar (${o.et==="gratis"?kmf(Number(o.dc)||0):"ganho "+R$(ganho(o))})</button></div>`;
  }
  /* Em rota normal */
- return `<div class="oc"><div class="row" style="align-items:flex-start"><b style="font-size:18px">#${o.id} · ${o.lojaN||o.loja}</b><span class="tag">${R$(ganho(o))}</span></div>
+ return `<div class="oc"><div class="row" style="align-items:flex-start"><b style="font-size:18px">#${o.id} · ${o.lojaN||o.loja}</b><span class="tag">${vv(o)}</span></div>
  ${EM.length>1?`<div class="row" style="margin:4px 0"><span class="meta">Entrega ${idx+1} de ${EM.length}</span><span><button class="ord" ${idx==0?"disabled":""} onclick="moverEm(${idx},-1)">▲</button> <button class="ord" ${idx==EM.length-1?"disabled":""} onclick="moverEm(${idx},1)">▼</button></span></div>`:""}
  <div class="meta">👤 ${o.cli} · 📍 ${o.rua}</div>
  ${o.maq?`<div class="meta">⚠️ Levar maquininha</div>`:""}
@@ -170,14 +171,14 @@ function cardEm(idx){
 function entregarCod(idx){
  const o=EM[idx],v=($("ec"+idx)||{}).value||"";
  if(v!==o.codEnt){toast("Código de entrega errado");return}
- OK.unshift({id:o.id,loja:o.loja,g:ganho(o),d:HJ(),st:"Entregue"});
- EM.splice(idx,1);draw();toast("✅ Entrega confirmada · "+R$(ganho(o)));
+ OK.unshift({id:o.id,loja:o.loja,g:ganho(o),d:HJ(),st:"Entregue",t:o.et==="gratis"?"loja":"cliente",km:Number(o.dc)||0});
+ EM.splice(idx,1);draw();toast("✅ Entrega confirmada · "+(o.et==="gratis"?kmf(Number(o.dc)||0):R$(ganho(o))));
 }
 function enviarFotoLoja(idx){
  const o=EM[idx];
  /* Caminho B: foto enviada à loja → pedido sai da tela, vai à carteira e o cliente fica "Entregue" */
- OK.unshift({id:o.id,loja:o.loja,g:ganho(o),d:HJ(),st:"Entregue"});
- EM.splice(idx,1);draw();toast("📷 Foto enviada à loja · cliente marcado como Entregue · "+R$(ganho(o)));
+ OK.unshift({id:o.id,loja:o.loja,g:ganho(o),d:HJ(),st:"Entregue",t:o.et==="gratis"?"loja":"cliente",km:Number(o.dc)||0});
+ EM.splice(idx,1);draw();toast("📷 Foto enviada à loja · cliente marcado como Entregue · "+(o.et==="gratis"?kmf(Number(o.dc)||0):R$(ganho(o))));
 }
 function finalizarDevolucao(idx){
  const o=EM[idx],v=($("dv"+idx)||{}).value||"";
@@ -211,10 +212,10 @@ async function cadSalva(){if(CADSAVING)return;const c=CAD;
  for(const [k,l] of [["rosto","Rosto"],["cnh","CNH"],["veiculo","Veículo"]])if(!CADF[k]&&!(c.fotos&&c.fotos[k])){toast("Foto obrigatória: "+l);return}
  if(!PA.ready||!PA.upFoto){toast("Sem conexão com o servidor");return}
  CADSAVING=true;toast("Enviando fotos…");
- try{const fotos={...(c.fotos||{})};for(const k of Object.keys(CADF)){fotos[k]=await PA.upFoto(k,await cadRedim(CADF[k]))}
+ try{const lim=(pr,ms,m)=>Promise.race([pr,new Promise((_,rj)=>setTimeout(()=>rj(new Error(m)),ms))]);const fotos={...(c.fotos||{})};for(const k of Object.keys(CADF)){let b;try{b=await lim(cadRedim(CADF[k]),15000,"redim")}catch(e){b=CADF[k]}fotos[k]=await lim(PA.upFoto(k,b),60000,"upload")}
   const out={...c,nome:c.nome.trim(),fotos,atualizadoEm:Date.now()};await PA.salvaCad(out);CAD=out;CADF={};CADFORCE=false;sh=null;toast("Cadastro salvo ✔")}
- catch(e){console.error(e);toast("Não foi possível salvar. Verifique a internet e tente de novo.")}
- CADSAVING=false;draw()}
+ catch(e){console.error(e);toast(e&&e.message=="upload"?"O envio das fotos demorou demais. Verifique a internet e toque em Salvar de novo.":"Não foi possível salvar. Verifique a internet e tente de novo.")}
+ finally{CADSAVING=false;draw()}}
 function edr(){const IN=(id,ph,k,ty)=>`<input id="${id}" ${ty?`type="${ty}" `:""}placeholder="${ph}" value="${hx(CAD[k])}" oninput="cadSet('${k}',this.value)">`;
  const ft=(k,l,cap)=>{const url=CADF[k]?URL.createObjectURL(CADF[k]):(CAD.fotos&&CAD.fotos[k]);return `<div class="oc"><b>${l} <span style="color:var(--rd)">*</span></b>${url?`<div style="margin:8px 0"><img src="${url}" alt="" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px"></div>`:`<div class="meta" style="margin:6px 0">Obrigatória</div>`}<input type="file" accept="image/*" capture="${cap}" onchange="cadFoto('${k}',this)"></div>`};
  return `<div class="panel"><b style="font-size:20px">Meu cadastro</b><div class="meta" style="margin-bottom:8px">${CADFORCE?"Para receber entregas, complete o cadastro e envie as 3 fotos.":"A loja e o cliente veem seu nome, veículo e placa."}</div>${IN("cdn","Nome completo","nome")}${IN("cdt","Telefone / WhatsApp (com DDD)","tel","tel")}${IN("cde","E-mail","email","email")}<div class="meta" style="margin-top:10px;font-weight:800">Endereço</div>${IN("cdc","CEP","cep")}${IN("cdr","Rua e número","rua")}${IN("cdb","Bairro","bairro")}${IN("cdi","Cidade","cidade")}<div class="meta" style="margin-top:10px;font-weight:800">Veículo</div><select onchange="cadSet('veic',this.value)">${["Moto","Bicicleta","Carro"].map(v=>`<option ${CAD.veic==v?"selected":""}>${v}</option>`).join("")}</select>${CAD.veic=="Bicicleta"?`<div class="meta">🚲 Bicicleta: só aparecem corridas de até 5 km.</div>`:""}${IN("cdp","Placa (se houver)","placa")}<div class="meta" style="margin-top:10px;font-weight:800">Fotos obrigatórias</div>${ft("rosto","📸 Rosto (selfie)","user")}${ft("cnh","🪪 CNH","environment")}${ft("veiculo","🏍️ Veículo","environment")}<button class="cta" ${CADSAVING?"disabled":""} onclick="cadSalva()">${CADSAVING?"Enviando…":"Salvar cadastro"}</button>${CADFORCE?"":`<button class="cta b" onclick="sh=null;draw()">Cancelar</button>`}</div>`}
@@ -226,10 +227,18 @@ async function vincular(){const c=($("cvinc").value||"").trim().toUpperCase();if
  try{const lj=await PA.buscaConvite(c);if(!lj){toast("Código não encontrado");return}const vg=PA.reservaVaga?await PA.reservaVaga(c):"ok";if(vg==="cheio"){toast("Vagas de entregador desta loja esgotadas");return}if(vg!=="ok"){toast("Código não encontrado");return}await PA.vincular(c,lj);toast("✅ Você agora é entregador da "+lj.nome);setTimeout(()=>{history.replaceState(null,"",location.pathname);location.reload()},1400)}catch(e){console.error(e);toast("Não foi possível vincular. Confira o código.")}}
 function menu(){const mi=(k,i,t)=>`<button class="mi" onclick="mi('${k}')"><span>${i}</span><span>${t}</span></button>`;return `<div class="drawer"><div style="text-align:right"><button style="font-size:24px;border:0;background:none;color:var(--tx)" onclick="sh=null;draw()">✕</button></div><div class="av">${ME.n.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase()}</div><div style="text-align:center;font-size:22px;font-weight:800">${ME.n}</div><div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:16px 0 8px"><b style="font-size:20px;color:${on?"var(--ok)":"var(--rd)"}">${on?"Online":"Offline"}</b><button class="sw ${on?"on":""}" onclick="on=!on;draw()"><i></i></button></div><div style="margin-top:10px">${mi("disp","📍","Entregas Disponíveis")}${mi("dia","🗓️","Diárias Disponíveis")}${mi("cart","👛","Carteira")}${mi("ind","🤝","Indicações")}${mi("edr","✏️","Editar meu cadastro")}${mi("vinc","🔗","Vincular à Loja")}${mi("cfg","⚙️","Configurações")}</div><div style="margin-top:auto;padding-top:20px">${mi("sair","🚪","Sair")}</div></div>`}
 function mi(k){if(k=="disp"){et="disp";sh=null}else if(k=="sair"){sh=null;if(window.PA&&PA.logout)PA.logout();else location.reload()}else sh=k;draw()}
-function draw(){
+let HS="loja";
+function histMb(){const L=OK.filter(o=>o.st!=="Descartado"||true).filter(o=>(o.t||"cliente")===HS),qt=L.length,km=L.reduce((s,o)=>s+(o.km||0),0),rs=L.reduce((s,o)=>s+(o.g||0),0);
+ return `<div class="etabs"><button class="${HS=="loja"?"on":""}" onclick="HS='loja';draw()">Pagas pela Loja</button><button class="${HS=="cliente"?"on":""}" onclick="HS='cliente';draw()">Pagas pelo Cliente</button></div>`
+ +(L.map(o=>`<div class="oc"><div class="row"><b>#${o.id} · ${o.loja}</b><span class="tag">${HS=="loja"?kmf(o.km||0):R$(o.g||0)}</span></div><div class="meta">${o.d} · ${o.st}${HS=="loja"?"":" · "+kmf(o.km||0)}</div></div>`).join("")||`<div class="oc"><div class="meta">Nenhuma entrega nesta aba ainda.</div></div>`)
+ +`<div class="oc" style="border-color:var(--ac)"><b>Resumo final</b><div class="row" style="margin-top:6px"><span>Total de entregas</span><b>${qt}</b></div><div class="row"><span>Total de KM</span><b>${kmf(km)}</b></div>${HS=="cliente"?`<div class="row"><span>Total recebido</span><b>${R$(rs)}</b></div>`:""}</div>`}
+let BRM=null,BRS="";
+function marcaMb(){const v=window.PA&&PA.vinculo,sl=v&&(v.slug||v.loja);if(!sl||BRS===sl||!PA.fb)return;BRS=sl;const {F,db}=PA.fb;F.onSnapshot(F.doc(db,"lojas",sl),s=>{BRM=s.exists()?(s.data().brand||null):null;if(window.MARCA)MARCA.aplica(BRM||{});draw()},e=>console.error("marca:",e))}
+const logoMb=()=>window.MARCA&&BRM?MARCA.html(BRM,(PA.vinculo&&PA.vinculo.nome)||""):"";
+function draw(){marcaMb();
  const h0=OK.filter(o=>o.d==HJ()).reduce((t,o)=>t+o.g,0),na=AC.length+EM.length;
- $("v").innerHTML=`<div class="hero"><div class="hrow"><div><div class="hi">Olá, ${ME.n.split(" ")[0]}</div><div class="hs">Boas entregas!</div></div><button class="pill ${on?"on":""}" onclick="on=!on;draw()"><i></i>${on?"Online":"Offline"}</button></div><div class="stats"><div><small>Hoje</small><b>${R$(h0)}</b></div><div><small>Ganhos</small><b>${R$(ganhos())}</b><small>${OK.length} entregas</small></div><div><small>Nota</small><b>★ 4,9</b></div></div></div>
- <div class="etabs"><button class="${et=="disp"?"on":""}" onclick="et='disp';draw()">Disponíveis${on&&visiveis().length?`<em>${visiveis().length}</em>`:""}</button><button class="${et=="and"?"on":""}" onclick="et='and';draw()">Em Andamento${na?`<em>${na}</em>`:""}</button></div>${et=="disp"?disp():and()}<div class="meta" style="margin-top:14px">Ganho base: ${R$(REG.km)}/km (mín. ${R$(REG.min)}). Avisos de maquininha/troco não alteram o valor. Tempo estimado a ${REG.vel} km/h. Valores definidos pela administração.</div><div class="meta" style="margin-top:8px">Gorjetas recebidas: R$ 0,00</div>`;
+ $("v").innerHTML=`${logoMb()}<div class="hero"><div class="hrow"><div><div class="hi">Olá, ${ME.n.split(" ")[0]}</div><div class="hs">Boas entregas!</div></div><button class="pill ${on?"on":""}" onclick="on=!on;draw()"><i></i>${on?"Online":"Offline"}</button></div><div class="stats"><div><small>Hoje</small><b>${R$(h0)}</b></div><div><small>Ganhos</small><b>${R$(ganhos())}</b><small>${OK.length} entregas</small></div><div><small>Nota</small><b>★ 4,9</b></div></div></div>
+ <div class="etabs"><button class="${et=="disp"?"on":""}" onclick="et='disp';draw()">Disponíveis${on&&visiveis().length?`<em>${visiveis().length}</em>`:""}</button><button class="${et=="and"?"on":""}" onclick="et='and';draw()">Em Andamento${na?`<em>${na}</em>`:""}</button><button class="${et=="his"?"on":""}" onclick="et='his';draw()">Histórico</button></div>${et=="disp"?disp():et=="his"?histMb():and()}<div class="meta" style="margin-top:14px">Ganho base: ${R$(REG.km)}/km (mín. ${R$(REG.min)}). Avisos de maquininha/troco não alteram o valor. Tempo estimado a ${REG.vel} km/h. Valores definidos pela administração.</div><div class="meta" style="margin-top:8px">Gorjetas recebidas: R$ 0,00</div>`;
  const S={menu,cart:wallet,dia,ind,edr,cfg,vinc};$("sheet").innerHTML=sh?`<div class="sheet ${sh=="menu"?"dr":""}" onclick="if(event.target===this){sh=null;draw()}">${S[sh]()}</div>`:""}
 draw();
 </script><script>
@@ -290,7 +299,7 @@ const ME=window.ME;
 let ENV=[],MINE=[],seen=new Set(),prim=true;
 const REC=new Set(JSON.parse(localStorage.getItem("pa_rec")||"[]"));
 const hoje=ms=>new Date(ms||Date.now()).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
-const toMb=d=>({id:d.id,grp:d.grp||null,loja:d.lojaN||d.loja,bairro:d.bairro||"",rua:d.rua||"",cli:d.cli||"Cliente",dl:d.dl||0,dc:d.dc||3,para:false,volta:!!d.volta,maq:!!d.maq,troco:!!d.troco,retirada:false,codRet:d.codRet,codEnt:d.codEnt,codDev:d.codDev});
+const toMb=d=>({id:d.id,grp:d.grp||null,loja:d.lojaN||d.loja,bairro:d.bairro||"",rua:d.rua||"",cli:d.cli||"Cliente",dl:d.dl||0,dc:d.dc||3,para:false,volta:!!d.volta,maq:!!d.maq,troco:!!d.troco,retirada:false,codRet:d.codRet,codEnt:d.codEnt,codDev:d.codDev,et:d.entTipo==="gratis"?"gratis":"cobrada"});
 /* v5.4.7 · regras do entregador: bicicleta até 5 km, despacho por proximidade com prazo de 6 min, aviso flutuante */
 const DESP_MS=6*60*1000,BIKE_KM=5;
 const nrm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase();
@@ -305,7 +314,7 @@ function PA_overlay(o,n){somAlerta();let el=document.getElementById("ovc");
  const ini=String(o.loja||"?").trim().charAt(0).toUpperCase();
  el.innerHTML='<div style="display:flex;gap:12px;align-items:center"><div style="flex:none;width:46px;height:46px;border-radius:50%;background:#d4141c;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px">'+ini+'</div><div style="flex:1;min-width:0"><b>🛵 Nova corrida'+(n>1?' (+'+(n-1)+')':'')+'</b><div style="color:#a3a3ad;font-size:14.5px">🏪 '+hx(o.loja)+' · 📍 '+hx(o.bairro||"—")+'</div><div style="font-weight:800">'+kmf(Number(o.dc)||0)+' · '+R$(ganho(o))+'</div></div></div><div style="display:flex;gap:8px;margin-top:10px"><button onclick="et=\'disp\';sh=null;ovFecha();draw()" style="flex:1;padding:12px;border:0;border-radius:12px;background:#d4141c;color:#fff;font:inherit;font-weight:800">Ver corrida</button><button onclick="ovFecha()" style="padding:12px 16px;border:1px solid #2a2a31;border-radius:12px;background:transparent;color:#f4f4f6;font:inherit;font-weight:800">Fechar</button></div>';
  clearTimeout(window._ovt);window._ovt=setTimeout(ovFecha,20000);
- try{if(window.Notification&&Notification.permission==="granted")new Notification("Nova corrida · "+(o.loja||""),{body:(o.bairro||"")+" · "+kmf(Number(o.dc)||0)+" · "+R$(ganho(o))})}catch(e){}}
+ try{if(window.Notification&&Notification.permission==="granted")new Notification("Nova corrida · "+(o.loja||""),{body:(o.bairro||"")+" · "+(o.et==="gratis"?kmf(Number(o.dc)||0):kmf(Number(o.dc)||0)+" · "+R$(ganho(o)))})}catch(e){}}
 setInterval(()=>{try{if(window.PA&&PA.ready&&typeof rebuild==="function")rebuild()}catch(e){}},30000);
 function rebuild(){
  const list=ENV.filter(d=>d.tp=="ent"&&!d.mot&&!REC.has(d.id)&&podeVer(d)),cnt={};
@@ -324,7 +333,7 @@ function rebuild(){
    if(d.devolvido){g=ganho({...o,volta:false})+ganho({...o,volta:true});s="Devolvido"}
    else if(d.st=="cancelado"){g=ganho({...o,volta:false});s="Descartado"}
    else{g=ganho(o);s="Entregue"}
-   OK.push({id:d.id,loja:d.loja,g:Number(g.toFixed(2)),d:hoje(d.fimEm),st:s})});
+   OK.push({id:d.id,loja:d.loja,g:Number(g.toFixed(2)),d:hoje(d.fimEm),st:s,t:o.et==="gratis"?"loja":"cliente",km:Number(o.dc)||0})});
  prim=false;draw()}
 PA.whenReady(()=>{
  PA.getCad().then(c=>{if(c)CAD={...CAD,...c,fotos:c.fotos||{}};if(!PA.email_ok&&PA.user&&!CAD.email)CAD.email=PA.user.email||"";if(!cadOk(c)){CADFORCE=true;sh="edr"}draw()}).catch(e=>console.error("cad:",e));

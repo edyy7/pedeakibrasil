@@ -67,7 +67,7 @@ const tempoMin=(d1,d2,E)=>Math.round(d1/E.vel*60+E.esp+d2/E.vel*60);
 function sim(){const d1=nm($("s1").value),d2=nm($("s2").value),E={km:nm($("ekm").value)||ENT.km,min:nm($("emin").value)||ENT.min,vel:nm($("evel").value)||ENT.vel,esp:nm($("eesp").value)};
  $("sr").innerHTML=`<b style="font-size:20px">${R$(ganhoKm(d2,E))}</b> de ganho · ${d2.toFixed(1).replace(".",",")} km de entrega<div class="meta">⏱️ ~${tempoMin(d1,d2,E)} min no total: ${Math.round(d1/E.vel*60)} min até a loja + ${E.esp} min na loja + ${Math.round(d2/E.vel*60)} min até o cliente</div>`}
 function salvaEnt(){const k=nm($("ekm").value),m=nm($("emin").value),v=nm($("evel").value);if(k<=0||v<=0){toast("Informe o valor por km e a velocidade média");return}const rm=nm($("erm").value);if(rm<=0){toast("Informe o raio máximo global (km)");return}ENT={km:k,min:m,vel:v,esp:Math.max(0,nm($("eesp").value)),raio:rm};draw();toast("Regra salva: "+R$(k)+" por km · raio máximo "+String(rm).replace(".",",")+" km")}
-const TABS=[["painel","Painel"],["lj","Lojas"],["pix","💠 Pix"],["msg","📨 Mensagens"],["oc","⚠️ Ocorrências"],["eq","Acessos"],["fin","Financeiro"],["cfg","Config"]];
+const TABS=[["painel","Painel"],["lj","Lojas"],["pix","💠 Pix"],["msg","📨 Mensagens"],["oc","⚠️ Ocorrências"],["eq","Acessos"],["dos","📁 Dossiê"],["fin","Financeiro"],["cfg","Config"]];
 const cnt=k=>k=="eq"?((window.PA&&PA.rhN)||0):k=="pix"?PIX.filter(p=>p.st=="pend").length:k=="msg"?MSG.filter(m=>!m.lida&&!m.resp).length:k=="oc"?OCm().filter(o=>o.st=="aberta").length:0;
 const tile=(n,l)=>`<div class="tile"><b>${n}</b><span class="meta">${l}</span></div>`;
 function painel(){const H=L.reduce((a,x)=>({cri:a.cri+x.h.cri,ent:a.ent+x.h.ent,and:a.and+x.h.and,pago:a.pago+x.h.pago}),{cri:0,ent:0,and:0,pago:0});const C={ativa:0,avencer:0,carencia:0,travada:0};L.forEach(x=>{const k=estadoPlano(x).k;if(k in C)C[k]++});return `<h2>Hoje</h2><div class="grid">${tile(H.cri,"pedidos criados")}${tile(H.ent,"entregues")}${tile(H.and,"em andamento")}${tile(R$(H.pago),"pago pelos clientes hoje")}</div>
@@ -170,7 +170,17 @@ async function bkAcao(k){
   try{localStorage.setItem("pa_contador",em)}catch(e){}
   if(pode){try{await navigator.share({files:[file],title:"Relatório PedeAí",text:"Segue o relatório da administração. Para: "+em})}catch(e){}return}
   r.d.save(r.nome);location.href="mailto:"+em+"?subject="+encodeURIComponent("Relatório PedeAí")+"&body="+encodeURIComponent("Segue em anexo o relatório (arquivo "+r.nome+" salvo neste aparelho).");toast("PDF salvo: anexe-o no e-mail que abriu")}}
-const V={painel,lj,pix,msg,oc,eq,fin,cfg};
+let DOS={slug:"",data:null,load:false,err:""};
+const dE=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])),dR=n=>"R$ "+Number(n||0).toFixed(2).replace(".",","),dH=t=>t?new Date(t).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"—";
+function dos(){return `<div class="oc"><b>📁 Dossiê das lojas</b><div class="meta" style="margin:4px 0">Saídas de caixa, fechamentos, estoque e patrimônio enviados pelas suas lojas.</div>${L.map(x=>`<button class="cta ${DOS.slug==x.slug?"":"b"}" onclick="dosAbre('${dE(x.slug)}')">${dE(x.n||x.slug)}</button>`).join("")||'<div class="meta">Nenhuma loja ainda.</div>'}</div>`+(DOS.slug?dosView():"")}
+function dosView(){if(DOS.load)return `<div class="oc"><div class="meta">Carregando…</div></div>`;if(DOS.err)return `<div class="oc"><div class="meta" style="color:var(--rd)">${dE(DOS.err)}</div></div>`;const d=DOS.data;if(!d)return `<div class="oc"><div class="meta">Esta loja ainda não enviou dados de caixa, estoque ou patrimônio.</div></div>`;
+ const sa=d.saidas||[],ss=(d.cx&&d.cx.sessoes)||[],ins=d.insumos||[],pat=d.pat||[],tot=sa.reduce((s,x)=>s+(x.v||0),0);
+ return `<div class="oc"><b>📤 Saídas de caixa</b><div class="row"><span class="meta">Total</span><b>${dR(tot)}</b></div>${sa.map(s=>`<div class="ln"><span>${dE(s.dt||"")} · ${dE(s.d)}<br><small>autorizado por ${dE(s.por||"—")}</small></span><b>${dR(s.v)}</b></div>`).join("")||'<div class="meta">Nenhuma saída.</div>'}</div>
+ <div class="oc"><b>💰 Aberturas e fechamentos</b>${ss.map(s=>`<div class="meta" style="margin-top:6px">${dH(s.abEm)} → ${dH(s.fechEm)} · abriu ${dR(s.ab)} (${dE(s.abPor)}) · contado ${dR(s.final)} (${dE(s.fechPor)}) · ${Math.abs(s.dif||0)<0.01?"confere ✅":"diferença "+dR(s.dif)+" ⚠️"}</div>`).join("")||'<div class="meta">Nenhum fechamento.</div>'}</div>
+ <div class="oc"><b>📦 Estoque</b>${ins.map(i=>`<div class="ln"><span>${dE(i.n)} <small>(${dE(i.cat||"")}) · entrou ${dH(i.em)}</small></span><b style="color:${i.q<=i.min?"var(--rd)":"inherit"}">${i.q} ${dE(i.un||"un")}</b></div>`).join("")||'<div class="meta">Sem itens.</div>'}</div>
+ <div class="oc"><b>🏢 Patrimônio</b><div class="row"><span class="meta">Total em bens</span><b>${dR(pat.reduce((s,x)=>s+(x.v||0),0))}</b></div>${pat.map(p=>`<div class="ln"><span>${dE(p.n)} <small>${dE(p.d||"")}</small></span><b>${dR(p.v)}</b></div>`).join("")}</div>`}
+async function dosAbre(slug){DOS={slug,data:null,load:true,err:""};draw();try{DOS.data=await PA.getDados(slug)}catch(e){console.error(e);DOS.err="Não foi possível carregar o dossiê ("+(e.code||e.message)+")"}DOS.load=false;draw()}
+const V={painel,lj,pix,msg,oc,eq,dos,fin,cfg};
 function sw(id){const x=L.find(y=>y.id==id);x.ent=!entOn(x);draw();toast(x.ent?"Entrega ligada":"Entrega desligada: só retirada")}
 function go(t){tab=t;open=null;draw()}
 function draw(){$("tabs").innerHTML=TABS.map(([k,l])=>`<button class="${tab==k?'on':''}" onclick="go('${k}')">${l}${cnt(k)?' ('+cnt(k)+')':''}</button>`).join("");$("v").innerHTML=V[tab]();if($("sr"))sim()}
@@ -213,6 +223,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
  PA.setLojaCfg=(slug,d)=>F.setDoc(F.doc(db,"lojas",slug),{...cl(d),atualizadoEm:Date.now()},{merge:true});
  PA.watchLojaCfg=(slug,cb)=>F.onSnapshot(F.doc(db,"lojas",slug),s=>cb(s.exists()?s.data():null));
+ PA.getDados=(slug)=>F.getDoc(F.doc(db,"lojaDados",slug)).then(s=>s.exists()?s.data():null);
  PA.watchLojasAdm=(cb)=>F.onSnapshot(F.query(F.collection(db,"lojas"),F.where("admId","==",au.currentUser.uid)),s=>cb(s.docs.map(d=>({slug:d.id,...d.data()})),null),e=>cb(null,e));
  PA.watchContaLoja=(uid,cb)=>F.onSnapshot(F.doc(db,"contas",uid+"_lojista"),s=>cb(s.exists()?s.data():null),e=>{console.error(e);cb(null)});
  PA.setSusp=(slug,on)=>F.setDoc(F.doc(db,"lojas",slug),{suspensa:!!on,suspEm:Date.now()},{merge:true});
