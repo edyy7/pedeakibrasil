@@ -39,7 +39,7 @@ if(["lojista","motoboy","adm","criador"].includes(window.PA_PAPEL)){
 })();
 /* PedeAí · login Google + contas + período grátis + cobrança (compartilhado pelos apps) */
 (function(){
-const DIA=864e5,TRIAL=30,CAR=3,CRIADOR_EMAIL="edinaldooliveiradesouza@gmail.com";
+const DIA=864e5,TRIAL=30,CAR=33,CRIADOR_EMAIL="edinaldooliveiradesouza@gmail.com";
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const R=v=>"R$ "+Number(v||0).toFixed(2).replace(".",",").replace(/\B(?=(\d{3})+,)/g,".");
 const fmt=t=>new Date(t).toLocaleDateString("pt-BR");
@@ -84,6 +84,12 @@ window.PA_login=async function(H,au){
     er.textContent=e.code==="auth/popup-closed-by-user"||e.code==="auth/cancelled-popup-request"?"Login cancelado. Tente de novo.":e.code==="auth/unauthorized-domain"?"Domínio não autorizado no Firebase (Authentication → Domínios autorizados).":"Não foi possível entrar ("+(e.code||e.message)+").";
    }}})};
 
+/* ---------- tolerância offline: 72 h sem falar com o servidor ---------- */
+const SYNC="pa_srv_sync",H72=72*36e5;let offOv=null;
+function offCheck(){try{if(!window.PA_PAPEL||window.PA_PAPEL==="cliente")return;const s=JSON.parse(localStorage.getItem(SYNC)||"null");if(!s)return;const now=Date.now(),exp=now<s.dev||now-s.dev>H72;
+ if(exp&&!(window.PA&&PA.contaOk)){if(!offOv){offOv=ov('<div style="text-align:center"><div style="font-size:42px">🌐</div><div style="font-size:22px;font-weight:800;margin:6px 0">Conecte-se à internet</div><div style="color:#a3a3ad;margin-bottom:14px">Passaram mais de 72 horas desde a última vez que o app falou com o servidor. Conecte-se para validar a assinatura e continuar.</div><button data-a="r" style="'+BTN+';background:#22a559;color:#fff">Tentar de novo</button></div>');offOv.onclick=ev=>{if(ev.target.dataset&&ev.target.dataset.a==="r")location.reload()}}}
+ else if(offOv){offOv.remove();offOv=null}}catch(e){}}
+try{setTimeout(offCheck,5000);setInterval(offCheck,60000)}catch(e){}
 /* ---------- estado do plano ---------- */
 const vencDe=d=>d.venc||((d.criadoEm&&d.criadoEm.toMillis?d.criadoEm.toMillis():Date.now())+TRIAL*DIA);
 window.PA_estado=function(d,now){const v=vencDe(d),dias=Math.ceil((v-now)/DIA);
@@ -142,16 +148,22 @@ window.PA_conta=async function(F,db,H,au){
   const b=(id,t)=>'<button data-a="'+id+'" style="background:#2a2a31;color:#f4f4f6;border:0;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer">'+t+'</button>';
   bar.innerHTML='<span>'+e.ico+' '+esc(e.t)+(gratis?'':' · até '+fmt(e.v))+'</span><span style="flex:1"></span>'+(PA_link()?b("link","🔗 Link da loja"):"")+(papel==="adm"?b("rh","👥 RH"+(PA.rhN?" ("+PA.rhN+")":"")):"")+(papel==="lojista"&&!PA.equipe?b("eq","👥 Equipe"):"")+(gratis||PA.equipe?"":b("pagar","💳 Pagar"))+b("sair","Sair");
   bar.onclick=ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(a==="link")PA_copia(PA_link());else if(a==="pagar")paywall(false);else if(a==="rh")PA_RH.adm();else if(a==="eq")PA_RH.equipe();else if(a==="sair")PA.logout()};
+  try{localStorage.setItem(SYNC,JSON.stringify({srv:agora(),dev:Date.now()}));PA.contaOk=true;offCheck()}catch(x){}
+  {const dd=Math.ceil((e.v-agora())/DIA),lv=gratis?0:e.k==="avencer"?(dd<=1?3:dd<=3?2:1):(e.k==="carencia"||e.k==="travada")?3:0;let bn=document.getElementById("pa-bn");
+   if(!lv){if(bn)bn.remove()}else{if(!bn){bn=document.createElement("div");bn.id="pa-bn";bar.parentNode.insertBefore(bn,bar.nextSibling)}
+    const cor=["","#e0a800","#ff8a3d","#d4141c"][lv],tx=e.k==="avencer"?"A fatura vence "+(dd<=0?"hoje":"em "+dd+" dia(s)")+". Pague para não ser bloqueado.":e.k==="carencia"?"Fatura vencida. Bloqueio total em "+Math.max(1,Math.ceil((e.v+CAR*DIA-agora())/DIA))+" dia(s).":"Loja bloqueada por falta de pagamento.";
+    bn.dataset.lvl=lv;bn.style.cssText="background:"+cor+";color:"+(lv===1?"#000":"#fff")+";font:700 13px system-ui,sans-serif;padding:8px 10px;text-align:center";bn.textContent=(lv===3?"🔴 ":lv===2?"🟠 ":"🟡 ")+tx;
+    const kk="pa_bn_"+lv+"_"+new Date().toISOString().slice(0,10);try{if(!localStorage.getItem(kk)){localStorage.setItem(kk,"1");if(window.Notification&&Notification.permission==="granted")new Notification("PedeAí · assinatura",{body:tx})}}catch(x){}}}
   if(window.PA_onConta)try{window.PA_onConta({estado:e,loja:PA.loja,venc:e.v})}catch(x){console.error(x)}
-  if(e.k==="travada")paywall(true);else if(pw){pw.remove();pw=null}
+  if(e.k==="travada"){if(!PA.finalizando)paywall(true)}else{PA.finalizando=false;if(pw){pw.remove();pw=null}}if(!window.__fimTimer)window.__fimTimer=setInterval(()=>{const ta=!!(window.PA_temAtivos&&PA_temAtivos());if(PA.finalizando&&!ta){PA.finalizando=false;render()}else if(PA.travada&&!PA.finalizando&&pw&&ta!==!!pw.querySelector('[data-a="fim"]'))paywall(true)},3000)
  };
  function paywall(bloqueio){
   if(pw)pw.remove();
-  if(PA.equipe){if(pw)pw.remove();pw=ov('<div style="text-align:center"><div style="font-size:42px">🔒</div><div style="font-size:22px;font-weight:800;margin:6px 0">Loja bloqueada</div><div style="color:#a3a3ad;margin-bottom:14px">A conta da loja venceu. Avise o gerente para regularizar o pagamento.</div><button data-a="sair" style="'+BTN+';background:#2a2a31;color:#f4f4f6">Sair da conta</button></div>');pw.onclick=ev=>{if(ev.target.dataset&&ev.target.dataset.a==="sair")PA.logout()};return}
+  if(PA.equipe){if(pw)pw.remove();pw=ov('<div style="text-align:center"><div style="font-size:42px">🔒</div><div style="font-size:22px;font-weight:800;margin:6px 0">Loja bloqueada</div><div style="color:#a3a3ad;margin-bottom:14px">A conta da loja venceu. Avise o gerente para regularizar o pagamento.</div>'+(window.PA_temAtivos&&PA_temAtivos()?'<button data-a="fim" style="'+BTN+';background:#22a559;color:#fff">Finalizar pedidos em andamento</button>':'')+'<button data-a="sair" style="'+BTN+';background:#2a2a31;color:#f4f4f6">Sair da conta</button></div>');pw.onclick=ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(a==="sair")PA.logout();else if(a==="fim"){PA.finalizando=true;pw.remove();pw=null}};return}
   const p=d.pagto||{},tab=papel==="adm"?ADMP:PLANOS,pl=tab[PA.planoSel]?PA.planoSel:(tab[PA.plano]?PA.plano:"iniciante"),valor=pl==="iniciante"?(PA.fat==null?0:PA.fat):tab[pl].p;
   const emAnalise=p.st==="analise";
   pw=ov('<div style="text-align:center"><div style="font-size:42px">'+(bloqueio?"🔒":"💳")+'</div><div style="font-size:22px;font-weight:800;margin:6px 0">'+(bloqueio?"Seu período acabou":"Pagar mensalidade")+'</div>'
-   +'<div style="color:#a3a3ad;margin-bottom:10px">'+(bloqueio?"Para continuar usando, pague. ":"")+'O pagamento libera mais '+tab[pl].d+' dias (+3 de carência).</div>'
+   +'<div style="color:#a3a3ad;margin-bottom:10px">'+(bloqueio?"Para continuar usando, pague. ":"")+'O pagamento libera mais '+tab[pl].d+' dias.</div>'
    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">'+Object.keys(tab).map(k=>'<button data-a="pl:'+k+'" style="flex:1;min-width:46%;padding:8px;border-radius:10px;border:2px solid '+(k===pl?'#22a559':'#2a2a31')+';background:#16161a;color:#f4f4f6;font-size:12px;font-weight:700;cursor:pointer">'+esc(tab[k].n)+(tab[k].p?'<br>'+R(tab[k].p):'')+'</button>').join('')+'</div>'
    +'<div style="background:#16161a;border-radius:12px;padding:14px;text-align:left"><div style="color:#a3a3ad;font-size:13px">'+(pl==="iniciante"?(PA.fat==null?"Calculando fatura…":"Fatura congelada (pedidos até ontem — D-1)"):"Valor do plano")+'</div><b style="font-size:22px">'+R(valor)+'</b>'
    +(cfg.pix?'<div style="color:#a3a3ad;font-size:13px;margin-top:10px">Chave Pix'+(cfg.titular?' · '+esc(cfg.titular):'')+'</div><b style="word-break:break-all">'+esc(cfg.pix)+'</b><button data-a="cp" style="'+BTN+';background:#2a2a31;color:#f4f4f6;margin-top:8px;padding:10px">📋 Copiar chave Pix</button>':'<div style="color:#e0a800;margin-top:10px">A chave Pix ainda não foi configurada pelo Criador. Fale com o suporte.</div>')+'</div>'
@@ -159,9 +171,9 @@ window.PA_conta=async function(F,db,H,au){
    +(emAnalise?'':'<button data-a="pago" style="'+BTN+';background:#22a559;color:#fff">✅ Já paguei</button>')
    +(cfg.whats?'<button data-a="wa" style="'+BTN+';background:#2a2a31;color:#f4f4f6">💬 Falar com o suporte</button>':'')
    +(bloqueio?'':'<button data-a="x" style="'+BTN+';background:transparent;color:#a3a3ad">Fechar</button>')
-   +'<button data-a="sair" style="'+BTN+';background:transparent;color:#a3a3ad">Sair da conta</button></div>');
+   +(bloqueio&&window.PA_temAtivos&&PA_temAtivos()?'<button data-a="fim" style="'+BTN+';background:#2a2a31;color:#f4f4f6">Finalizar pedidos em andamento</button>':'')+'<button data-a="sair" style="'+BTN+';background:transparent;color:#a3a3ad">Sair da conta</button></div>');
   pw.onclick=async ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(!a)return;
-   if(a.indexOf("pl:")===0){PA.planoSel=a.slice(3);paywall(bloqueio);return}if(a==="cp")copia(cfg.pix);else if(a==="sair")PA.logout();else if(a==="x"){pw.remove();pw=null}
+   if(a.indexOf("pl:")===0){PA.planoSel=a.slice(3);paywall(bloqueio);return}if(a==="cp")copia(cfg.pix);else if(a==="sair")PA.logout();else if(a==="x"){pw.remove();pw=null}else if(a==="fim"){PA.finalizando=true;pw.remove();pw=null}
    else if(a==="wa")window.open("https://wa.me/"+String(cfg.whats).replace(/\D/g,"")+"?text="+encodeURIComponent("Olá! Paguei a mensalidade do PedeAí ("+(u.email||"")+")"),"_blank");
    else if(a==="pago"){ev.target.disabled=true;try{await F.setDoc(ref,{pagto:{st:"analise",em:Date.now(),valor,plano:pl}},{merge:true})}catch(e){ev.target.disabled=false;alert("Não foi possível registrar. Tente de novo.")}}};
  }

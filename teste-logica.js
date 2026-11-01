@@ -9,7 +9,9 @@ const t0=Date.UTC(2026,0,1),d={criadoEm:{toMillis:()=>t0}};
 T("dia 30 ativa/avencer",['ativa','avencer'].includes(W.PA_estado(d,t0+30*DIA).k));
 T("dia 31 carência",W.PA_estado(d,t0+31*DIA).k==='carencia');
 T("dia 33 carência",W.PA_estado(d,t0+32.9*DIA).k==='carencia');
-T("dia 34 travada",W.PA_estado(d,t0+33.1*DIA).k==='travada');
+T("dia 34 ainda em carência (bloqueio só 33 dias depois do vencimento)",W.PA_estado(d,t0+33.1*DIA).k==='carencia');
+T("dia 62 ainda em carência",W.PA_estado(d,t0+62.9*DIA).k==='carencia');
+T("dia 64 travada",W.PA_estado(d,t0+63.1*DIA).k==='travada');
 T("tabela planos loja",W.PA_PLANOS.mensal.p===199.9&&W.PA_PLANOS.anual.p===1999&&W.PA_PLANOS['3anos'].p===4799&&W.PA_PLANOS['5anos'].p===7199);
 T("plano ADM mensal 299,90",W.PA_ADMP.mensal.p===299.9);
 // D-1

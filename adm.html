@@ -54,7 +54,7 @@ let tab="painel",open=null,ENT={km:1.5,min:6,vel:25,esp:5,raio:10};const $=i=>do
 const R$=n=>"R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2});
 const entOn=x=>x.ent!==false&&x.tp!=="agenda";
 const HOJE=new Date("2026-10-27T00:00:00");
-/* estadoPlano: 🟢 Ativa · 🟡 A vencer (até 7 dias) · 🟠 Carência (até 3 dias após vencer) · 🔴 Travada (depois da carência) */
+/* estadoPlano: 🟢 Ativa · 🟡 A vencer (até 7 dias) · 🟠 Carência (até 33 dias após vencer) · 🔴 Travada (depois da carência) */
 function estadoPlano(x){if(!x.conta&&x.pend)return{k:"pendente",ico:"⏳",cor:"var(--mu)",lbl:"Aguardando o gerente abrir o link"};if(!x.conta)return{k:"carregando",ico:"⏳",cor:"var(--mu)",lbl:"Carregando plano…"};
  const e=PA_estado(x.conta,Date.now()),cor={ativa:"var(--ok)",avencer:"var(--yl)",carencia:"#ff8a3d",travada:"var(--rd)"}[e.k];
  return{k:e.k,ico:e.ico,cor,lbl:e.t}}
@@ -172,14 +172,17 @@ async function bkAcao(k){
   r.d.save(r.nome);location.href="mailto:"+em+"?subject="+encodeURIComponent("Relatório PedeAí")+"&body="+encodeURIComponent("Segue em anexo o relatório (arquivo "+r.nome+" salvo neste aparelho).");toast("PDF salvo: anexe-o no e-mail que abriu")}}
 let DOS={slug:"",data:null,load:false,err:""};
 const dE=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])),dR=n=>"R$ "+Number(n||0).toFixed(2).replace(".",","),dH=t=>t?new Date(t).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"—";
-function dos(){return `<div class="oc"><b>📁 Dossiê das lojas</b><div class="meta" style="margin:4px 0">Saídas de caixa, fechamentos, estoque e patrimônio enviados pelas suas lojas.</div>${L.map(x=>`<button class="cta ${DOS.slug==x.slug?"":"b"}" onclick="dosAbre('${dE(x.slug)}')">${dE(x.n||x.slug)}</button>`).join("")||'<div class="meta">Nenhuma loja ainda.</div>'}</div>`+(DOS.slug?dosView():"")}
+function dos(){return `<div class="oc"><b>📁 Dossiê das lojas</b><div class="meta" style="margin:4px 0">Saídas de caixa, fechamentos, estoque e patrimônio enviados pelas suas lojas.</div>${L.map(x=>`<button class="cta ${DOS.slug==x.slug?"":"b"}" onclick="dosAbre('${dE(x.slug)}')">${dE(x.n||x.slug)}</button>`).join("")||'<div class="meta">Nenhuma loja ainda.</div>'}</div>`+(DOS.slug?dosView()+(DOS.load?"":atrasosView()):"")}
 function dosView(){if(DOS.load)return `<div class="oc"><div class="meta">Carregando…</div></div>`;if(DOS.err)return `<div class="oc"><div class="meta" style="color:var(--rd)">${dE(DOS.err)}</div></div>`;const d=DOS.data;if(!d)return `<div class="oc"><div class="meta">Esta loja ainda não enviou dados de caixa, estoque ou patrimônio.</div></div>`;
  const sa=d.saidas||[],ss=(d.cx&&d.cx.sessoes)||[],ins=d.insumos||[],pat=d.pat||[],tot=sa.reduce((s,x)=>s+(x.v||0),0);
  return `<div class="oc"><b>📤 Saídas de caixa</b><div class="row"><span class="meta">Total</span><b>${dR(tot)}</b></div>${sa.map(s=>`<div class="ln"><span>${dE(s.dt||"")} · ${dE(s.d)}<br><small>autorizado por ${dE(s.por||"—")}</small></span><b>${dR(s.v)}</b></div>`).join("")||'<div class="meta">Nenhuma saída.</div>'}</div>
  <div class="oc"><b>💰 Aberturas e fechamentos</b>${ss.map(s=>`<div class="meta" style="margin-top:6px">${dH(s.abEm)} → ${dH(s.fechEm)} · abriu ${dR(s.ab)} (${dE(s.abPor)}) · contado ${dR(s.final)} (${dE(s.fechPor)}) · ${Math.abs(s.dif||0)<0.01?"confere ✅":"diferença "+dR(s.dif)+" ⚠️"}</div>`).join("")||'<div class="meta">Nenhum fechamento.</div>'}</div>
  <div class="oc"><b>📦 Estoque</b>${ins.map(i=>`<div class="ln"><span>${dE(i.n)} <small>(${dE(i.cat||"")}) · entrou ${dH(i.em)}</small></span><b style="color:${i.q<=i.min?"var(--rd)":"inherit"}">${i.q} ${dE(i.un||"un")}</b></div>`).join("")||'<div class="meta">Sem itens.</div>'}</div>
  <div class="oc"><b>🏢 Patrimônio</b><div class="row"><span class="meta">Total em bens</span><b>${dR(pat.reduce((s,x)=>s+(x.v||0),0))}</b></div>${pat.map(p=>`<div class="ln"><span>${dE(p.n)} <small>${dE(p.d||"")}</small></span><b>${dR(p.v)}</b></div>`).join("")}</div>`}
-async function dosAbre(slug){DOS={slug,data:null,load:true,err:""};draw();try{DOS.data=await PA.getDados(slug)}catch(e){console.error(e);DOS.err="Não foi possível carregar o dossiê ("+(e.code||e.message)+")"}DOS.load=false;draw()}
+function atrasosView(){const per=DOS.per||"dia",now=Date.now(),ini=per=="dia"?new Date().setHours(0,0,0,0):now-(per=="semana"?7:30)*864e5;
+ const L=(DOS.ped||[]).filter(o=>o.prontoEm&&o.prontoEm>=ini&&o.tpOrig),at=L.filter(o=>o.atrasou||o.atrasoReal>0),med=at.length?at.reduce((s,o)=>s+(o.atrasoReal||0),0)/at.length:0,pr=L.reduce((s,o)=>s+(o.prorrog||[]).length,0);
+ return `<div class="oc"><b>⏱️ Relatório de atrasos</b><div class="meta">Consolidado auditável (sem alerta em tempo real).</div><div style="display:flex;gap:6px;margin:6px 0">${[["dia","Dia"],["semana","Semana"],["mes","Mês"]].map(x=>`<button class="cta ${per==x[0]?"":"b"}" style="margin:0" onclick="DOS.per='${x[0]}';draw()">${x[1]}</button>`).join("")}</div><div class="row"><span class="meta">Pedidos medidos</span><b>${L.length}</b></div><div class="row"><span class="meta">Atrasados</span><b>${at.length}${L.length?" ("+Math.round(at.length/L.length*100)+"%)":""}</b></div><div class="row"><span class="meta">Atraso médio</span><b>${med.toFixed(1)} min</b></div><div class="row"><span class="meta">Prorrogações</span><b>${pr}</b></div>${at.slice(0,30).map(o=>`<div class="ln"><span>#${o.id}${o.mesa?" · Mesa "+dE(o.mesa):""} · estimado ${o.tpOrig} min → real ${o.tpReal} min<br><small>${(o.prorrog||[]).map(p=>dE(p.role)+" ("+dE(p.uid)+") "+p.de+"→"+p.para+" min às "+dH(p.em)).join(" · ")||"sem prorrogação"}</small></span><b style="color:var(--rd)">+${o.atrasoReal||0} min</b></div>`).join("")}</div>`}
+async function dosAbre(slug){DOS={slug,data:null,ped:[],per:(typeof DOS!=="undefined"&&DOS&&DOS.per)||"dia",load:true,err:""};draw();try{DOS.data=await PA.getDados(slug)}catch(e){console.error(e);DOS.err="Não foi possível carregar o dossiê ("+(e.code||e.message)+")"}try{DOS.ped=await PA.getPedLoja(slug)}catch(e){console.error(e)}DOS.load=false;draw()}
 const V={painel,lj,pix,msg,oc,eq,dos,fin,cfg};
 function sw(id){const x=L.find(y=>y.id==id);x.ent=!entOn(x);draw();toast(x.ent?"Entrega ligada":"Entrega desligada: só retirada")}
 function go(t){tab=t;open=null;draw()}
@@ -223,6 +226,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
  PA.setLojaCfg=(slug,d)=>F.setDoc(F.doc(db,"lojas",slug),{...cl(d),atualizadoEm:Date.now()},{merge:true});
  PA.watchLojaCfg=(slug,cb)=>F.onSnapshot(F.doc(db,"lojas",slug),s=>cb(s.exists()?s.data():null));
+ PA.getPedLoja=(slug)=>F.getDocs(F.query(F.collection(db,"pedidos"),F.where("loja","==",slug))).then(s=>s.docs.map(d=>d.data()));
  PA.getDados=(slug)=>F.getDoc(F.doc(db,"lojaDados",slug)).then(s=>s.exists()?s.data():null);
  PA.watchLojasAdm=(cb)=>F.onSnapshot(F.query(F.collection(db,"lojas"),F.where("admId","==",au.currentUser.uid)),s=>cb(s.docs.map(d=>({slug:d.id,...d.data()})),null),e=>cb(null,e));
  PA.watchContaLoja=(uid,cb)=>F.onSnapshot(F.doc(db,"contas",uid+"_lojista"),s=>cb(s.exists()?s.data():null),e=>{console.error(e);cb(null)});

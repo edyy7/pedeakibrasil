@@ -278,3 +278,11 @@ Alterado SOMENTE o que o comando listava; o resto do pacote ficou igual.
 - **Motoboy:** grátis = KM; cobrada = R$ + KM; aba **Histórico** (Pagas pela Loja / Pagas pelo Cliente) com resumo (entregas, KM, R$). Envio de fotos no cadastro com tempo limite (não fica preso em "Enviando…").
 - **Dados:** coleção `lojaDados/{slug}` (caixa, saídas, estoque, patrimônio). **Republique `firebase/firestore.rules`.** O campo `modulos` continua sendo do Criador/ADM; a escolha da loja fica em `modulosLoja`.
 - **Não coberto (precisa de app nativo/dispositivo):** gerar APK, permissão "Sobrepor outros apps" do Android, teste em celulares reais.
+
+## v5.7.0 · Itens 28 a 31 (Base Padrão V1.0)
+- **28 Fila de motoboy:** motoboy escolhe Modo Loja (fila FIFO, botão "Estou na Loja", pedido pronto vai para o 1º, sai ao aceitar, volta pelo fim, não pega 2 seguidos se há outro na fila) ou Marketplace (sem fila, até 4 entregas na mesma região). A Loja vê a fila em tempo real (aba Entregas) e liga/desliga o Marketplace na Gestão. Coleção nova `filas/{slug}`; campo `mkt` no pedido.
+- **29 Tempo e atrasos:** barra de progresso por pedido na Cozinha; estourou = card vermelho + alerta sonoro/visual que repete até "Pronto"; prorrogar (+2/+3/+5/outro) só o Gerente, com registro (uid, role, de, para, hora); o vermelho não some ao prorrogar; relatório de atrasos no dossiê do ADM (dia/semana/mês). Tempo estimado configurável na Gestão.
+- **30 Bloqueio:** bloqueio total 33 dias após o vencimento (app, regras e simulador); banners D-7 amarelo, D-3 laranja, D-1 vermelho + notificação; tolerância offline de 72 h (relógio do aparelho voltando atrás também exige conexão); pedidos em andamento podem ser finalizados; pedidos novos são recusados pelo servidor.
+- **31 Pix com valor e ID do pedido:** código copia-e-cola (BR Code com CRC) + QR Code gerados no app (`pixbr.js`), pedido nasce "Aguardando pagamento", Gerente ou Caixa marca "Pago", cancelamento automático no prazo (padrão 10 min, configurável). Camada abstraída em `PIX_PROVIDER` para trocar por gateway.
+- **Republique `firebase/firestore.rules`** (novos: `filas`, leitura/aceite de corridas do marketplace, 33 dias).
+- Testes novos: t15_pix (13), t16_tempo (15), t17_bloqueio (16), t18_fila (16). Lógica: 12.

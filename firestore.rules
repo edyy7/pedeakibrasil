@@ -30,8 +30,8 @@ service cloud.firestore {
     }
 
     // TRAVA NO SERVIDOR: pedido novo só é criado se a conta da loja estiver em dia
-    // (período grátis de 30 dias + 3 dias de carência, ou renovada pelo Criador).
-    // Prazos: 2592000000 ms = 30 dias · 259200000 ms = 3 dias (iguais a TRIAL e CAR em conta.js).
+    // (período grátis de 30 dias + 33 dias até o bloqueio total, ou renovada pelo Criador).
+    // Prazos: 2592000000 ms = 30 dias · 2851200000 ms = 33 dias (iguais a TRIAL e CAR em conta.js).
     function lojistaGratis() {
       let cf = /databases/$(database)/documents/meta/config;
       return exists(cf) && get(cf).data.get('valores', {}).get('lojista', 1) == 0;
@@ -39,7 +39,7 @@ service cloud.firestore {
     function contaLiberada(uid) {
       let c = /databases/$(database)/documents/contas/$(uid + '_lojista');
       return lojistaGratis() || (exists(c)
-        && get(c).data.get('venc', get(c).data.criadoEm.toMillis() + 2592000000) + 259200000 >= request.time.toMillis());
+        && get(c).data.get('venc', get(c).data.criadoEm.toMillis() + 2592000000) + 2851200000 >= request.time.toMillis());
     }
     function lojaLiberada(chave) {
       let lj = /databases/$(database)/documents/lojas/$(chave);
@@ -88,7 +88,10 @@ service cloud.firestore {
     // ATENÇÃO: toda consulta (query) nos apps precisa ter where('loja','==',…) ou where('mot','==',uid):
     // regra não é filtro, e consulta ampla demais é recusada inteira.
     match /pedidos/{id} {
-      allow read: if signed() && (isCriador() || veLoja(resource.data));
+      allow read: if signed() && (isCriador() || veLoja(resource.data)
+        // Marketplace: motoboy autônomo vê corridas "enviadas" de lojas que abriram para o marketplace
+        || (resource.data.get('mkt', false) == true && resource.data.get('st', '') == 'enviado'
+            && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_motoboy'))));
       allow create: if signed() && lojaLiberada(request.resource.data.get('loja', 'x'));
       allow update: if signed() && (
         isCriador()
@@ -100,7 +103,13 @@ service cloud.firestore {
         || (motoboyDaLoja(resource.data.get('loja', ''))
             && !('mot' in resource.data)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mot', 'motN', 'atualizadoEm'])
-            && request.resource.data.mot == request.auth.uid));
+            && request.resource.data.mot == request.auth.uid)
+        // motoboy autônomo PEGANDO uma corrida do marketplace
+        || (resource.data.get('mkt', false) == true
+            && !('mot' in resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mot', 'motN', 'atualizadoEm'])
+            && request.resource.data.mot == request.auth.uid
+            && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_motoboy'))));
       allow delete: if isCriador() || (signed() && donoDaLoja(resource.data.get('loja', '')));
     }
     // Ocorrências: piloto.
@@ -242,6 +251,13 @@ service cloud.firestore {
     match /lojaDados/{slug} {
       allow get: if isCriador() || (signed() && (donoDaLoja(slug) || equipeAtiva(slug) || admDaLoja(slug)));
       allow create, update: if isCriador() || (signed() && (donoDaLoja(slug) || equipeAtiva(slug)));
+      allow delete: if isCriador();
+    }
+
+    // Fila de motoboys da loja (modo Loja): motoboys vinculados entram/saem; a loja acompanha.
+    match /filas/{slug} {
+      allow get: if isCriador() || (signed() && (donoDaLoja(slug) || equipeAtiva(slug) || motoboyDaLoja(slug) || admDaLoja(slug)));
+      allow create, update: if isCriador() || (signed() && (donoDaLoja(slug) || equipeAtiva(slug) || motoboyDaLoja(slug)));
       allow delete: if isCriador();
     }
 
