@@ -1,3 +1,29 @@
+# PedeAí Brasil · v6.0.0
+
+**Novo na v6.0.0:** Marketplace removido; entregador sem vínculo só vê “Vincular à Loja”; Diárias reais (`app/diarias.js`, bloco `diarias` no `firestore.rules`, aviso de cancelamento em `api/push.js`). **NÃO publique o `firestore.rules` antes de rodar o emulador** (`cd firebase/teste-rules && npm install && npm test`, 6 testes novos de diárias). Testes do navegador: `sh docs/teste-navegador/rodar-tudo.sh` (t21_diarias.py e t21_push.js novos).
+
+---
+
+# (base) v5.9.0 (P0 do handoff)
+
+## Publicar (nesta ordem)
+1. Firebase → Firestore → Regras → colar `firebase/firestore.rules` → Publicar.
+2. Vercel: subir a pasta `app/` (inclui `api/push.js`).
+3. Push (opcional até ter a chave): Firebase Console → Configurações do projeto → Cloud Messaging → Certificados push da Web → gerar par de chaves → colar a chave pública em `PA_VAPID` na seção v5.9.0 de `app/conta.js`. Na Vercel, variável `FIREBASE_SERVICE_ACCOUNT` (a mesma do Asaas).
+4. Regras no emulador: `cd firebase/teste-rules && npm install && npm test` (precisa de internet e Java).
+
+## O que mudou
+- Valor do pedido conferido no servidor: o cliente grava `itens:[{i,q}]`; a regra soma pelo cardápio `lojas/{slug}.m` e recusa total menor que a soma (ou maior que soma + R$ 200), item esgotado, quantidade fora de 1–50, mais de 12 itens. Cliente não altera v/itens/loja depois. Criar pedido: só cliente (uid dele), dono ou equipe ativa.
+- Correção: o cardápio agora é gravado como lista de mapas (Firestore não aceita array dentro de array).
+- lojaDados amarrado à própria loja; coleções `tokens/{uid}` e `pushLog`.
+- Offline: cache persistente do Firestore; sem internet o pedido usa id local de 8 dígitos e fica na fila do aparelho.
+- Push FCM: `api/push.js` + handler no `sw.js` + registro de token em `conta.js`.
+
+## Não verificado
+- Regras reais no Emulador: teste escrito, NÃO executado (sem rede no build).
+- Push e offline em aparelho real: não testados.
+- Simulador: 12 de lógica + 20 scripts de navegador (incl. novo t20_p0) passando.
+
 # PedeAí Brasil · v5.0 (teste real) — leia a seção v5.0 no fim; o resto é histórico da v4
 
 ## Colocar no ar (15 min)
@@ -286,3 +312,26 @@ Alterado SOMENTE o que o comando listava; o resto do pacote ficou igual.
 - **31 Pix com valor e ID do pedido:** código copia-e-cola (BR Code com CRC) + QR Code gerados no app (`pixbr.js`), pedido nasce "Aguardando pagamento", Gerente ou Caixa marca "Pago", cancelamento automático no prazo (padrão 10 min, configurável). Camada abstraída em `PIX_PROVIDER` para trocar por gateway.
 - **Republique `firebase/firestore.rules`** (novos: `filas`, leitura/aceite de corridas do marketplace, 33 dias).
 - Testes novos: t15_pix (13), t16_tempo (15), t17_bloqueio (16), t18_fila (16). Lógica: 12.
+
+## v5.7.1 · Criador no formato do preview (6 abas)
+Alterado SOMENTE o painel do Criador (`criador.html`) e uma ponte de leitura em `conta.js`; o resto ficou igual. Republicar `firestore.rules` não é necessário.
+- **Abas (como no `preview-criador.html`):** 👑 ADMs · 💰 Faturamento · 🔓 Travas · 💾 Backup · 📨 Mensagens · ⚙️ Configurações. Abre em ADMs.
+- **ADMs:** número de ADMs, lojas (total e suspensas), planos vencidos, pedidos de hoje, Total de Motoboys (lista) e contas por tipo, tudo lido do Firebase.
+- **Faturamento:** Pix em análise (a confirmação continua em Contas e pagamentos), pedidos entregues, volume e comissão estimada (7%) dos últimos 30 dias, mensalidades por mês e faturamento por loja.
+- **Travas:** totais, lista de lojas com busca, situação (Ativa, Plano vencido, Suspensa, Aguardando gerente) e **Suspender/Reativar loja** (grava `lojas/{slug}.suspensa`).
+- **Configurações:** os 5 cartões de antes (Contas e pagamentos, Lojas e dados com Zerar e Reset Total, Links de pagamento, Módulos e preço por loja, Leads do site), perfil, planos e valores atuais (R$ 199,90 / 1.999 / 4.799 / 7.199 e ADM R$ 299,90), teste de aviso e Sair.
+- **Não ligados (só avisam na tela):** Backup mestre, Mensagens ADM→Criador, Motoboys globais, Marketplace e Pagamentos ON/OFF. Preços e textos antigos do preview (R$ 100/mês, R$ 1.000…) NÃO foram usados. O limite de 15 pedidos/dia continua fora do Criador (removido na v5.2).
+- `conta.js`: novas `PA_criadorDados` (lê lojas, contas e pedidos) e `PA_criadorSuspender`. `sw.js`: `pedeai-v5.7.1`.
+- Testes: novo `t19_criador_abas.py` (20 checagens). `t4`, `t7_zerar` e `t12_reset_total` agora clicam na aba Configurações antes dos cartões. Suíte: 242 de 242.
+
+
+## v5.8.0 · Limpeza do que não é real + relatório do ADM + teste de isolamento
+**Status: 🟡 parcial. Este ciclo NÃO fecha APK** (faltam os 4 P0: push FCM, offline Firestore, valor no servidor, rules `lojaDados` + emulador). Republicar `firestore.rules` NÃO é necessário.
+- **ADM (`adm.html`):** aba **📨 Mensagens removida** (era caixa de exemplo, nada chegava de verdade). Texto do **Marketplace** corrigido: quem liga/desliga é cada loja, na Gestão dela (antes dizia "Desligado" e "quem liga é o Criador"). **Relatório da administração (PDF) ampliado:** despesas (saídas de caixa, 30 dias e total), folha mensal (equipe ativa; salário do funcionário ou do cargo) e taxas de serviço (soma de `ts` dos pedidos entregues/retirados, 30 dias e total), no resumo geral e por loja. Novas leituras `PA.getEquipeAdm` e `PA.getCargosAdm` (já permitidas pelas regras: `admId == uid`).
+- **Loja (`lojista.html`):** tela **Aprovar Entregador** (lista Motoboys com Aprovar/Recusar/Suspender) removida: era de exemplo (`MB` nunca era preenchido). O vínculo real continua pelo **link/código de convite** (Compartilhar link do motoboy). **Diárias escondidas** por `DIARIAS_ON=false` (formulário e lista); a aba **Entregas** (motoboys online, alertas, fila) continua. Removidas as frases falsas ("os entregadores aprovados já podem ver", "e peça diárias").
+- **Entregador (`motoboy.html`):** item **Diárias Disponíveis** do menu escondido por `DIARIAS_ON=false`; textos e avisos que sugeriam que a loja era avisada foram corrigidos.
+- **Criador (`criador.html`):** texto de Controles do sistema: o Marketplace não tem chave global (cada loja liga/desliga). Nada mais mudou.
+- **Teste novo `t31_isolamento.py` (12 checagens):** C1 não vinculado, C2 vinculado à loja Y lendo a X, C3 vinculado à X lendo a X, mais controles positivos, a fronteira do Marketplace (corrida `mkt=true` enviada é visível por desenho) e escrita negada. Conferido por mutação: com a regra `motoboyDaLoja` quebrada no simulador, cai para 5/12.
+- `sw.js`: `pedeai-v5.8.0`. `rodar-tudo.sh` inclui o t31.
+- **Limites:** o teste roda no simulador de Firestore e na porta das regras feita neste projeto; **não substitui o emulador/projeto Firebase real**. O PDF do ADM foi conferido com jsPDF simulado (a biblioteca vem da internet), não aberto em PDF real. "Taxas" = taxa de serviço (`ts`); confirmar se é isso que o ADM precisa.
+- **Pendente conhecido (não mexido):** "Motoboys online" da Loja usa `MB`, que nunca é preenchido (sempre "Nenhum motoboy online"); o botão "Falar com o Criador" do ADM mostra "Mensagem enviada" sem enviar nada.

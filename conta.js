@@ -289,6 +289,11 @@ async function criador(F,db,u,cfg){
  b3.onclick=()=>pagCriador(F,db);document.body.appendChild(b3);
  /* painel do Criador: a tela inicial chama estas ações; as bolhas ficam escondidas */
  window.PA_criadorAcoes={contas:()=>bt.onclick(),lojas:()=>b2.onclick(),pag:()=>b3.onclick(),mod:()=>modulosCriador(F,db),leads:()=>leadsCriador(F,db)};
+ /* dados para as abas do painel do Criador (só leitura) + suspender/reativar loja */
+ window.PA_criadorDados=async()=>{const [ls,cs,ps]=await Promise.all([F.getDocs(F.collection(db,"lojas")),F.getDocs(F.collection(db,"contas")),F.getDocs(F.collection(db,"pedidos"))]);
+  return {lojas:ls.docs.map(d=>({slug:d.id,...d.data()})),contas:cs.docs.map(d=>({id:d.id,...d.data()})),pedidos:ps.docs.map(d=>{const x=d.data();return {id:x.id,loja:x.loja,tt:x.tt,st:x.st,criadoEm:x.criadoEm}})}};
+ window.PA_criadorSuspender=(slug,v)=>F.setDoc(F.doc(db,"lojas",slug),{suspensa:!!v},{merge:true});
+ try{window.PA_onCriadorPronto&&PA_onCriadorPronto()}catch(e){}
  /* contador de leads novos (aparece no painel) */
  F.onSnapshot(F.collection(db,"leads"),s=>{const n=s.docs.filter(d=>!d.data().lido).length;window.PA_onLeads&&PA_onLeads(n)},()=>{});
  [bt,b2,b3].forEach(x=>x.style.display="none");
@@ -459,3 +464,50 @@ async function painel(F,db,cfg){
  try{await draw()}catch(e){o.firstChild.innerHTML='<div style="color:#ff6b6b">Erro ao carregar ('+esc(e.code||e.message)+')</div><button style="'+BTN+'" onclick="this.closest(\'div[style*=fixed]\').remove()">Fechar</button>'}
 }
 })();
+
+/* ===================== v5.9.0 · P0 ===================== */
+/* (1) OFFLINE: cache local do Firestore (IndexedDB, várias abas). Escritas feitas sem internet ficam numa fila e sobem sozinhas. */
+window.PA_db=function(F,app){
+ try{if(F.initializeFirestore&&F.persistentLocalCache&&F.persistentMultipleTabManager)return F.initializeFirestore(app,{localCache:F.persistentLocalCache({tabManager:F.persistentMultipleTabManager()})})}
+ catch(e){console.warn("Cache offline indisponível, seguindo só online:",e&&e.message)}
+ return F.getFirestore(app)};
+/* Número do pedido: contador do servidor (transação). Sem internet (ou servidor lento) usa um número local de 8 dígitos,
+   que nunca colide com o contador (começa em 5001) e é aceito pelas regras como qualquer outro id. */
+window.PA_nextId=function(F,db){return async function(){
+ const loc=()=>10000000+Math.floor(Math.random()*89999999);
+ if(navigator.onLine===false)return loc();
+ try{return await Promise.race([
+  F.runTransaction(db,async t=>{const r=F.doc(db,"meta","contador"),s=await t.get(r);const n=(s.exists()?s.data().n:5000)+1;t.set(r,{n});return n}),
+  new Promise((_,rj)=>setTimeout(()=>rj(new Error("timeout")),6000))])}
+ catch(e){return loc()}}};
+if(typeof window.addEventListener==="function"){window.addEventListener("offline",()=>{try{window.PA&&PA._status&&PA._status(false,"Sem internet · pedidos ficam salvos no aparelho")}catch(e){}});
+window.addEventListener("online",()=>{try{window.PA&&PA.ready&&PA._status(true)}catch(e){}})}
+
+/* (2) PUSH (FCM). Preencha a chave pública Web Push: Firebase Console → Configurações do projeto → Cloud Messaging →
+   Certificados push da Web → "Gerar par de chaves" → copie a chave e cole abaixo. Enquanto estiver vazia, o push fica desligado. */
+window.PA_VAPID=window.PA_VAPID||"";
+window.PA_pushAvisa=async function(PA,id){
+ try{if(navigator.onLine===false||!PA.user)return;const t=await PA.user.getIdToken();
+  fetch("/api/push",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+t},body:JSON.stringify({pedido:String(id)}),keepalive:true}).catch(()=>{})}catch(e){}};
+window.PA_pushInit=function(PA,F,db,H,au,app){
+ const papel=window.PA_PAPEL||"cliente",tela=(location.pathname.match(/([a-z]+)\.html/)||[0,papel])[1];
+ /* a) avisa o servidor quando um pedido nasce ou muda de status (o servidor confere quem chamou e decide quem recebe) */
+ if(PA.setPedido&&!PA.__pushHook){PA.__pushHook=true;const o=PA.setPedido;
+  PA.setPedido=function(id,patch){const r=o.apply(PA,arguments);
+   if(patch&&(patch.st!==undefined||patch.criadoEm!==undefined)&&r&&r.then)r.then(()=>PA_pushAvisa(PA,id)).catch(()=>{});return r}}
+ /* b) registra este aparelho para receber push */
+ const reg=async()=>{
+  if(!window.PA_VAPID||!("serviceWorker"in navigator)||!("Notification"in window)||Notification.permission!=="granted"||!PA.uid)return;
+  const M=await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js");
+  if(!(await M.isSupported()))return;
+  const sw=(await navigator.serviceWorker.getRegistration())||(await navigator.serviceWorker.register("sw.js"));
+  const tok=await M.getToken(M.getMessaging(app),{vapidKey:window.PA_VAPID,serviceWorkerRegistration:sw});
+  if(!tok)return;const chave=tok+"|"+PA.uid;if(localStorage.getItem("pa_push_tok")===chave)return;
+  const ref=F.doc(db,"tokens",PA.uid);let ant=[];try{const s=await F.getDoc(ref);if(s.exists())ant=s.data().tokens||[]}catch(e){}
+  const tokens=ant.filter(x=>x!==tok).concat(tok).slice(-5);
+  await F.setDoc(ref,{uid:PA.uid,email:String((PA.user&&PA.user.email)||"").toLowerCase(),papel,app:tela,tokens,atualizadoEm:Date.now()});
+  localStorage.setItem("pa_push_tok",chave)};
+ const tenta=()=>reg().catch(e=>console.warn("push:",e&&e.message));
+ if(!window.PA_VAPID||!("Notification"in window))return;
+ if(Notification.permission==="granted")tenta();
+ else if(Notification.permission==="default"){const um=()=>{document.removeEventListener("click",um);Notification.requestPermission().then(p=>{if(p==="granted")tenta()}).catch(()=>{})};document.addEventListener("click",um)}};

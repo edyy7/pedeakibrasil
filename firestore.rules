@@ -84,18 +84,47 @@ service cloud.firestore {
         || motoboyDaLoja(p.get('loja', ''));           // motoboys vinculados à loja (veem os "enviados" dela)
     }
 
+    // ---------- Valor do pedido validado NO SERVIDOR (v5.9.0) ----------
+    // O cardápio fica em lojas/{slug}.m = [{n,p,ok,d,em}] (lista de MAPAS: o Firestore não aceita arrays dentro de arrays).
+    // O app grava itens = [{i: posição em m, q: quantidade}]. O servidor refaz a soma
+    // com os PREÇOS DO CARDÁPIO e recusa pedido cujo total (v) seja menor que a soma dos itens.
+    // O teto (soma + R$ 200) cobre frete, taxa extra de raio e taxa de serviço. Máx. 12 itens distintos por pedido.
+    function precoItem(m, it) {
+      return (it.i is int && it.i >= 0 && it.i < m.size() && it.q is int && it.q >= 1 && it.q <= 50
+              && m[it.i].get('ok', false) == true && m[it.i].get('p', null) is number)
+        ? m[it.i].p * it.q : 100000000;
+    }
+    function linhaItem(m, l, k) { return l.size() > k ? precoItem(m, l[k]) : 0; }
+    function somaItens(m, l) {
+      return linhaItem(m, l, 0) + linhaItem(m, l, 1) + linhaItem(m, l, 2) + linhaItem(m, l, 3)
+           + linhaItem(m, l, 4) + linhaItem(m, l, 5) + linhaItem(m, l, 6) + linhaItem(m, l, 7)
+           + linhaItem(m, l, 8) + linhaItem(m, l, 9) + linhaItem(m, l, 10) + linhaItem(m, l, 11);
+    }
+    function valorContra(d, m) {
+      let s = somaItens(m, d.itens);
+      return d.v is number && d.v >= s - 0.01 && d.v <= s + 200;
+    }
+    // Loja sem cardápio publicado (ou inexistente) segue como antes; com cardápio, itens + valor são obrigatórios.
+    function valorOk(d) {
+      let p = /databases/$(database)/documents/lojas/$(d.get('loja', 'x'));
+      return !exists(p) || !('m' in get(p).data) || get(p).data.m.size() == 0
+        || (d.get('itens', null) is list && d.itens.size() >= 1 && d.itens.size() <= 12 && valorContra(d, get(p).data.m));
+    }
+
     // Pedidos: criar exige loja em dia; ler só quem participa; alterar só quem participa do jeito certo.
     // ATENÇÃO: toda consulta (query) nos apps precisa ter where('loja','==',…) ou where('mot','==',uid):
     // regra não é filtro, e consulta ampla demais é recusada inteira.
     match /pedidos/{id} {
-      allow read: if signed() && (isCriador() || veLoja(resource.data)
-        // Marketplace: motoboy autônomo vê corridas "enviadas" de lojas que abriram para o marketplace
-        || (resource.data.get('mkt', false) == true && resource.data.get('st', '') == 'enviado'
-            && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_motoboy'))));
-      allow create: if signed() && lojaLiberada(request.resource.data.get('loja', 'x'));
+      allow read: if signed() && (isCriador() || veLoja(resource.data));
+      // Criar: (a) o CLIENTE, com uid = dele e valor conferido contra o cardápio; ou (b) a própria loja / equipe ativa (pedido do salão).
+      allow create: if signed() && lojaLiberada(request.resource.data.get('loja', 'x'))
+        && ((request.resource.data.get('uid', '') == request.auth.uid && valorOk(request.resource.data))
+            || donoDaLoja(request.resource.data.get('loja', ''))
+            || equipeAtiva(request.resource.data.get('loja', '')));
       allow update: if signed() && (
         isCriador()
-        || resource.data.get('uid', '') == request.auth.uid            // cliente (cancelar, confirmar recebimento)
+        || (resource.data.get('uid', '') == request.auth.uid            // cliente (cancelar, confirmar recebimento)
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['v', 'tt', 'itens', 'loja', 'uid', 'mot', 'motN', 'paid', 'ps', 'entTipo', 'dc', 'dl']))
         || donoDaLoja(resource.data.get('loja', ''))                   // loja (aceitar, preparar, enviar…)
         || equipeAtiva(resource.data.get('loja', ''))                  // funcionário autorizado
         || resource.data.get('mot', '') == request.auth.uid            // motoboy dono da corrida
@@ -103,13 +132,7 @@ service cloud.firestore {
         || (motoboyDaLoja(resource.data.get('loja', ''))
             && !('mot' in resource.data)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mot', 'motN', 'atualizadoEm'])
-            && request.resource.data.mot == request.auth.uid)
-        // motoboy autônomo PEGANDO uma corrida do marketplace
-        || (resource.data.get('mkt', false) == true
-            && !('mot' in resource.data)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mot', 'motN', 'atualizadoEm'])
-            && request.resource.data.mot == request.auth.uid
-            && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_motoboy'))));
+            && request.resource.data.mot == request.auth.uid));
       allow delete: if isCriador() || (signed() && donoDaLoja(resource.data.get('loja', '')));
     }
     // Ocorrências: piloto.
@@ -248,9 +271,57 @@ service cloud.firestore {
     }
 
     // Dados da loja (caixa, saídas, estoque, patrimônio). Dono e equipe ativa gravam; o ADM da loja lê (dossiê).
+    // v5.9.0: o documento só pode dizer que é da PRÓPRIA loja (campo loja == slug) e fica com no máximo 40 campos (o Firestore já limita o documento a 1 MiB).
     match /lojaDados/{slug} {
       allow get: if isCriador() || (signed() && (donoDaLoja(slug) || equipeAtiva(slug) || admDaLoja(slug)));
-      allow create, update: if isCriador() || (signed() && (donoDaLoja(slug) || equipeAtiva(slug)));
+      allow create, update: if isCriador()
+        || (signed() && (donoDaLoja(slug) || equipeAtiva(slug))
+            && request.resource.data.get('loja', slug) == slug
+            && request.resource.data.keys().size() <= 40);
+      allow delete: if isCriador();
+    }
+
+    // ---------- Diárias (v6.0.0): a loja publica, o entregador vinculado aceita ----------
+    // As vagas são controladas AQUI: o aceite só passa se ainda há vaga, a diária não foi cancelada,
+    // o horário fim não passou e o entregador é vinculado à loja. Duas pessoas na última vaga: a 2ª é recusada.
+    // ATENÇÃO: não publicar antes de rodar o emulador (firebase/teste-rules: npm test).
+    function diaVeLoja(l) {
+      return l != '' && (donoDaLoja(l) || equipeAtiva(l) || admDaLoja(l) || motoboyDaLoja(l));
+    }
+    function diaCriar(n) {
+      return n.keys().hasOnly(['loja','lojaN','d','i','f','v','q','o','st','ens','ensN','iniMs','fimMs','criadoEm','atualizadoEm'])
+        && donoDaLoja(n.get('loja', '')) && lojaLiberada(n.get('loja', 'x'))
+        && n.st == 'aberta' && n.ens == [] && n.ensN == []
+        && n.d is string && n.i is string && n.f is string
+        && n.v is number && n.v >= 0 && n.v <= 100000
+        && n.q is int && n.q >= 1 && n.q <= 20
+        && n.iniMs is number && n.fimMs is number && n.fimMs > n.iniMs;
+    }
+    // Gerente (dono): editar a diária aberta ou cancelar com motivo. Nunca mexe em quem aceitou.
+    function diaDono(r, n) {
+      return donoDaLoja(r.get('loja', '')) && n.loja == r.loja
+        && n.ens == r.ens && n.ensN == r.ensN && r.st == 'aberta'
+        && n.keys().hasOnly(['loja','lojaN','d','i','f','v','q','o','st','ens','ensN','iniMs','fimMs','criadoEm','atualizadoEm','motivo','canceladaEm','durante'])
+        && (n.st == 'aberta'
+            ? (n.q is int && n.q >= 1 && n.q <= 20 && n.q >= r.ens.size()
+               && n.v is number && n.v >= 0 && n.v <= 100000 && n.iniMs is number && n.fimMs is number && n.fimMs > n.iniMs)
+            : (n.st == 'cancelada' && n.get('motivo', '') is string && n.motivo.size() >= 3 && n.motivo.size() <= 200
+               && n.canceladaEm is number && n.durante is bool));
+    }
+    // Entregador vinculado: só acrescenta o próprio uid (e o nome) na lista, e só se ainda há vaga.
+    function diaAceite(r, n) {
+      return motoboyDaLoja(r.get('loja', '')) && r.st == 'aberta'
+        && request.time.toMillis() < r.fimMs
+        && n.diff(r).affectedKeys().hasOnly(['ens', 'ensN', 'atualizadoEm'])
+        && r.ens.size() < r.q && !(request.auth.uid in r.ens)
+        && n.ens.size() == r.ens.size() + 1 && n.ens.hasAll(r.ens) && request.auth.uid in n.ens
+        && n.ensN.size() == n.ens.size();
+    }
+    // ATENÇÃO: toda consulta precisa de where('loja','==',…).
+    match /diarias/{id} {
+      allow read: if signed() && (isCriador() || diaVeLoja(resource.data.loja));
+      allow create: if signed() && diaCriar(request.resource.data);
+      allow update: if signed() && (isCriador() || diaDono(resource.data, request.resource.data) || diaAceite(resource.data, request.resource.data));
       allow delete: if isCriador();
     }
 
@@ -285,6 +356,18 @@ service cloud.firestore {
         && request.resource.data.salario is number && request.resource.data.salario >= 0;
       allow delete: if isCriador() || (signed() && resource.data.admId == request.auth.uid);
     }
+
+    // Tokens de push (FCM): cada pessoa grava só o PRÓPRIO documento (tokens/{uid}); o servidor (Admin SDK) lê para enviar.
+    match /tokens/{uid} {
+      allow get: if signed() && uid == request.auth.uid;
+      allow create, update: if signed() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'papel', 'app', 'tokens', 'atualizadoEm'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.tokens is list && request.resource.data.tokens.size() <= 10;
+      allow list, delete: if isCriador();
+    }
+    // Registro de envios de push (idempotência): só o servidor escreve (Admin SDK ignora as regras).
+    match /pushLog/{id} { allow read, write: if false; }
 
     // Lojas
     //  · get: qualquer app logado (o cliente precisa ler o cardápio pelo link).

@@ -29,19 +29,84 @@ input,select{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1p
 <div class="pv" id="pa-st" style="background:#111;color:#e0a800;font-size:12.5px;font-weight:700">Conectando…</div>
 <div class="pg" id="inst"></div>
 <div class="top">Criador · painel mestre</div>
-<div class="pg" id="v"></div>
+<div class="tabs" id="tabs"></div><div class="pg" id="v"></div>
 <div id="modal"></div><div class="toast" id="t"></div>
 <script>
 const $=i=>document.getElementById(i),toast=m=>{const t=$("t");t.textContent=m;t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",2200)};
-let nEv=0,txBt="",nLeads=0;
+const R$=n=>"R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2});
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let nEv=0,txBt="",nLeads=0,tab="adm",mod=null,det=null,busca="",D=null,erro="",tD=0;
+const TABS=[["adm","👑 ADMs"],["fat","💰 Faturamento"],["trv","🔓 Travas"],["bkp","💾 Backup"],["msg","📨 Mensagens"],["cfg","⚙️ Configurações"]];
 window.PA_onEventos=n=>{nEv=n;draw()};window.PA_onLeads=n=>{nLeads=n;draw()};window.PA_onBt=t=>{txBt=t;draw()};
 function go(k){const a=window.PA_criadorAcoes;if(!a){toast("Aguarde a conexão e o login do Criador");return}a[k]()}
-function draw(){const m=/\((\d+)\)/.exec(txBt||""),nc=m?+m[1]:0;
- $("v").innerHTML=`<div class="card"><b style="font-size:20px">💳 Contas e pagamentos${nc?` (${nc} aguardando)`:""}</b><div class="meta">Confirmar Pix recebidos, vencimentos, liberar ou travar lojas e ADMs.</div><button class="cta" onclick="go('contas')">Abrir</button></div>
+async function carregar(){if(!window.PA_criadorDados)return;try{D=await PA_criadorDados();erro="";tD=Date.now()}catch(e){console.error(e);erro="Não foi possível ler os dados agora."}draw()}
+window.PA_onCriadorPronto=()=>{carregar()};
+const PL=()=>window.PA_PLANOS||{};
+const dia0=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+const lojista=l=>D.contas.find(c=>c.papel==="lojista"&&c.loja&&c.loja.slug===l.slug);
+const vencDe=l=>{const c=lojista(l);return c&&c.venc?c.venc:0};
+const vencida=l=>{const v=vencDe(l);return !!v&&v<Date.now()};
+const entregue=p=>p.st==="entregue"||p.st==="retirado";
+const hojeDe=l=>D.pedidos.filter(p=>p.loja===l.slug&&p.criadoEm>=dia0()).length;
+const stl=l=>l.suspensa?["Suspensa","bad"]:l.pendente?["Aguardando gerente",""]:vencida(l)?["Plano vencido","bad"]:["Ativa","ok"];
+const dt=ms=>ms?new Date(ms).toLocaleDateString("pt-BR"):"—";
+const row=(a,b)=>`<div class="row"><span>${a}</span><b>${b}</b></div>`;
+const tile=(n,l)=>`<div><div class="num">${n}</div><div class="lbl">${l}</div></div>`;
+const carr=()=>`<div class="card"><div class="meta">${erro||"Carregando dados reais…"}</div></div>`;
+function adm(){if(!D)return carr();
+ const A=D.contas.filter(c=>c.papel==="adm"),M=D.contas.filter(c=>c.papel==="motoboy"),LJ=D.lojas,LC=D.contas.filter(c=>c.papel==="lojista");
+ const ped=D.pedidos.filter(p=>p.criadoEm>=dia0()).length;
+ return `<div class="card"><b style="font-size:20px">Visão do sistema</b>${row("ADMs (contas com poder de ADM)",A.length)}${row("Lojas (total · suspensas)",LJ.length+" · "+LJ.filter(x=>x.suspensa).length)}${row("Lojas com plano vencido",LJ.filter(vencida).length)}${row("Pedidos hoje (todas as lojas)",ped)}</div>
+ <button class="summ" onclick="mod='motos';draw()"><div class="lbl">Total de Motoboys no Sistema</div><div class="num">${M.length}</div><div class="more">Toque para ver a lista ›</div></button>
+ <div class="card"><b>Por tipo de conta</b>${row("Lojas",LC.length)}${row("ADMs",A.length)}${row("Entregadores",M.length)}</div>`}
+function fat(){if(!D)return carr();
+ const pend=D.contas.filter(c=>c.pagto&&c.pagto.st==="analise"),P=PL(),t30=Date.now()-30*864e5;
+ const ent=D.pedidos.filter(p=>entregue(p)&&p.criadoEm>=t30),vol=ent.reduce((t,p)=>t+(Number(p.tt)||0),0);
+ const mens=D.lojas.reduce((t,l)=>{const p=P[l.plano||"iniciante"]||{p:0,d:30};return t+p.p*30/p.d},0);
+ const now=Date.now(),ven7=D.lojas.filter(l=>{const v=vencDe(l);return v&&v>=now&&v<=now+7*864e5}).length;
+ return `<div class="card"><b style="font-size:20px">💠 Pix de mensalidades</b><div class="lbl">A confirmação do recebimento continua em “Contas e pagamentos”.</div></div>
+ <h2>Aguardando sua confirmação (${pend.length})</h2>
+ ${pend.map(c=>`<div class="card al"><div class="row"><b>${esc(c.nome||c.email)}</b><span class="tag">Em análise</span></div><div class="meta">${esc(c.papel)}${c.loja?" · "+esc(c.loja.nome):""} · ${esc(((c.papel==="adm"?window.PA_ADMP:P)||{})[(c.pagto&&c.pagto.plano)||"iniciante"]?.n||"")} ${c.pagto&&c.pagto.valor?"· "+R$(c.pagto.valor):""}</div></div>`).join("")||"<div class='meta'>Nenhum Pix em análise.</div>"}
+ ${pend.length?`<button class="cta g" onclick="go('contas')">Confirmar em Contas e pagamentos</button>`:""}
+ <div class="card"><b style="font-size:20px">Faturamento do sistema (últimos 30 dias)</b><div class="lbl">Calculado dos pedidos entregues e dos planos das lojas. Não substitui o extrato do Pix.</div><div class="grid" style="margin-top:10px">${tile(ent.length,"Pedidos entregues")}${tile(R$(vol),"Volume vendido")}${tile(R$(vol*.07),"Comissão estimada (7%)")}${tile(R$(mens),"Mensalidades por mês (planos)")}</div></div>
+ <div class="card"><b>Planos das lojas</b>${row("Lojas cadastradas",D.lojas.length)}${row("Planos vencidos",D.lojas.filter(vencida).length)}${row("Vencem em até 7 dias",ven7)}</div>
+ <button class="summ" onclick="mod='fat';draw()"><div class="lbl">Faturamento por loja (30 dias)</div><div class="num">${D.lojas.length}</div><div class="lbl">lojas cadastradas</div><div class="more">Toque para ver cada loja ›</div></button>`}
+function trv(){if(!D)return carr();
+ return `<div class="card"><b style="font-size:20px">Lojas do sistema</b><div class="grid" style="margin-top:10px">${tile(D.lojas.length,"Total de lojas")}${tile(D.lojas.filter(x=>x.suspensa).length,"Suspensas")}${tile(D.lojas.filter(vencida).length,"Plano vencido")}${tile(D.pedidos.filter(p=>p.criadoEm>=dia0()).length,"Pedidos hoje (todas)")}</div><button class="sec" onclick="mod='lojas';det=null;busca='';draw()">Ver lojas ›</button></div>`}
+function bkp(){return `<div class="card"><b style="font-size:20px">💾 Backup mestre</b><div class="lbl" style="margin-top:6px">Ainda não ligado nesta versão: o arquivo de backup (lojas, motoboys e pedidos dos últimos 30 dias) não existe no app. A aba já está no lugar para quando for construído.</div></div>`}
+function msg(){return `<div class="card"><b style="font-size:20px">📨 Caixa de entrada</b><div class="lbl" style="margin-top:6px">Ainda não ligada nesta versão: a mensagem do ADM para o Criador (hierarquia Loja → ADM → Criador) não existe no app. A aba já está no lugar para quando for construída.</div></div>`}
+function cfg(){const P=PL(),AP=window.PA_ADMP||{},m=/\((\d+)\)/.exec(txBt||""),nc=m?+m[1]:0,u=(window.PA&&PA.user)||{};
+ return `<div class="card"><b style="font-size:20px">💳 Contas e pagamentos${nc?` (${nc} aguardando)`:""}</b><div class="meta">Confirmar Pix recebidos, vencimentos, liberar ou travar lojas e ADMs.</div><button class="cta" onclick="go('contas')">Abrir</button></div>
 <div class="card"><b style="font-size:20px">🏪 Lojas e dados${nEv?` (${nEv} nova${nEv>1?"s":""})`:""}</b><div class="meta">Lojas criadas pelos ADMs, excluir loja, zerar vendas, lucros e carteira e Reset Total (estado de fábrica, com 3 confirmações).</div><button class="cta" onclick="go('lojas')">Abrir</button></div>
 <div class="card"><b style="font-size:20px">🔗 Links de pagamento</b><div class="meta">Cadastre os links e ligue ou desligue o redirecionamento no checkout.</div><button class="cta" onclick="go('pag')">Abrir</button></div>
 <div class="card"><b style="font-size:20px">🧩 Módulos e preço por loja</b><div class="meta">Liga e desliga Gestão, Loja Virtual e Agendamento de cada loja. O total muda conforme você liga os módulos.</div><button class="cta" onclick="go('mod')">Abrir</button></div>
-<div class="card"><b style="font-size:20px">📩 Leads do site${nLeads?` (${nLeads} novo${nLeads>1?"s":""})`:""}</b><div class="meta">Pedidos de site personalizado e APK feitos pelo formulário do site.</div><button class="cta" onclick="go('leads')">Abrir</button></div>`}
+<div class="card"><b style="font-size:20px">📩 Leads do site${nLeads?` (${nLeads} novo${nLeads>1?"s":""})`:""}</b><div class="meta">Pedidos de site personalizado e APK feitos pelo formulário do site.</div><button class="cta" onclick="go('leads')">Abrir</button></div>
+<div class="card"><b>👤 Perfil do Criador</b><div class="meta" style="margin-top:4px">${esc(u.displayName||"Criador")} · ${esc(u.email||"")}<br>A chave Pix e os valores ficam em Contas e pagamentos.</div></div>
+<div class="card"><b>💳 Planos e valores (os da cobrança atual)</b>${Object.keys(P).map(k=>row("Loja · "+esc(P[k].n),P[k].p?R$(P[k].p):"sem mensalidade")).join("")}${Object.keys(AP).map(k=>row("ADM · "+esc(AP[k].n),AP[k].p?R$(AP[k].p):"sem mensalidade")).join("")}</div>
+<div class="card"><b>🔔 Avisos</b><div class="meta" style="margin:4px 0">Som, vibração e notificação quando entra pagamento ou loja nova.</div><button class="sec" onclick="window.PA_aviso&&PA_aviso('🔔 Teste','Aviso de teste do Criador');toast('Aviso de teste enviado')">Testar aviso</button></div>
+<div class="card"><b>🎛️ Controles do sistema</b><div class="meta" style="margin-top:4px">Motoboys globais e Pagamentos ON/OFF: ainda não ligados nesta versão.</div></div>
+<button class="sec" style="margin-top:14px" onclick="PA.logout&&PA.logout()">Sair</button>`}
+function lojas(){const q=busca.toLowerCase(),l=D.lojas.filter(x=>((x.nome||x.slug)+" "+((lojista(x)||{}).nome||"")+" "+((lojista(x)||{}).email||"")).toLowerCase().includes(q));
+ return `<input id="bq" placeholder="Buscar loja por nome ou responsável" value="${esc(busca)}" oninput="busca=this.value;draw(true)">
+ ${l.map(x=>{const s=stl(x);return `<button class="item" onclick="det='${esc(x.slug)}';draw()"><div class="row"><b>${esc(x.nome||x.slug)}</b><span class="tag ${s[1]}">${s[0]}</span></div><div class="meta">${hojeDe(x)} pedido(s) hoje · plano ${esc((PL()[x.plano||"iniciante"]||{}).n||"")}</div></button>`}).join("")||`<div class="meta">Nenhuma loja encontrada.</div>`}`}
+function detalhe(x){const s=stl(x),c=lojista(x)||{},v=vencDe(x);
+ return `<div class="card">${row("Responsável",esc(c.nome||c.email||"—"))}${row("Situação",`<span class="${s[1]}">${s[0]}</span>`)}${row("Plano",esc((PL()[x.plano||"iniciante"]||{}).n||"")+(v?" · vence "+dt(v):""))}${row("Pedidos hoje",hojeDe(x))}</div>
+ <button class="cta ${x.suspensa?"g":"o"}" onclick="suspender('${esc(x.slug)}')">${x.suspensa?"Reativar loja":"Suspender loja"}</button>
+ <button class="cta b" onclick="go('contas')">Vencimento e pagamento: Contas e pagamentos</button>
+ <div class="meta" style="margin-top:10px">Excluir loja e dados: Configurações → Lojas e dados.</div>`}
+async function suspender(slug){const x=D.lojas.find(l=>l.slug===slug);if(!x)return;const nv=!x.suspensa;if(!confirm((nv?"Suspender ":"Reativar ")+(x.nome||slug)+"?"))return;
+ try{await PA_criadorSuspender(slug,nv);x.suspensa=nv;draw();toast(nv?"Loja suspensa":"Loja reativada")}catch(e){console.error(e);toast("Não foi possível alterar agora")}}
+function modal(){let t="",b="",voltar=false;
+ if(mod==="motos"){t="Motoboys no sistema";b=D.contas.filter(c=>c.papel==="motoboy").map(c=>`<div class="card"><b>${esc(c.nome||c.email)}</b><div class="meta">${esc(c.email||"")}</div></div>`).join("")||`<div class="meta">Nenhum motoboy cadastrado.</div>`}
+ else if(mod==="fat"){t="Faturamento por loja (30 dias)";const t30=Date.now()-30*864e5;b=D.lojas.map(l=>{const ps=D.pedidos.filter(p=>p.loja===l.slug&&entregue(p)&&p.criadoEm>=t30),f=ps.reduce((a,p)=>a+(Number(p.tt)||0),0);return {l,ps,f}}).sort((a,b)=>b.f-a.f).map(o=>`<div class="card"><div class="row"><b>${esc(o.l.nome||o.l.slug)}</b><b>${R$(o.f)}</b></div><div class="meta">${o.ps.length} pedidos · comissão ${R$(o.f*.07)} · plano ${esc((PL()[o.l.plano||"iniciante"]||{}).n||"")}</div></div>`).join("")||`<div class="meta">Nenhuma loja.</div>`}
+ else if(det){const x=D.lojas.find(y=>y.slug===det);if(!x){det=null;return ""}t=x.nome||x.slug;voltar=true;b=detalhe(x)}
+ else{t="Lojas do sistema";b=lojas()}
+ return `<div class="modal" onclick="if(event.target===this){mod=null;det=null;draw()}"><div class="mbox"><div class="mhead">${voltar?`<button onclick="det=null;draw()">‹ Voltar</button>`:`<span></span>`}<b>${esc(t)}</b><button onclick="mod=null;det=null;draw()">✕</button></div>${b}</div></div>`}
+function draw(keep){
+ $("tabs").innerHTML=TABS.map(([k,l])=>`<button class="${tab==k?"on":""}" onclick="tab='${k}';draw();if(Date.now()-tD>20000)carregar()">${l}</button>`).join("");
+ $("v").innerHTML=({adm,fat,trv,bkp,msg,cfg})[tab]();
+ $("modal").innerHTML=(mod&&D)?modal():"";
+ if(keep===true){const e=$("bq");if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}}}
 draw();
 </script><script>
 /* Botão "Baixar e instalar": some depois da instalação (evento appinstalled ou app aberto instalado) */
@@ -66,10 +131,10 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
 (async()=>{try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
- const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
+ const app=A.initializeApp(CFG),db=PA_db(F,app),au=H.getAuth(app);
  await PA_login(H,au);
  PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
- PA.nextId=async()=>{const r=F.doc(db,"meta","contador");return F.runTransaction(db,async t=>{const s=await t.get(r);const n=(s.exists()?s.data().n:5000)+1;t.set(r,{n});return n})};
+ PA.nextId=PA_nextId(F,db);
  const cl=o=>JSON.parse(JSON.stringify(o));
  PA.setPedido=(id,patch)=>F.setDoc(F.doc(db,"pedidos",String(id)),{...cl(patch),id:Number(id),atualizadoEm:Date.now()},{merge:true});
  PA.aceitar=(id,me)=>F.runTransaction(db,async t=>{const r=F.doc(db,"pedidos",String(id));const s=await t.get(r);if(!s.exists())return false;const d=s.data();if(d.mot||d.st!=="enviado")return false;t.update(r,{mot:me.id,motN:me.n,atualizadoEm:Date.now()});return true});
@@ -81,7 +146,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
  PA.setLojaCfg=(slug,d)=>F.setDoc(F.doc(db,"lojas",slug),{...cl(d),atualizadoEm:Date.now()},{merge:true});
  PA.watchLojaCfg=(slug,cb)=>F.onSnapshot(F.doc(db,"lojas",slug),s=>cb(s.exists()?s.data():null));
- PA.ready=true;PA._status(true);PA._q.splice(0).forEach(f=>f());
+ PA.ready=true;PA._status(navigator.onLine!==false,"Sem internet · pedidos ficam salvos no aparelho");try{PA_pushInit(PA,F,db,H,au,app)}catch(e){console.warn("push",e)}PA._q.splice(0).forEach(f=>f());
 }catch(e){console.error("Firebase:",e);PA._status(false,"Sem conexão · modo local")}})();
 })();
 /* ===== helpers comuns ===== */

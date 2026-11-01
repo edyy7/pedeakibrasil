@@ -67,8 +67,8 @@ const tempoMin=(d1,d2,E)=>Math.round(d1/E.vel*60+E.esp+d2/E.vel*60);
 function sim(){const d1=nm($("s1").value),d2=nm($("s2").value),E={km:nm($("ekm").value)||ENT.km,min:nm($("emin").value)||ENT.min,vel:nm($("evel").value)||ENT.vel,esp:nm($("eesp").value)};
  $("sr").innerHTML=`<b style="font-size:20px">${R$(ganhoKm(d2,E))}</b> de ganho · ${d2.toFixed(1).replace(".",",")} km de entrega<div class="meta">⏱️ ~${tempoMin(d1,d2,E)} min no total: ${Math.round(d1/E.vel*60)} min até a loja + ${E.esp} min na loja + ${Math.round(d2/E.vel*60)} min até o cliente</div>`}
 function salvaEnt(){const k=nm($("ekm").value),m=nm($("emin").value),v=nm($("evel").value);if(k<=0||v<=0){toast("Informe o valor por km e a velocidade média");return}const rm=nm($("erm").value);if(rm<=0){toast("Informe o raio máximo global (km)");return}ENT={km:k,min:m,vel:v,esp:Math.max(0,nm($("eesp").value)),raio:rm};draw();toast("Regra salva: "+R$(k)+" por km · raio máximo "+String(rm).replace(".",",")+" km")}
-const TABS=[["painel","Painel"],["lj","Lojas"],["pix","💠 Pix"],["msg","📨 Mensagens"],["oc","⚠️ Ocorrências"],["eq","Acessos"],["dos","📁 Dossiê"],["fin","Financeiro"],["cfg","Config"]];
-const cnt=k=>k=="eq"?((window.PA&&PA.rhN)||0):k=="pix"?PIX.filter(p=>p.st=="pend").length:k=="msg"?MSG.filter(m=>!m.lida&&!m.resp).length:k=="oc"?OCm().filter(o=>o.st=="aberta").length:0;
+const TABS=[["painel","Painel"],["lj","Lojas"],["pix","💠 Pix"],["oc","⚠️ Ocorrências"],["eq","Acessos"],["dos","📁 Dossiê"],["fin","Financeiro"],["cfg","Config"]];
+const cnt=k=>k=="eq"?((window.PA&&PA.rhN)||0):k=="pix"?PIX.filter(p=>p.st=="pend").length:k=="oc"?OCm().filter(o=>o.st=="aberta").length:0;
 const tile=(n,l)=>`<div class="tile"><b>${n}</b><span class="meta">${l}</span></div>`;
 function painel(){const H=L.reduce((a,x)=>({cri:a.cri+x.h.cri,ent:a.ent+x.h.ent,and:a.and+x.h.and,pago:a.pago+x.h.pago}),{cri:0,ent:0,and:0,pago:0});const C={ativa:0,avencer:0,carencia:0,travada:0};L.forEach(x=>{const k=estadoPlano(x).k;if(k in C)C[k]++});return `<h2>Hoje</h2><div class="grid">${tile(H.cri,"pedidos criados")}${tile(H.ent,"entregues")}${tile(H.and,"em andamento")}${tile(R$(H.pago),"pago pelos clientes hoje")}</div>
 <h2 style="margin-top:16px">📄 Planos das lojas</h2><div class="grid">${tile(C.ativa,"🟢 Ativa")}${tile(C.avencer,"🟡 A vencer")}${tile(C.carencia,"🟠 Carência")}${tile(C.travada,"🔴 Travada")}</div>
@@ -90,7 +90,7 @@ function eq(){return `<h2>🔑 Acessos</h2><div class="oc"><div class="meta">Fun
 function fin(){return `<h2>💰 Financeiro</h2><div class="grid">${tile(R$(L.reduce((s,x)=>s+x.fat30,0)),"faturado (30 dias)")}${tile(R$(L.reduce((s,x)=>s+x.fat,0)),"faturado (total)")}</div>
 <div class="oc"><b>Por loja</b><table><tr><th>Loja</th><th>30 dias</th><th>Total</th></tr>${L.map(x=>`<tr><td>${x.n}${x.sus?" ⛔":""}</td><td>${R$(x.fat30)}</td><td>${R$(x.fat)}</td></tr>`).join("")||`<tr><td colspan="3" class="meta">Nenhuma loja ainda.</td></tr>`}</table><div class="meta" style="margin-top:6px">Só pedidos entregues ou retirados.</div></div><button class="cta b" onclick="bk=true;go('cfg')">⬇ Relatório do contador (PDF)</button>
 `}
-function cfg(){return `<h2>⚙️ Config</h2><div class="oc"><b>🛵 Entregas</b><div class="meta" style="margin:4px 0 8px">${ENTG?"LIGADO: os ganhos por entrega aparecem abaixo e no Financeiro.":"DESLIGADO: ganhos por entrega e repasse aos entregadores ficam escondidos. Ligue para abrir."}</div><button class="cta ${ENTG?"o":"g"}" onclick="ENTG=!ENTG;draw();toast(ENTG?'Entregas ligadas':'Entregas desligadas')">${ENTG?"Desligar entregas":"Ligar entregas"}</button></div><div class="oc"><b style="color:var(--mu)">🛍️ Marketplace</b><div class="meta" style="margin:4px 0">Desligado</div><div class="meta">Quem liga ou desliga é o Criador.</div></div>
+function cfg(){return `<h2>⚙️ Config</h2><div class="oc"><b>🛵 Entregas</b><div class="meta" style="margin:4px 0 8px">${ENTG?"LIGADO: os ganhos por entrega aparecem abaixo e no Financeiro.":"DESLIGADO: ganhos por entrega e repasse aos entregadores ficam escondidos. Ligue para abrir."}</div><button class="cta ${ENTG?"o":"g"}" onclick="ENTG=!ENTG;draw();toast(ENTG?'Entregas ligadas':'Entregas desligadas')">${ENTG?"Desligar entregas":"Ligar entregas"}</button></div>
 
 ${ENTG?`<div class="oc"><b>🛵 Ganho do entregador por distância</b><div class="meta" style="margin:4px 0 8px">O app mede a distância pelo GPS da loja e do cliente e mostra ao entregador, antes de aceitar: quanto ele ganha, quantos km são e o tempo médio da corrida (deslocamento até a loja, espera e entrega).</div>
 <div class="meta">Raio Máximo Global da Rede (km)</div><input id="erm" inputmode="decimal" value="${String(ENT.raio).replace(".",",")}"><div class="meta" style="margin-bottom:6px">Nenhuma loja pode definir um raio de entrega maior que este.</div>
@@ -122,11 +122,6 @@ ${ok.length?`<h2>Confirmados pelo Criador</h2>`+ok.map(p=>`<div class="oc"><div 
 function copiaPix(){try{navigator.clipboard.writeText(CHAVE_CRIADOR)}catch(e){}toast("Chave Pix do Criador copiada")}
 function confPix(id){const p=PIX.find(x=>x.id==id),t=$("pc"+id).value.trim();if(!t){toast("Informe quem pagou ou o nº do comprovante");return}p.st="analise";p.por=t;L.find(x=>x.id==p.lj).lib=true;som("plim");draw();toast("💰 Pagamento confirmado: loja liberada na hora · Pix em análise (aguardando o Criador)")}
 function criadorOk(id){const p=PIX.find(x=>x.id==id),x=L.find(y=>y.id==p.lj);p.st="ok";x.lib=false;const b=new Date(Math.max(HOJE,new Date(x.pl.v+"T00:00:00")));b.setDate(b.getDate()+(p.pl=="Anual"?365:30));x.pl.v=iso(b);draw();toast("Criador confirmou: plano de "+x.n+" renovado")}
-/* ---------- MENSAGENS DAS LOJAS ---------- */
-let MSG=[],rp=null;
-function msg(){return `<h2>📨 Mensagens</h2><div class="meta">Caixa de entrada com as mensagens das lojas que você atende.</div>${MSG.map(m=>`<div class="oc" style="${!m.lida&&!m.resp?'border-color:var(--bl)':''}"><div class="row"><b>${m.lj}</b><span class="meta">${m.hr}</span></div><div style="margin:6px 0">${m.txt}</div>${m.resp?`<div class="meta" style="color:var(--ok)">✓ Você respondeu: “${m.resp}”</div>`:""}${m.rep?`<div class="meta" style="color:var(--yl)">📤 Repassada ao Criador</div>`:""}${rp==m.id?`<input id="rpm" placeholder="Escreva a resposta à loja"><button class="cta" onclick="enviaResp(${m.id})">Enviar resposta</button>`:`<button class="cta b" onclick="rp=${m.id};draw()">Responder à loja</button>`}${m.rep?"":`<button class="cta b" onclick="repassaMsg(${m.id})">📤 Repassar ao Criador</button>`}</div>`).join("")}`}
-function enviaResp(id){const t=$("rpm").value.trim();if(!t){toast("Escreva a resposta");return}const m=MSG.find(x=>x.id==id);m.resp=t;m.lida=true;rp=null;draw();toast("Resposta enviada à loja")}
-function repassaMsg(id){const m=MSG.find(x=>x.id==id);m.rep=true;m.lida=true;draw();toast("Mensagem repassada ao Criador")}
 /* ---------- OCORRENCIAS (problemas reportados por clientes) ---------- */
 let OCO=[];
 function oc(){const ab=OCm().filter(o=>o.st=="aberta"),rs=OCm().filter(o=>o.st!="aberta");
@@ -138,8 +133,23 @@ function resolveOc(id){OCO.find(o=>o.id==id).st="resolvida";draw();toast("Ocorr�
 const bkMail=()=>{try{return(localStorage.getItem("pa_contador")||"").replace(/"/g,"")}catch(e){return""}};
 function bkLib(){return new Promise((ok,er)=>{if(window.jspdf&&window.jspdf.jsPDF)return ok(window.jspdf.jsPDF);const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";s.onload=()=>window.jspdf&&window.jspdf.jsPDF?ok(window.jspdf.jsPDF):er(new Error("lib"));s.onerror=()=>er(new Error("net"));document.head.appendChild(s)})}
 const bkTxt=s=>String(s==null?"":s).replace(/[^\x20-\x7E\u00A0-\u00FF]/g,"");
+/* Dados do relatório: despesa (saídas de caixa), folha (equipe ativa) e taxas de serviço, por loja */
+async function bkDados(){
+ const d30=Date.now()-30*864e5,num=v=>Number(v)||0;
+ let eq=[],cg=[];
+ try{eq=await PA.getEquipeAdm()}catch(e){console.error(e)}
+ try{cg=await PA.getCargosAdm()}catch(e){console.error(e)}
+ const sal=e=>typeof e.salario==="number"?e.salario:num((cg.find(c=>c.id===e.cargoId)||{}).salario);
+ const rows=[];
+ for(const x of L){
+  let dd=null;try{dd=await PA.getDados(x.slug)}catch(e){console.error(e)}
+  const sa=(dd&&dd.saidas)||[];
+  rows.push({x,desp:sa.reduce((s,y)=>s+num(y.v),0),desp30:sa.filter(y=>num(y.em)>=d30).reduce((s,y)=>s+num(y.v),0),
+   folha:eq.filter(e=>e.slug===x.slug&&e.st==="ativo").reduce((s,e)=>s+sal(e),0),tx:num(x.tx),tx30:num(x.tx30)})}
+ const T=rows.reduce((a,r)=>({desp:a.desp+r.desp,desp30:a.desp30+r.desp30,folha:a.folha+r.folha,tx:a.tx+r.tx,tx30:a.tx30+r.tx30}),{desp:0,desp30:0,folha:0,tx:0,tx30:0});
+ return{rows,T}}
 async function bkMonta(){
- const J=await bkLib(),d=new J({unit:"mm",format:"a4"}),W=210,M=14;let y=18;
+ const J=await bkLib(),BD=await bkDados(),d=new J({unit:"mm",format:"a4"}),W=210,M=14;let y=18;
  const agora=new Date(),dt=agora.toLocaleDateString("pt-BR")+" "+agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
  const quem=(window.PA&&PA.user&&(PA.user.displayName||PA.user.email))||"Administração";
  const nova=h=>{if(y+h>285){d.addPage();y=18}};
@@ -149,13 +159,15 @@ async function bkMonta(){
  const T=L.reduce((a,x)=>({ped:a.ped+(x.ped||0),fat:a.fat+(x.fat||0),f30:a.f30+(x.fat30||0),hj:a.hj+((x.h&&x.h.cri)||0),hent:a.hent+((x.h&&x.h.ent)||0)}),{ped:0,fat:0,f30:0,hj:0,hent:0});
  d.setFont("helvetica","bold");d.setFontSize(12);d.text("Resumo geral",M,y);y+=7;
  lin("Lojas vinculadas",String(L.length));lin("Pedidos (total)",String(T.ped));lin("Pedidos criados hoje",String(T.hj));lin("Pedidos entregues hoje",String(T.hent));
- lin("Faturamento (últimos 30 dias)",R$(T.f30));lin("Faturamento total",R$(T.fat),true);y+=3;
+ lin("Faturamento (últimos 30 dias)",R$(T.f30));lin("Faturamento total",R$(T.fat),true);
+ lin("Despesas - saídas de caixa (30 dias)",R$(BD.T.desp30));lin("Despesas - saídas de caixa (total)",R$(BD.T.desp));lin("Folha de pagamento mensal (equipe ativa)",R$(BD.T.folha));lin("Taxas de serviço cobradas (30 dias)",R$(BD.T.tx30));lin("Taxas de serviço cobradas (total)",R$(BD.T.tx),true);y+=3;
  d.setFont("helvetica","bold");d.setFontSize(12);nova(10);d.text("Lojas",M,y);y+=7;
  if(!L.length){d.setFont("helvetica","normal");d.setFontSize(10.5);d.text("Nenhuma loja vinculada a este ADM.",M,y);y+=7}
- L.forEach(x=>{nova(34);const e=estadoPlano(x);
+ L.forEach(x=>{nova(58);const e=estadoPlano(x),B=BD.rows.find(r=>r.x===x)||{desp:0,desp30:0,folha:0,tx:0,tx30:0};
   d.setFont("helvetica","bold");d.setFontSize(11.5);d.text(bkTxt(x.n),M,y);d.setFont("helvetica","normal");d.setFontSize(10);d.text(bkTxt((PLN[x.plano]||x.plano||"Iniciante")+" · "+e.lbl+(x.sus?" · SUSPENSA":"")),W-M,y,{align:"right"});y+=6;
-  lin("  Pedidos (total)",String(x.ped||0));lin("  Faturamento 30 dias",R$(x.fat30||0));lin("  Faturamento total",R$(x.fat||0));lin("  Entrega",x.ent===false?"desligada":"ligada");
+  lin("  Pedidos (total)",String(x.ped||0));lin("  Faturamento 30 dias",R$(x.fat30||0));lin("  Faturamento total",R$(x.fat||0));lin("  Despesas (30 dias / total)",R$(B.desp30)+" / "+R$(B.desp));lin("  Folha mensal (equipe ativa)",R$(B.folha));lin("  Taxas de serviço (30 dias / total)",R$(B.tx30)+" / "+R$(B.tx));lin("  Entrega",x.ent===false?"desligada":"ligada");
   d.setDrawColor(200);d.line(M,y-2,W-M,y-2);y+=2});
+ nova(14);d.setFont("helvetica","normal");d.setFontSize(8.5);d.text(bkTxt("Despesas = saídas de caixa lançadas pelas lojas. Folha = salários mensais da equipe ativa. Taxas = taxa de serviço dos pedidos entregues ou retirados."),M,y,{maxWidth:W-2*M});y+=8;
  const n=d.getNumberOfPages();for(let p=1;p<=n;p++){d.setPage(p);d.setFont("helvetica","normal");d.setFontSize(8.5);d.text("Página "+p+" de "+n,W/2,291,{align:"center"})}
  return{d,nome:"relatorio-pedeai-"+agora.toISOString().slice(0,10)+".pdf"}}
 async function bkAcao(k){
@@ -183,7 +195,7 @@ function atrasosView(){const per=DOS.per||"dia",now=Date.now(),ini=per=="dia"?ne
  const L=(DOS.ped||[]).filter(o=>o.prontoEm&&o.prontoEm>=ini&&o.tpOrig),at=L.filter(o=>o.atrasou||o.atrasoReal>0),med=at.length?at.reduce((s,o)=>s+(o.atrasoReal||0),0)/at.length:0,pr=L.reduce((s,o)=>s+(o.prorrog||[]).length,0);
  return `<div class="oc"><b>⏱️ Relatório de atrasos</b><div class="meta">Consolidado auditável (sem alerta em tempo real).</div><div style="display:flex;gap:6px;margin:6px 0">${[["dia","Dia"],["semana","Semana"],["mes","Mês"]].map(x=>`<button class="cta ${per==x[0]?"":"b"}" style="margin:0" onclick="DOS.per='${x[0]}';draw()">${x[1]}</button>`).join("")}</div><div class="row"><span class="meta">Pedidos medidos</span><b>${L.length}</b></div><div class="row"><span class="meta">Atrasados</span><b>${at.length}${L.length?" ("+Math.round(at.length/L.length*100)+"%)":""}</b></div><div class="row"><span class="meta">Atraso médio</span><b>${med.toFixed(1)} min</b></div><div class="row"><span class="meta">Prorrogações</span><b>${pr}</b></div>${at.slice(0,30).map(o=>`<div class="ln"><span>#${o.id}${o.mesa?" · Mesa "+dE(o.mesa):""} · estimado ${o.tpOrig} min → real ${o.tpReal} min<br><small>${(o.prorrog||[]).map(p=>dE(p.role)+" ("+dE(p.uid)+") "+p.de+"→"+p.para+" min às "+dH(p.em)).join(" · ")||"sem prorrogação"}</small></span><b style="color:var(--rd)">+${o.atrasoReal||0} min</b></div>`).join("")}</div>`}
 async function dosAbre(slug){DOS={slug,data:null,ped:[],per:(typeof DOS!=="undefined"&&DOS&&DOS.per)||"dia",load:true,err:""};draw();try{DOS.data=await PA.getDados(slug)}catch(e){console.error(e);DOS.err="Não foi possível carregar o dossiê ("+(e.code||e.message)+")"}try{DOS.ped=await PA.getPedLoja(slug)}catch(e){console.error(e)}DOS.load=false;draw()}
-const V={painel,lj,pix,msg,oc,eq,dos,fin,cfg};
+const V={painel,lj,pix,oc,eq,dos,fin,cfg};
 function sw(id){const x=L.find(y=>y.id==id);x.ent=!entOn(x);draw();toast(x.ent?"Entrega ligada":"Entrega desligada: só retirada")}
 function go(t){tab=t;open=null;draw()}
 function draw(){$("tabs").innerHTML=TABS.map(([k,l])=>`<button class="${tab==k?'on':''}" onclick="go('${k}')">${l}${cnt(k)?' ('+cnt(k)+')':''}</button>`).join("");$("v").innerHTML=V[tab]();if($("sr"))sim()}
@@ -211,10 +223,10 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
 (async()=>{try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
- const app=A.initializeApp(CFG),db=F.getFirestore(app),au=H.getAuth(app);
+ const app=A.initializeApp(CFG),db=PA_db(F,app),au=H.getAuth(app);
  await PA_login(H,au);
  PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
- PA.nextId=async()=>{const r=F.doc(db,"meta","contador");return F.runTransaction(db,async t=>{const s=await t.get(r);const n=(s.exists()?s.data().n:5000)+1;t.set(r,{n});return n})};
+ PA.nextId=PA_nextId(F,db);
  const cl=o=>JSON.parse(JSON.stringify(o));
  PA.setPedido=(id,patch)=>F.setDoc(F.doc(db,"pedidos",String(id)),{...cl(patch),id:Number(id),atualizadoEm:Date.now()},{merge:true});
  PA.aceitar=(id,me)=>F.runTransaction(db,async t=>{const r=F.doc(db,"pedidos",String(id));const s=await t.get(r);if(!s.exists())return false;const d=s.data();if(d.mot||d.st!=="enviado")return false;t.update(r,{mot:me.id,motN:me.n,atualizadoEm:Date.now()});return true});
@@ -228,11 +240,13 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.watchLojaCfg=(slug,cb)=>F.onSnapshot(F.doc(db,"lojas",slug),s=>cb(s.exists()?s.data():null));
  PA.getPedLoja=(slug)=>F.getDocs(F.query(F.collection(db,"pedidos"),F.where("loja","==",slug))).then(s=>s.docs.map(d=>d.data()));
  PA.getDados=(slug)=>F.getDoc(F.doc(db,"lojaDados",slug)).then(s=>s.exists()?s.data():null);
+ PA.getEquipeAdm=()=>F.getDocs(F.query(F.collection(db,"equipe"),F.where("admId","==",au.currentUser.uid))).then(s=>s.docs.map(d=>({id:d.id,...d.data()})));
+ PA.getCargosAdm=()=>F.getDocs(F.query(F.collection(db,"cargos"),F.where("admId","==",au.currentUser.uid))).then(s=>s.docs.map(d=>({id:d.id,...d.data()})));
  PA.watchLojasAdm=(cb)=>F.onSnapshot(F.query(F.collection(db,"lojas"),F.where("admId","==",au.currentUser.uid)),s=>cb(s.docs.map(d=>({slug:d.id,...d.data()})),null),e=>cb(null,e));
  PA.watchContaLoja=(uid,cb)=>F.onSnapshot(F.doc(db,"contas",uid+"_lojista"),s=>cb(s.exists()?s.data():null),e=>{console.error(e);cb(null)});
  PA.setSusp=(slug,on)=>F.setDoc(F.doc(db,"lojas",slug),{suspensa:!!on,suspEm:Date.now()},{merge:true});
  PA.setVencLoja=(uid,patch)=>F.setDoc(F.doc(db,"contas",uid+"_lojista"),patch,{merge:true});
- PA.ready=true;PA._status(true);PA._q.splice(0).forEach(f=>f());
+ PA.ready=true;PA._status(navigator.onLine!==false,"Sem internet · pedidos ficam salvos no aparelho");try{PA_pushInit(PA,F,db,H,au,app)}catch(e){console.warn("push",e)}PA._q.splice(0).forEach(f=>f());
 }catch(e){console.error("Firebase:",e);PA._status(false,"Sem conexão · modo local")}})();
 })();
 /* ===== helpers comuns ===== */
@@ -261,11 +275,11 @@ PA.whenReady(()=>PA.watchOco(docs=>{let ch=false,novas=0;
 (function(){
 const FIN=["entregue","retirado"],DIA=864e5;
 let ARR=[];const PEDS={},CONT={},uP={},uC={};
-function stats(os){const ini=new Date();ini.setHours(0,0,0,0);const i0=ini.getTime(),d30=Date.now()-30*DIA,h={cri:0,ent:0,and:0,pago:0};let fat=0,fat30=0;
- os.forEach(o=>{const fim=FIN.includes(o.st),v=Number(o.v)||0,t=o.criadoEm||0;
-  if(fim){fat+=v;if((o.entregueEm||t)>=d30)fat30+=v}
+function stats(os){const ini=new Date();ini.setHours(0,0,0,0);const i0=ini.getTime(),d30=Date.now()-30*DIA,h={cri:0,ent:0,and:0,pago:0};let fat=0,fat30=0,tx=0,tx30=0;
+ os.forEach(o=>{const fim=FIN.includes(o.st),v=Number(o.v)||0,t=o.criadoEm||0,tx_=Number(o.ts)||0;
+  if(fim){fat+=v;tx+=tx_;if((o.entregueEm||t)>=d30){fat30+=v;tx30+=tx_}}
   if(t>=i0){h.cri++;if(fim){h.ent++;h.pago+=v}else if(!["cancelado","cancelado_cli"].includes(o.st))h.and++}});
- return{ped:os.length,fat,fat30,h}}
+ return{ped:os.length,fat,fat30,tx,tx30,h}}
 function rebuild(){
  L.length=0;MYS.clear();
  ARR.forEach(c=>{MYS.add(c.slug);const s=stats(PEDS[c.slug]||[]);

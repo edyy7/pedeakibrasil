@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Inventário PedeAí v5.7.0</title>
+<style>body{background:#0b0b0d;color:#f4f4f6;font:16px/1.5 system-ui,sans-serif;padding:18px;max-width:820px;margin:auto}h1{font-size:23px}h2{font-size:18px;margin-top:28px;color:#f5c518}h3{font-size:15px;margin:14px 0 4px}.c{background:#16161a;border-radius:12px;padding:12px 14px;margin:10px 0}code{background:#0f0f12;border-radius:6px;padding:2px 6px;font-size:13px}.ok{color:#22c55e}.no{color:#ff6b6b}.w{color:#e0a800}.sc{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:560px}td,th{padding:6px 8px;border-bottom:1px solid #2a2a31;text-align:left;font-size:13.5px;vertical-align:top}th{color:#a3a3ad;font-weight:600}small{color:#a3a3ad}</style></head><body>
+<h1>📋 Inventário do pacote PedeAí Brasil · v5.7.0</h1>
+<p><small>Gerado em 01/11/2026 a partir do ZIP <code>pedeai-v5.7.0</code> (71 arquivos, 347.635 bytes), lendo o código e rodando os testes. <b>O APK não veio no ZIP</b>: o que dá para provar é o que está no código; o que só o arquivo APK mostra está marcado como “precisa do dev”.</small></p>
+
+<div class="c"><b>Resposta direta à pergunta do dev</b><br>
+Garçom e Cozinha <b>existem no código</b> e de dois jeitos ao mesmo tempo:<br>
+① <b>app próprio</b>: <code>garcom.html</code> e <code>cozinha.html</code>, cada um com manifest, ícone, nome e escopo próprios (instalam separado);<br>
+② <b>UI do app da Loja filtrada por papel</b>: os três arquivos são o mesmo motor de ~115 KB (a diferença é de 6 linhas: título, manifest, aba inicial e <code>modo()</code> fixo). Dentro do <code>lojista.html</code>, quem entra com cargo contendo “garçom” ou “cozinh” cai sozinho na UI desse papel; dono/gerente alterna Loja ⇄ Garçom.<br>
+Como o escopo de cada manifest é o próprio arquivo (<code>"scope": "./garcom.html"</code>), um APK feito só do link do Loja <b>não leva</b> Garçom nem Cozinha como apps; só mostra essas UIs para funcionário com o cargo. Ou seja: é <b>lacuna de empacotamento</b>, não de código. O LEIA-ME já registra “APK ainda não feito” (v5.4.6 e v5.6.0).<br>
+<b>Única coisa que só o dev responde:</b> de quais links ele gerou o APK (e o package id, minSdk/targetSdk e assinatura).</div>
+
+<h2>1. Identificação</h2>
+<div class="sc"><table><tr><th>Item</th><th>Valor</th></tr>
+<tr><td>Pacote</td><td>pedeai-v5.7.0 · <code>sw.js</code> com <code>CACHE_VERSION="pedeai-v5.7.0"</code></td></tr>
+<tr><td>Tipo</td><td>PWA (HTML/JS) + 2 funções serverless Vercel (<code>api/asaas.js</code>, <code>api/asaas-webhook.js</code>); sem projeto Android no ZIP</td></tr>
+<tr><td>Backend</td><td>Firebase <code>delivery-67d14</code> (Firestore + Auth Google/Anônimo + Storage)</td></tr>
+<tr><td>APK: nome, package id, tamanho, minSdk/targetSdk, assinatura debug/release</td><td class="w">precisa do dev (não consta no pacote)</td></tr></table></div>
+
+<h2>2. Telas presentes (10 páginas)</h2>
+<div class="sc"><table><tr><th>Tela</th><th>Perfil</th><th>O que faz</th><th>Coleções</th><th>Offline</th><th>Estado</th></tr>
+<tr><td>index.html</td><td>público</td><td>site de vendas; formulário de contato</td><td>leads</td><td>só a página</td><td class="ok">completa</td></tr>
+<tr><td>PedeAi.html</td><td>público</td><td>hub com links dos apps; entrada oculta do Criador</td><td>—</td><td>só a página</td><td class="ok">completa</td></tr>
+<tr><td>cliente.html</td><td>Cliente (sem login)</td><td>cardápio por link, pedido, Pix, histórico de endereços, ocorrência</td><td>lojas, pedidos, ocorrencias</td><td>não</td><td class="ok">completa</td></tr>
+<tr><td>lojista.html</td><td>Loja (dono/gerente/equipe)</td><td>Resumo, Pedidos, Produtos, Estoque, Patrimônio, Caixa, Gestão, Equipe, Pedido do Salão, Entregas/fila, agenda</td><td>lojas, pedidos, equipe, lojaDados, filas, convites, agendamentos, servicos, ocupados</td><td>não</td><td class="ok">completa</td></tr>
+<tr><td>garcom.html</td><td>Garçom</td><td>abre em Garçom; lança mesa, minhas mesas, fechar mesa, recibo</td><td>as mesmas do Loja</td><td>não</td><td class="ok">completa</td></tr>
+<tr><td>cozinha.html</td><td>Cozinha</td><td>fila FIFO, barra de tempo, atraso vermelho + alerta, PRONTO, comanda</td><td>as mesmas do Loja</td><td>não</td><td class="ok">completa</td></tr>
+<tr><td>motoboy.html</td><td>Entregador</td><td>cadastro com 3 fotos, corridas, fila/Marketplace, histórico</td><td>contas, convites, filas, lojas, pedidos, ocorrencias</td><td>não</td><td class="ok">completa</td></tr>
+<tr><td>adm.html</td><td>ADM</td><td>lojas, planos/vencimento, RH e cargos, Dossiê, relatório de atrasos</td><td>contas, lojas, pedidos, lojaDados, ocorrencias, cargos, equipe, admCodigos</td><td>não</td><td class="ok">completa</td></tr>
+<tr><td>criador.html</td><td>Criador (1 e-mail)</td><td>contas e pagamentos, módulos por loja, leads, Zerar/Reset Total</td><td>contas, lojas, leads, eventos, linksPagamento</td><td>não</td><td class="ok">completa</td></tr>
+<tr><td>agendar.html</td><td>Cliente</td><td>agendamento (dia + horário) por <code>?loja=</code></td><td>agendamentos, servicos, ocupados, lojas</td><td>não</td><td class="ok">completa (só com ?loja=)</td></tr></table></div>
+<p><small>Coleções: lidas do código e conferidas com <code>firestore.rules</code> (17 coleções). “Offline”: o <code>sw.js</code> guarda as páginas (rede primeiro, cache se cair), mas o Firestore está <b>sem persistência local</b>: sem internet o app abre e não carrega dados.</small></p>
+
+<h2>3. Módulos presentes × ausentes</h2>
+<div class="sc"><table><tr><th>Módulo</th><th>No código</th><th>Como acessa</th><th>Completo?</th></tr>
+<tr><td>Cliente</td><td class="ok">S</td><td>app próprio (<code>cliente.html</code>) ou link <code>?loja=</code></td><td>sim</td></tr>
+<tr><td>Loja</td><td class="ok">S</td><td>app próprio</td><td>sim</td></tr>
+<tr><td>Garçom</td><td class="ok">S</td><td>app próprio <b>e</b> UI por cargo dentro do Loja</td><td>sim</td></tr>
+<tr><td>Cozinha</td><td class="ok">S</td><td>app próprio <b>e</b> UI por cargo dentro do Loja</td><td>sim</td></tr>
+<tr><td>Motoboy</td><td class="ok">S</td><td>app próprio; vínculo por convite da loja</td><td>sim</td></tr>
+<tr><td>ADM</td><td class="ok">S</td><td>app próprio</td><td>sim</td></tr>
+<tr><td>Criador</td><td class="ok">S</td><td>oculto: <code>/criador</code> ou 5 toques no título do hub e digitar o caminho</td><td>sim</td></tr>
+<tr><td>Parceiro</td><td class="no">N</td><td>não existe no código</td><td>—</td></tr></table></div>
+
+<h2>4. Permissões (o que o código pede; manifest Android só o APK mostra)</h2>
+<div class="sc"><table><tr><th>Permissão</th><th>Situação no código</th></tr>
+<tr><td>Notificação / POST_NOTIFICATIONS</td><td>solicitada em runtime (<code>Notification.requestPermission</code>) quando está “default”; usada em <code>conta.js</code> (aviso de assinatura) e <code>motoboy.html</code> (corrida nova). Sem push em segundo plano.</td></tr>
+<tr><td>Localização</td><td>só no Cliente, ao tocar em usar GPS (uma leitura). Entregador não usa GPS (despacho por bairro).</td></tr>
+<tr><td>Câmera</td><td>só via campo de foto (<code>capture</code>) no Entregador; sem <code>getUserMedia</code>.</td></tr>
+<tr><td>Armazenamento</td><td><code>localStorage</code> + Firebase Storage (fotos do entregador e logos). Sem IndexedDB do Firestore.</td></tr>
+<tr><td>SYSTEM_ALERT_WINDOW</td><td><span class="no">não usa</span> (o “cartão flutuante” é dentro do app; “Sobrepor outros apps” está listado como não coberto)</td></tr>
+<tr><td>FOREGROUND_SERVICE</td><td><span class="no">não usa</span></td></tr>
+<tr><td>WAKE_LOCK</td><td>Screen Wake Lock do navegador, só no modo Cozinha, com a tela visível.</td></tr></table></div>
+
+<h2>5. Real × stub × mock</h2>
+<div class="sc"><table><tr><th>Item</th><th>Situação</th></tr>
+<tr><td>Firebase (Firestore + Auth)</td><td><span class="ok">real em todas as telas.</span> O <code>PA_MOCK</code> existe só como gancho de teste e não é definido em lugar nenhum do pacote.</td></tr>
+<tr><td>Upload de foto</td><td><span class="ok">real</span> (Storage; regras em <code>storage.rules</code>).</td></tr>
+<tr><td>Pix</td><td>BR Code com CRC e QR gerados de verdade (<code>pixbr.js</code>) com a chave Pix da loja; “Pago” é marcado à mão por Gerente/Caixa. Asaas (split) existe em <code>api/</code> mas depende de variáveis de ambiente (chave Asaas, conta de serviço, token do webhook) e <b class="w">nunca foi testado com Asaas real</b>.</td></tr>
+<tr><td>Push (FCM)</td><td><span class="no">não existe</span></td></tr>
+<tr><td>Dados de exemplo</td><td>não há dados fixos em produção; loja nova começa vazia.</td></tr></table></div>
+
+<h2>6. Pontos de entrada</h2>
+<div class="c">Hub <code>PedeAi.html</code> → app escolhido → login Google (cliente entra anônimo) → o backend lê o papel (conta, equipe.cargo) e mostra a tela. Links com parâmetro: <code>cliente.html?loja=</code>, <code>lojista.html?loja=</code> / <code>?adm=</code> / <code>?gerente=</code>, <code>motoboy.html?loja=</code>, <code>adm.html?adm=</code>. Seletor de perfil dentro do app: só o dono/gerente alterna Loja ⇄ Garçom.</div>
+
+<h2>7. O que NÃO está no pacote e deveria</h2>
+<div class="c">• O <b>APK</b> (e um APK por link: Loja, Garçom, Cozinha, Entregador, ADM, Cliente, Criador).<br>
+• <b>Push em segundo plano</b> (FCM): alerta de atraso da Cozinha e “pedido pronto” do Garçom só tocam com o app aberto.<br>
+• Módulo <b>Parceiro</b>; chave “Motoboys globais” e card “Total de Motoboys” no Criador; aprovação do entregador pelo lojista (continuam sem registro de entrega).<br>
+• Teste em <b>celular real</b>, no <b>emulador das regras</b> e com <b>Asaas real</b>.<br>
+Garçom e Cozinha <b>não foram omitidos por falha de código</b>: o que falta é gerar o APK de cada um (ou decidir por APK único).</div>
+
+<h2>8. Riscos conhecidos</h2>
+<div class="c">• Sem internet o app abre e não mostra dados; gravação falha (bloqueio tem tolerância de 72 h).<br>
+• Alerta sonoro e vermelho da Cozinha: depende do app aberto e da tela ligada; em segundo plano o Android pausa o som.<br>
+• Nenhum teste cobre rotação de tela nem troca de usuário no mesmo aparelho.<br>
+• <code>t5_fumaca</code> cobre 9 das 10 páginas: <code>cozinha.html</code> está fora (o LEIA-ME diz “10 telas”).<br>
+• Os testes de navegador dependem de ordem (<code>t4</code> sozinho falha por falta do estado do <code>t1</code>/<code>t3</code>).<br>
+• Crash ao abrir: nenhum nas 9 páginas testadas, mas isso é em Chromium de computador, não em Android.</div>
+
+<h2>Checklist corrigido (itens afetados)</h2>
+<div class="sc"><table><tr><th>Item</th><th>Antes</th><th>Agora (provado)</th></tr>
+<tr><td>29 Tempo e atrasos (Cozinha)</td><td>✅/⏳</td><td>✅ código + simulador (15/15) · ⏳ celular/APK · ❌ alerta em segundo plano</td></tr>
+<tr><td>Garçom e Cozinha no dispositivo</td><td>“não tem”</td><td>existem como apps próprios e como UI por cargo no Loja; APK de cada um ainda não gerado</td></tr>
+<tr><td>Aviso de pedido pronto ao garçom</td><td>✅</td><td>✅ dentro do app aberto · ❌ push</td></tr>
+<tr><td>P0 <code>firestore.rules</code> com <code>lojaDados</code></td><td>pendente</td><td>regra já existe (leitura: dono, equipe ativa, ADM da loja; apagar: Criador) · ⏳ falta rodar no emulador/Simulador do Firebase</td></tr></table></div>
+
+<h2>Testes e conclusão</h2>
+<div class="c"><b>Testes automáticos: 222 de 222 (100%)</b> no simulador local: lógica 12 · cenário 30 · checkout 2 · fumaça 9 · site 9 · zerar 9 · garçom 6 · pedido do garçom 6 · vagas 9 · salão/cozinha 22 · reset total 17 · v5.6 24 · ADM/motoboy 7 · Pix 13 · tempo 15 · bloqueio 16 · fila 16 (<code>t4</code> passou sem erros, sem contador). Sintaxe de todos os <code>.js</code>: ok.<br>
+<b>Módulos previstos presentes: 7 de 8 (87,5%)</b> (falta Parceiro).<br>
+<b>Páginas na fumaça: 9 de 10 (90%)</b>.<br>
+<b>Validação em aparelho real: 0%</b> · <b>APKs comprovados: 0 de 7</b> · <b>regras no emulador: 0%</b> (só lidas).</div>
+</body></html>
