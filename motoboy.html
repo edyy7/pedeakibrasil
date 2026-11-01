@@ -39,7 +39,7 @@ input,select{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1p
 .bdg{font-size:12.5px;font-weight:800;border-radius:999px;padding:2px 8px;background:var(--yl);color:#000}
 .cta.yl{background:var(--yl);color:#000}
 .ord{border:1px solid var(--br);background:var(--cd);color:var(--tx);border-radius:8px;padding:4px 12px;font:inherit;font-weight:800}.ord:disabled{opacity:.35}
-</style><script src="diarias.js"></script><script>(function(){let id=localStorage.getItem("pa_mid"),n=localStorage.getItem("pa_mnome");if(!id){id="m"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);localStorage.setItem("pa_mid",id)}if(!n){n="Entregador"}window.ME={id:id,n:n}})();</script><link rel="manifest" href="manifest-motoboy.json"><meta name="theme-color" content="#22a559"><link rel="icon" href="icon-motoboy-192.png"><link rel="apple-touch-icon" href="icon-motoboy-192.png"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
+</style><script>(function(){let id=localStorage.getItem("pa_mid"),n=localStorage.getItem("pa_mnome");if(!id){id="m"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);localStorage.setItem("pa_mid",id)}if(!n){n="Entregador"}window.ME={id:id,n:n}})();</script><link rel="manifest" href="manifest-motoboy.json"><meta name="theme-color" content="#22a559"><link rel="icon" href="icon-motoboy-192.png"><link rel="apple-touch-icon" href="icon-motoboy-192.png"><meta name="apple-mobile-web-app-capable" content="yes"></head><body>
 <div class="pv" id="pa-st" style="background:#111;color:#e0a800;font-size:12.5px;font-weight:700">○ Conectando…</div>
 <div class="pg" id="inst"></div>
 <div class="top"><span>Motoboy</span><button onclick="sh='menu';draw()">☰ Menu</button></div>
@@ -69,10 +69,13 @@ let on=true,et="disp",sh=null;
 let DISP=[];
 let AC=[],EM=[];
 const OK=[];
+const DIA=[];
+const DIARIAS_ON=false; /* v5.8.0: diárias escondidas (ainda não ligadas ao servidor) */
+let MINHAS=[];
 const ganhos=()=>OK.reduce((t,o)=>t+o.g,0);
 const chat=(rota)=>``;
 function disp0(){
- if(window.PA&&PA.ready&&!PA.vinculo)return `<div class="empty">Você ainda não está vinculado a nenhuma loja.<br>Peça o código de convite ao lojista.<br><button class="cta" style="margin-top:12px" onclick="sh='vinc';draw()">🔗 Vincular à loja</button></div>`;
+ if(window.PA&&PA.ready&&!PA.vinculo&&MODO!=="mkt")return `<div class="empty">Você ainda não está vinculado a nenhuma loja.<br>Peça o código de convite ao lojista.<br><button class="cta" style="margin-top:12px" onclick="sh='vinc';draw()">🔗 Vincular à loja</button></div>`;
  if(!on)return `<div class="empty">Você está offline.<br>Fique online no menu para ver as entregas disponíveis.</div>`;
  if(!visiveis().length)return `<div class="radar"><div class="rd"><i></i><i></i><b></b></div><div class="rt">LOCALIZANDO PEDIDOS</div></div>`;
  return gruposDisp().map(([k,itens])=>cardGrupoDisp(itens,k)).join("");
@@ -91,34 +94,19 @@ function cardGrupoDisp(itens,key){
  <button class="cta o" onclick="recusarGrupo('${key}')">${itens.length>1?"Recusar grupo inteiro":"Recusar"}</button></div>`;
 }
 
-/* ---------- item 28 · modo Loja (fila FIFO) ---------- */
+/* ---------- item 28 · modo Loja (fila FIFO) e modo Marketplace ---------- */
 const meId=()=>(typeof ME!=="undefined"&&ME&&ME.id)||"";
 const naFila=()=>FILA.fila.findIndex(x=>x.mid===meId());
-const podePegar=o=>(o.dest===meId()&&!(FILA.ult===meId()&&FILA.fila.some(x=>x.mid!==meId())));
+const podePegar=o=>MODO==="mkt"?true:(o.dest===meId()&&!(FILA.ult===meId()&&FILA.fila.some(x=>x.mid!==meId())));
+function modoBox(){return `<div class="etabs"><button class="${MODO=="loja"?"on":""}" onclick="setModo('loja')">🏪 Modo Loja</button><button class="${MODO=="mkt"?"on":""}" onclick="setModo('mkt')">🛵 Marketplace</button></div>`}
+function setModo(m){MODO=m;try{localStorage.setItem("pa_mb_modo",m)}catch(e){}if(m==="mkt"&&!MKTW&&window.PA&&PA.watchMkt){MKTW=true;PA.watchMkt(l=>{MKT=l;window.PA_rebuild&&PA_rebuild()})}window.PA_rebuild&&PA_rebuild();draw()}
 function filaBox(){const pos=naFila(),f=FILA.fila;return `<div class="oc"><b>🚏 Fila da loja (${f.length})</b>${f.map((x,i)=>`<div class="meta">${i+1}º ${hx(x.nome)}${x.mid===meId()?" (você)":""}</div>`).join("")||'<div class="meta">Ninguém na fila.</div>'}${pos<0?`<button class="cta" onclick="entraFila()">📍 Estou na Loja</button>`:`<div class="meta" style="font-weight:800">Você é o ${pos+1}º da fila. O próximo pedido pronto vai para o 1º.</div><button class="cta o" onclick="saiFilaBtn()">Sair da fila</button>`}</div>`}
+function mktBox(){const n=AC.length+EM.length;return `<div class="oc"><b>🛵 Marketplace</b><div class="meta">Entregas de várias lojas, sem fila. Você pode levar até 4 ao mesmo tempo, na mesma região (${n}/4 agora).</div></div>`}
 async function entraFila(){const v=window.PA&&PA.vinculo;if(!v){toast("Vincule-se a uma loja primeiro");return}if(!on){toast("Fique online primeiro");return}try{await PA.entraFila(v.slug,ME);toast("Você entrou no fim da fila")}catch(e){console.error(e);toast("Não foi possível entrar na fila")}}
 async function saiFilaBtn(){try{await PA.saiFila(PA.vinculo.slug,ME,false)}catch(e){console.error(e)}}
-const _cg=cardGrupoDisp;cardGrupoDisp=function(itens,key){const h=_cg(itens,key);if(podePegar(itens[0]))return h;const pos=naFila();
+const _cg=cardGrupoDisp;cardGrupoDisp=function(itens,key){const h=_cg(itens,key);if(MODO==="mkt"||podePegar(itens[0]))return h;const pos=naFila();
  return h.replace(/<button class="cta" onclick="aceitarGrupo[^>]*>[^<]*<\/button>/,'<div class="meta" style="font-weight:800;margin:8px 0">'+(pos<0?"Toque em “Estou na Loja” para entrar na fila.":"⏳ Aguarde a sua vez · você é o "+(pos+1)+"º da fila")+'</div>')};
-function disp(){return (window.PA&&PA.vinculo?filaBox():"")+disp0()}
-/* ---------- Diárias (v6.0.0) ---------- */
-let DIA_L=[],DIA_W="";
-const hmDia=d=>PADia.br(d.d)+" "+d.i+"–"+d.f;
-function diaWatchMb(){const v=window.PA&&PA.vinculo,sl=v&&(v.slug||v.loja);if(!sl||DIA_W===sl||!(PA.fb&&window.PADia))return;DIA_W=sl;PADia.watch(PA.fb,sl,l=>{DIA_L=l;diaAvisos();draw()})}
-function diaAvisos(){if(!PA.uid)return;DIA_L.filter(d=>d.st==="cancelada"&&(d.ens||[]).includes(PA.uid)).forEach(d=>{const k="pa_dia_visto_"+d.id;let v=false;try{v=!!localStorage.getItem(k)}catch(e){}if(v)return;try{localStorage.setItem(k,"1")}catch(e){}
- const msg=(d.lojaN||(PA.vinculo&&PA.vinculo.nome)||"A loja")+" cancelou a diária de "+hmDia(d)+". Motivo: "+(d.motivo||"—")+(d.durante?" (durante o turno)":"");toast("❌ "+msg);if(window.PA_aviso)try{PA_aviso("❌ Diária cancelada",msg,"dia-"+d.id)}catch(e){}})}
-function diaCardMb(d,minha){const e=PADia.estado(d),r=PADia.vagasRest(d),loja=d.lojaN||(PA.vinculo&&PA.vinculo.nome)||"Loja";
- return `<div class="oc" data-dia="${d.id}"><div class="row"><b>🏪 ${hx(loja)}</b><span class="tag">${minha&&e.k!=="cancelada"&&e.k!=="encerrada"?"Aceita":e.t}</span></div><div class="meta" style="font-size:16px"><b>${hmDia(d)}</b> · ${R$(d.v)}</div>${minha?"":`<div class="meta" style="font-weight:800">Vagas restantes: ${r} de ${d.q}</div>`}${d.o?`<div class="meta">Obs.: ${hx(d.o)}</div>`:""}${minha&&e.k==="cancelada"?`<div class="meta" style="color:var(--rd);font-weight:800">${hx(loja)} cancelou a diária de ${hmDia(d)}. Motivo: ${hx(d.motivo||"—")}${d.durante?" (durante o turno)":""}</div>`:""}${minha?"":(r>0?`<button class="cta" onclick="aceitaDia('${d.id}')">Aceitar diária</button>`:`<button class="cta b" disabled style="opacity:.55">Vagas esgotadas</button>`)}</div>`}
-function dia(){diaWatchMb();const u=PA.uid,l=DIA_L.filter(d=>d.st!=="cancelada"&&PADia.estado(d).k!=="encerrada"&&!(d.ens||[]).includes(u)).sort((a,b)=>(a.iniMs||0)-(b.iniMs||0));
- return `<div class="panel"><b style="font-size:20px">🗓️ Diárias Disponíveis</b>${l.map(d=>diaCardMb(d,false)).join("")||'<div class="meta" style="margin:8px 0">Nenhuma diária disponível agora.</div>'}<button class="cta b" onclick="sh=null;draw()">Fechar</button></div>`}
-function mdia(){diaWatchMb();const u=PA.uid,l=DIA_L.filter(d=>(d.ens||[]).includes(u)).sort((a,b)=>(b.iniMs||0)-(a.iniMs||0));
- return `<div class="panel"><b style="font-size:20px">📋 Minhas Diárias</b>${l.map(d=>diaCardMb(d,true)).join("")||'<div class="meta" style="margin:8px 0">Você ainda não aceitou diárias.</div>'}<button class="cta b" onclick="sh=null;draw()">Fechar</button></div>`}
-async function aceitaDia(id){const r=await PADia.aceitar(PA.fb,id,{uid:PA.uid,nome:ME.n});if(r.ok){toast("✅ Diária aceita");}else toast(PADia.MSG[r.motivo]||PADia.MSG.erro);draw()}
-/* ---------- Entregador sem vínculo (opção A): só “Vincular à Loja” ---------- */
-const semVinc=()=>!!(window.PA&&PA.ready&&!PA.vinculo);
-function menuSemVinc(){const mi=(k,i,t)=>`<button class="mi" onclick="mi('${k}')"><span>${i}</span><span>${t}</span></button>`;return `<div class="drawer"><div style="text-align:right"><button style="font-size:24px;border:0;background:none;color:var(--tx)" onclick="sh=null;draw()">✕</button></div><div style="text-align:center;font-size:22px;font-weight:800;margin-bottom:12px">${ME.n}</div>${mi("vinc","🔗","Vincular à Loja")}<div style="margin-top:auto;padding-top:20px">${mi("sair","🚪","Sair")}</div></div>`}
-function drawSemVinc(){$("v").innerHTML=`<div class="empty" id="semvinc"><b style="font-size:20px">Você não está vinculado a nenhuma loja.</b><br>Peça um convite ao gerente.<br><button class="cta" style="margin-top:14px" onclick="sh='vinc';draw()">🔗 Vincular à Loja</button></div>`;const S={menu:menuSemVinc,vinc};if(sh!=="menu"&&sh!=="vinc")sh=null;$("sheet").innerHTML=sh?`<div class="sheet ${sh=="menu"?"dr":""}" onclick="if(event.target===this){sh=null;draw()}">${S[sh]()}</div>`:""}
-const _drawMb=draw;draw=function(){if(semVinc()){drawSemVinc();return}diaWatchMb();_drawMb()};
+function disp(){const top=modoBox();if(MODO==="mkt")return top+mktBox()+disp0();return top+(window.PA&&PA.vinculo?filaBox():"")+disp0()}
 function aceitarGrupo(key){
  const itens=DISP.filter(o=>keyOf(o)===key);
  DISP=DISP.filter(o=>keyOf(o)!==key);
@@ -224,6 +212,9 @@ function descartarEm(idx){
 function simLojaDescarta(idx){EM[idx].estado="descartado";draw();toast("Loja descartou o pedido #"+EM[idx].id)}
 function simLojaVolta(idx){EM[idx].estado="voltando";draw();toast("↩️ A loja pediu a volta · retorne à loja · GPS aberto")}
 function wallet(){const g=ganhos();return `<div class="panel"><b style="font-size:20px">👛 Carteira</b><div class="oc"><div class="meta">Total ganho (entregas + gorjetas)</div><b style="font-size:30px;color:var(--ok)">${R$(g)}</b></div><div class="line"><span>Hoje</span><b>${R$(OK.filter(o=>o.d==HJ()).reduce((t,o)=>t+o.g,0))}</b></div><div class="line"><span>Entregas concluídas</span><b>${OK.length}</b></div><div class="line"><span>Ganhos das entregas</span><b>${R$(g)}</b></div><div class="line"><span>Gorjetas</span><b>${R$(0)}</b></div><h2>Últimas entregas</h2>${OK.map(o=>`<div class="line"><span>#${o.id} · ${o.lojaN||o.loja}<br><small class="meta">${o.d}${o.st?" · "+o.st:""}</small></span><b>${R$(o.g)}</b></div>`).join("")}<div class="meta" style="margin-top:12px">Os pagamentos ainda não estão integrados nesta versão: aqui você acompanha o que tem a receber.</div>${fechar()}</div>`}
+function dia(){return `<div class="panel"><b style="font-size:20px">🗓️ Diárias Disponíveis</b><div class="meta">Turnos de exemplo. Ainda não vêm das lojas.</div>${MINHAS.length?`<h2>Minhas diárias</h2>`+MINHAS.map(d=>dc(d,`<button class="cta b" onclick="MINHAS=MINHAS.filter(x=>x.id!=${d.id});DIA.push(${JSON.stringify(d).replace(/"/g,"&quot;")});draw();toast('Você desistiu da diária')">Desistir da diária</button>`)).join(""):""}<h2>Disponíveis</h2>${DIA.length?DIA.map(d=>dc(d,`<button class="cta" onclick="pegar(${d.id})">Aceitar diária</button>`)).join(""):`<div class="empty">Nenhuma diária disponível no momento.</div>`}${fechar()}</div>`}
+const dc=(d,b)=>`<div class="oc"><div class="row"><b>${d.t} · ${d.d}</b><span class="tag">${MINHAS.some(x=>x.id==d.id)?"Aceita":"Aberta"}</span></div><div class="meta" style="font-size:16px"><b>${d.h}</b> · ${R$(d.v)}</div><div class="meta">Loja: ${d.l}</div>${d.ob?`<div class="meta">• ${d.ob}</div>`:""}${b}</div>`;
+function pegar(id){const d=DIA.find(x=>x.id==id);DIA.splice(DIA.indexOf(d),1);MINHAS.push(d);draw();toast("Diária aceita (exemplo: a loja ainda não é avisada)")}
 function ind(){return `<div class="panel"><b style="font-size:20px">🤝 Indicações</b><div class="oc"><b>Indicação Comissionada</b><div class="meta" style="margin:4px 0">Indique lojas, entregadores ou colegas com o seu link. Ele é único e não gera dois cadastros. Quem entra por ele já vem identificado e só preenche nome e chave Pix. A comissão é de 1 nível, só sobre pagamento efetivo, repassada no ato do pagamento da loja.</div><div class="meta">Como terceiro, você recebe: Por uso R$ 0,50/pedido por 3 meses (contados do 1º pagamento) · Mensal 100% do 1º mês · Anual (1/3/5 anos) 20% do total. No período grátis ninguém recebe.</div></div><div class="oc"><div class="meta">Seu link já gerado</div><b style="word-break:break-all;font-size:15px">https://meudelivery-six.vercel.app/#indica=JOAO-4821</b></div><button class="cta" onclick="try{navigator.clipboard.writeText('https://meudelivery-six.vercel.app/#indica=JOAO-4821')}catch(e){};toast('Link de indicação copiado')">Copiar link</button><div class="line" style="margin-top:12px"><span>Ana (entregadora)<br><small class="meta">12/50 no 1º mês · bônus R$ 0,00</small></span><b>R$ 0,00/mês</b></div>${fechar()}</div>`}
 let CAD={nome:"",tel:"",email:"",cep:"",rua:"",bairro:"",cidade:"",veic:"Moto",placa:"",fotos:{}},CADF={},CADFORCE=false,CADSAVING=false;
 const cadOk=c=>!!(c&&c.nome&&c.tel&&c.fotos&&c.fotos.rosto&&c.fotos.cnh&&c.fotos.veiculo);
@@ -249,9 +240,9 @@ const fechar=()=>`<button class="cta b" style="margin-top:14px" onclick="sh=null
 function vinc(){const v=window.PA&&PA.vinculo;return `<div class="panel"><b style="font-size:20px">🔗 Vincular à Loja</b>${v?`<div class="oc"><b>✅ Entregador da ${v.nome}</b><div class="meta">Você vê só os pedidos desta loja. Para trocar, use um novo código abaixo.</div></div>`:`<div class="meta" style="margin:8px 0">Cole o código de convite que o lojista enviou.</div>`}<input id="cvinc" value="${window.__cv||""}" maxlength="12" placeholder="Ex.: ZE-4X9K7M" style="width:100%;box-sizing:border-box;padding:14px;border-radius:12px;border:1px solid var(--bd,#2a2a31);background:transparent;color:var(--tx);font-size:18px;text-transform:uppercase"><button class="cta" onclick="vincular()">Confirmar</button><button class="cta b" onclick="sh=null;draw()">Fechar</button></div>`}
 async function vincular(){const c=($("cvinc").value||"").trim().toUpperCase();if(!c){toast("Digite o código");return}if(!PA.ready||!PA.buscaConvite){toast("Sem conexão com o servidor");return}
  try{const lj=await PA.buscaConvite(c);if(!lj){toast("Código não encontrado");return}const vg=PA.reservaVaga?await PA.reservaVaga(c):"ok";if(vg==="cheio"){toast("Vagas de entregador desta loja esgotadas");return}if(vg!=="ok"){toast("Código não encontrado");return}await PA.vincular(c,lj);toast("✅ Você agora é entregador da "+lj.nome);setTimeout(()=>{history.replaceState(null,"",location.pathname);location.reload()},1400)}catch(e){console.error(e);toast("Não foi possível vincular. Confira o código.")}}
-function menu(){const mi=(k,i,t)=>`<button class="mi" onclick="mi('${k}')"><span>${i}</span><span>${t}</span></button>`;return `<div class="drawer"><div style="text-align:right"><button style="font-size:24px;border:0;background:none;color:var(--tx)" onclick="sh=null;draw()">✕</button></div><div class="av">${ME.n.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase()}</div><div style="text-align:center;font-size:22px;font-weight:800">${ME.n}</div><div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:16px 0 8px"><b style="font-size:20px;color:${on?"var(--ok)":"var(--rd)"}">${on?"Online":"Offline"}</b><button class="sw ${on?"on":""}" onclick="on=!on;draw()"><i></i></button></div><div style="margin-top:10px">${mi("disp","📍","Entregas Disponíveis")}${mi("dia","🗓️","Diárias Disponíveis")}${mi("mdia","📋","Minhas Diárias")}${mi("cart","👛","Carteira")}${mi("ind","🤝","Indicações")}${mi("edr","✏️","Editar meu cadastro")}${mi("vinc","🔗","Vincular à Loja")}${mi("cfg","⚙️","Configurações")}</div><div style="margin-top:auto;padding-top:20px">${mi("sair","🚪","Sair")}</div></div>`}
+function menu(){const mi=(k,i,t)=>`<button class="mi" onclick="mi('${k}')"><span>${i}</span><span>${t}</span></button>`;return `<div class="drawer"><div style="text-align:right"><button style="font-size:24px;border:0;background:none;color:var(--tx)" onclick="sh=null;draw()">✕</button></div><div class="av">${ME.n.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase()}</div><div style="text-align:center;font-size:22px;font-weight:800">${ME.n}</div><div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:16px 0 8px"><b style="font-size:20px;color:${on?"var(--ok)":"var(--rd)"}">${on?"Online":"Offline"}</b><button class="sw ${on?"on":""}" onclick="on=!on;draw()"><i></i></button></div><div style="margin-top:10px">${mi("disp","📍","Entregas Disponíveis")}${DIARIAS_ON?mi("dia","🗓️","Diárias Disponíveis"):""}${mi("cart","👛","Carteira")}${mi("ind","🤝","Indicações")}${mi("edr","✏️","Editar meu cadastro")}${mi("vinc","🔗","Vincular à Loja")}${mi("cfg","⚙️","Configurações")}</div><div style="margin-top:auto;padding-top:20px">${mi("sair","🚪","Sair")}</div></div>`}
 function mi(k){if(k=="disp"){et="disp";sh=null}else if(k=="sair"){sh=null;if(window.PA&&PA.logout)PA.logout();else location.reload()}else sh=k;draw()}
-let HS="loja",FILA={fila:[],ult:null};
+let HS="loja",FILA={fila:[],ult:null},MODO=(function(){try{return localStorage.getItem("pa_mb_modo")||"loja"}catch(e){return"loja"}})(),MKT=[],MKTW=false;
 function histMb(){const L=OK.filter(o=>o.st!=="Descartado"||true).filter(o=>(o.t||"cliente")===HS),qt=L.length,km=L.reduce((s,o)=>s+(o.km||0),0),rs=L.reduce((s,o)=>s+(o.g||0),0);
  return `<div class="etabs"><button class="${HS=="loja"?"on":""}" onclick="HS='loja';draw()">Pagas pela Loja</button><button class="${HS=="cliente"?"on":""}" onclick="HS='cliente';draw()">Pagas pelo Cliente</button></div>`
  +(L.map(o=>`<div class="oc"><div class="row"><b>#${o.id} · ${o.loja}</b><span class="tag">${HS=="loja"?kmf(o.km||0):R$(o.g||0)}</span></div><div class="meta">${o.d} · ${o.st}${HS=="loja"?"":" · "+kmf(o.km||0)}</div></div>`).join("")||`<div class="oc"><div class="meta">Nenhuma entrega nesta aba ainda.</div></div>`)
@@ -263,7 +254,7 @@ function draw(){marcaMb();
  const h0=OK.filter(o=>o.d==HJ()).reduce((t,o)=>t+o.g,0),na=AC.length+EM.length;
  $("v").innerHTML=`${logoMb()}<div class="hero"><div class="hrow"><div><div class="hi">Olá, ${ME.n.split(" ")[0]}</div><div class="hs">Boas entregas!</div></div><button class="pill ${on?"on":""}" onclick="on=!on;draw()"><i></i>${on?"Online":"Offline"}</button></div><div class="stats"><div><small>Hoje</small><b>${R$(h0)}</b></div><div><small>Ganhos</small><b>${R$(ganhos())}</b><small>${OK.length} entregas</small></div><div><small>Nota</small><b>★ 4,9</b></div></div></div>
  <div class="etabs"><button class="${et=="disp"?"on":""}" onclick="et='disp';draw()">Disponíveis${on&&visiveis().length?`<em>${visiveis().length}</em>`:""}</button><button class="${et=="and"?"on":""}" onclick="et='and';draw()">Em Andamento${na?`<em>${na}</em>`:""}</button><button class="${et=="his"?"on":""}" onclick="et='his';draw()">Histórico</button></div>${et=="disp"?disp():et=="his"?histMb():and()}<div class="meta" style="margin-top:14px">Ganho base: ${R$(REG.km)}/km (mín. ${R$(REG.min)}). Avisos de maquininha/troco não alteram o valor. Tempo estimado a ${REG.vel} km/h. Valores definidos pela administração.</div><div class="meta" style="margin-top:8px">Gorjetas recebidas: R$ 0,00</div>`;
- const S={menu,cart:wallet,dia,mdia,ind,edr,cfg,vinc};$("sheet").innerHTML=sh?`<div class="sheet ${sh=="menu"?"dr":""}" onclick="if(event.target===this){sh=null;draw()}">${S[sh]()}</div>`:""}
+ const S={menu,cart:wallet,...(DIARIAS_ON?{dia}:{}),ind,edr,cfg,vinc};$("sheet").innerHTML=sh?`<div class="sheet ${sh=="menu"?"dr":""}" onclick="if(event.target===this){sh=null;draw()}">${S[sh]()}</div>`:""}
 draw();
 </script><script>
 /* Botão "Baixar e instalar": some depois da instalação (evento appinstalled ou app aberto instalado) */
@@ -308,6 +299,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.watchFila=(slug,cb)=>F.onSnapshot(F.doc(db,"filas",slug),s=>cb(s.exists()?s.data():{fila:[],ult:null}),e=>console.error("fila:",e));
  PA.entraFila=(slug,me)=>F.runTransaction(db,async t=>{const r=F.doc(db,"filas",slug),s=await t.get(r),d=s.exists()?s.data():{fila:[],ult:null},f=(d.fila||[]).slice();if(f.some(x=>x.mid===me.id))return false;f.push({mid:me.id,nome:me.n,em:Date.now()});t.set(r,{fila:f,ult:d.ult||null,loja:slug,atualizadoEm:Date.now()});return true});
  PA.saiFila=(slug,me,aceitou)=>F.runTransaction(db,async t=>{const r=F.doc(db,"filas",slug),s=await t.get(r),d=s.exists()?s.data():{fila:[],ult:null};t.set(r,{fila:(d.fila||[]).filter(x=>x.mid!==me.id),ult:aceitou?me.id:(d.ult||null),loja:slug,atualizadoEm:Date.now()});return true});
+ PA.watchMkt=cb=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("mkt","==",true),F.where("st","==","enviado")),s=>cb(s.docs.map(d=>strip(d.data()))),e=>console.error("mkt:",e));
  PA.watchMoto=(mid,cb)=>F.onSnapshot(F.query(F.collection(db,"pedidos"),F.where("mot","==",mid)),s=>cb(s.docs.map(d=>strip(d.data()))));
  PA.setOco=(id,o)=>F.setDoc(F.doc(db,"ocorrencias",String(id)),{...cl(o),id:Number(id)},{merge:true});
  PA.watchOco=cb=>F.onSnapshot(F.collection(db,"ocorrencias"),s=>cb(s.docs.map(d=>d.data())));
@@ -345,10 +337,10 @@ function PA_overlay(o,n){somAlerta();let el=document.getElementById("ovc");
 setInterval(()=>{try{if(window.PA&&PA.ready&&typeof rebuild==="function")rebuild()}catch(e){}},30000);
 window.PA_rebuild=function(){rebuild()};
 function rebuild(){
- const list=ENV.filter(d=>d.tp=="ent"&&!d.mot&&!REC.has(d.id)&&podeVer(d)),cnt={};
- {list.sort((a,b)=>(a.prontoEm||a.criadoEm||0)-(b.prontoEm||b.criadoEm||0));list.forEach((d,i)=>{d._dest=(FILA.fila[i]||{}).mid||null})}
+ const mk=MODO==="mkt",list=(mk?MKT:ENV).filter(d=>d.tp=="ent"&&!d.mot&&!REC.has(d.id)&&(mk||podeVer(d))),cnt={};
+ if(!mk){list.sort((a,b)=>(a.prontoEm||a.criadoEm||0)-(b.prontoEm||b.criadoEm||0));list.forEach((d,i)=>{d._dest=(FILA.fila[i]||{}).mid||null})}
  list.forEach(d=>{const k="M|"+d.bairro;cnt[k]=(cnt[k]||0)+1});
- DISP=list.map(d=>{const o=toMb(d);o.dest=d._dest||null;return o});
+ DISP=list.map(d=>{const o=toMb(d);if(mk&&cnt["M|"+d.bairro]>1)o.grp="G:M|"+d.bairro;o.dest=d._dest||null;return o});
  const novas=DISP.filter(o=>!seen.has(o.id));DISP.forEach(o=>seen.add(o.id));
  if(!prim&&on&&novas.length){PA_beep();toast("🛵 Nova corrida disponível");try{PA_overlay(novas[0],novas.length)}catch(e){}}
  const ac=MINE.filter(d=>d.st=="enviado"),antes=AC.map(o=>o.id);
@@ -369,17 +361,19 @@ PA.whenReady(()=>{
  ME.id=PA.uid;if(PA.user&&PA.user.displayName)ME.n=PA.user.displayName;
  {const tp=document.querySelector(".top span");if(tp)tp.textContent="Motoboy · "+ME.n+(PA.vinculo?" · "+PA.vinculo.nome:"")}
  if(PA.vinculo){PA.watchEnviados(PA.vinculo.slug,l=>{ENV=l;rebuild()});PA.watchFila(PA.vinculo.slug,f=>{FILA=f;rebuild()})}
+ if(MODO==="mkt"&&!MKTW){MKTW=true;PA.watchMkt(l=>{MKT=l;rebuild()})}
  if(PA.vinculo&&PA.watchProntos){const PRON=new Set();let primP=true;PA.watchProntos(PA.vinculo.slug,l=>{const nv=l.filter(d=>d.tp=="ent"&&!d.mot&&!PRON.has(d.id)&&!REC.has(d.id));l.forEach(d=>PRON.add(d.id));
   if(!primP&&on&&nv.length)PA_aviso("📦 Pedido pronto na loja","Pedido #"+nv.map(d=>d.id).join(", #")+" pronto para retirar"+(PA.vinculo.nome?" · "+PA.vinculo.nome:""),"pedido-pronto");primP=false})}
  PA.watchMoto(ME.id,l=>{MINE=l;rebuild()});
  const q=new URLSearchParams(location.search).get("convite");if(q&&!PA.vinculo){window.__cv=q.toUpperCase();sh="vinc";draw()}});
 aceitarGrupo=async function(key){
  const itens=DISP.filter(o=>keyOf(o)===key);if(!itens.length)return;
- if(!podePegar(itens[0])){toast("Aguarde a sua vez na fila");return}
+ if(MODO==="mkt"){const n=AC.length+EM.length+itens.length;if(n>4){toast("Limite de 4 entregas ao mesmo tempo");return}const cur=[...AC,...EM];if(cur.length&&!cur.some(c=>nrm(c.bairro)===nrm(itens[0].bairro))){toast("No Marketplace só dá para juntar entregas na mesma região");return}}
+ else if(!podePegar(itens[0])){toast("Aguarde a sua vez na fila");return}
  const gid=itens.length>1?"G"+Date.now():null;let ok=0;
  for(const o of itens){try{if(await PA.aceitar(o.id,ME)){ok++;if(gid)PA.setPedido(o.id,{grp:gid})}}catch(e){console.error(e)}}
  if(!ok){toast("Outro entregador já aceitou esta entrega");draw();return}
- if(PA.vinculo){PA.saiFila(PA.vinculo.slug,ME,true).catch(e=>console.error(e))}
+ if(MODO!=="mkt"&&PA.vinculo){PA.saiFila(PA.vinculo.slug,ME,true).catch(e=>console.error(e))}
  et="and";draw();toast(ok>1?"Grupo aceito: vá até a loja retirar os "+ok+" pacotes":"Entrega aceita: vá até a loja")};
 recusarGrupo=function(key){DISP.filter(o=>keyOf(o)===key).forEach(o=>REC.add(o.id));
  localStorage.setItem("pa_rec",JSON.stringify([...REC].slice(-300)));rebuild();toast("Recusado")};

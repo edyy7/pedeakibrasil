@@ -1,134 +1,122 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#002776">
-<title>PedeAí Brasil · Menos correria, mais pedidos entregues</title>
-<meta name="description" content="Gestão, loja virtual e entregas em um só sistema. Baixe o app da sua loja, do entregador ou da administração.">
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#060806">
+<title>PedeAí Brasil — Baixe, use e receba pedidos no WhatsApp e Pix</title>
+<meta name="description" content="Pedido no WhatsApp. Pix na hora. Sem bagunça. Baixe o app, monte sua loja e comece a receber pedidos hoje.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Karla:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{--g:#009c3b;--gd:#006b28;--y:#ffdf00;--b:#002776;--tx:#13213d;--mu:#4b5870;--bg:#f4f8f5;--w:#fff}
+:root{--bg:#060806;--cd:#121512;--ln:#262b27;--g:#00ff88;--y:#ffe500;--tx:#f2f5f2;--mu:#8a968c}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--tx);font:18px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0)}
-.wrap{max-width:980px;margin:0 auto;padding:0 20px}
-header{position:sticky;top:0;z-index:20;background:var(--w);box-shadow:0 2px 10px #0002}
-header .wrap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:12px;padding-bottom:12px}
-.logo{font-weight:900;font-size:21px;color:var(--b)}.logo span{color:var(--g)}
-.btn{display:inline-block;border:0;border-radius:14px;padding:16px 22px;font:800 18px system-ui;text-align:center;text-decoration:none;cursor:pointer;min-height:54px}
-.bg{background:var(--g);color:#fff}.by{background:var(--y);color:var(--b)}.bb{background:var(--b);color:#fff}.bo{background:#fff;color:var(--b);border:2px solid var(--b)}
-header .btn{padding:10px 16px;min-height:44px;font-size:16px}
-.hero{background:linear-gradient(160deg,var(--b),var(--gd) 60%,var(--g));color:#fff;padding:44px 0 56px}
-.hero h1{font-size:clamp(32px,7vw,52px);line-height:1.12;margin:0 0 16px}.hero h1 em{font-style:normal;color:var(--y)}
-.hero p{font-size:20px;max-width:640px;margin:0 0 22px;color:#e8f3ec}
-.cta{display:flex;flex-wrap:wrap;gap:12px}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.chips span{background:#ffffff22;border-radius:20px;padding:6px 14px;font-size:16px;font-weight:700}
-section{padding:48px 0;scroll-margin-top:72px}h2{font-size:clamp(26px,5vw,36px);line-height:1.2;margin:0 0 10px;color:var(--b)}
-.sub{color:var(--mu);margin:0 0 24px;font-size:19px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
-.card{background:var(--w);border-radius:18px;padding:22px;box-shadow:0 4px 16px #0a2a1414}
-.card .ic{font-size:34px}.card h3{margin:8px 0 6px;font-size:22px;color:var(--b)}.card p{margin:0;color:var(--mu)}
-.dor{border-left:6px solid #d4141c}.sol{border-left:6px solid var(--g)}
-.dor b{color:#b30f16}
-.alt{background:#e6f1ea}
-.dl .card{display:flex;flex-direction:column;gap:6px}.dl .btn{margin-top:auto}
-.dl small{color:var(--mu);font-size:15px}
-.steps{counter-reset:s}.steps .card{position:relative;padding-top:50px}
-.steps .card:before{counter-increment:s;content:counter(s);position:absolute;top:-14px;left:20px;width:46px;height:46px;border-radius:50%;background:var(--y);color:var(--b);font:900 24px/46px system-ui;text-align:center}
-.price{display:flex;justify-content:space-between;gap:10px;padding:14px 0;border-bottom:1px solid #dfe6e1;font-weight:700}.price:last-child{border:0}.price span:last-child{color:var(--g);white-space:nowrap}
-details{background:#fff;border-radius:14px;padding:16px 18px;margin:10px 0;box-shadow:0 2px 8px #0a2a1410}summary{font-weight:800;cursor:pointer;color:var(--b)}details p{margin:10px 0 0;color:var(--mu)}
-.final{background:linear-gradient(160deg,var(--b),var(--gd));color:#fff;text-align:center;border-radius:24px;padding:36px 20px}.final h2{color:#fff}.final p{color:#e8f3ec}
-footer{padding:28px 0 40px;color:var(--mu);font-size:15px;text-align:center}footer a{color:var(--b);font-weight:700}
-.modal{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;justify-content:center;z-index:50}.modal.on{display:flex}
-.box{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:22px;max-height:92vh;overflow:auto;padding-bottom:calc(22px + env(safe-area-inset-bottom,0))}
-.box input,.box textarea{width:100%;padding:14px;border-radius:12px;border:2px solid #cfd8d2;font:inherit;margin-top:6px;color:var(--tx)}
-.box label{display:block;margin-top:12px;font-weight:800}.ok{color:var(--gd);font-weight:800}
+body{margin:0;background:var(--bg);color:var(--tx);font:18px/1.5 Karla,system-ui,sans-serif;overflow-x:hidden;padding-top:env(safe-area-inset-top,0)}
+h1,h2,h3,.logo,.btn,.big{font-family:"Archivo Black",system-ui,sans-serif;font-weight:900;text-transform:none}
+.wrap{max-width:560px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:0;z-index:30;background:#060806ee;border-bottom:1px solid var(--ln);backdrop-filter:blur(8px)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo{display:flex;align-items:center;gap:12px;font-size:23px;color:var(--tx)}.logo b{color:var(--g)}
+.lg{width:44px;height:44px;border-radius:12px;background:var(--g);display:grid;place-items:center;box-shadow:0 0 22px #00ff8855;font-size:22px}
+.hb{background:none;border:0;color:var(--tx);font-size:34px;min-width:48px;min-height:48px;cursor:pointer}
+nav{display:none;background:var(--cd);border-bottom:1px solid var(--ln)}nav.on{display:block}nav a{display:block;padding:16px 20px;color:var(--tx);text-decoration:none;font-weight:700;border-top:1px solid var(--ln)}
+.btn{display:block;width:100%;border:0;border-radius:16px;padding:20px;font-size:21px;text-align:center;text-decoration:none;cursor:pointer;margin:12px 0}
+.by{background:var(--y);color:#000;box-shadow:0 0 28px #ffe50044}.bg{background:var(--g);color:#000;box-shadow:0 0 24px #00ff8844}.bo{background:transparent;color:var(--tx);border:2px solid var(--ln)}
+.hero{padding:34px 0 10px;background:radial-gradient(120% 60% at 50% 0,#0b3a22,transparent)}
+.pill{display:inline-block;border:1px solid #0a6b3d;background:#0a2a1a;color:var(--g);border-radius:30px;padding:9px 16px;font:700 14px Karla;letter-spacing:.12em}
+h1{font-size:clamp(38px,11vw,54px);line-height:1.04;margin:22px 0 18px;text-transform:uppercase}h1 .ol{color:transparent;-webkit-text-stroke:2px var(--g)}h1 .yl{color:var(--y)}
+.mu{color:var(--mu)}.from{display:inline-flex;align-items:baseline;gap:12px;background:var(--cd);border:1px solid var(--ln);border-radius:16px;padding:16px 22px;margin:12px 0}.from small{font-weight:700;letter-spacing:.1em}.from b{font:900 38px "Archivo Black";color:var(--y)}
+.ck{list-style:none;padding:0;margin:14px 0}.ck li{display:flex;gap:12px;align-items:center;margin:12px 0;color:var(--mu);font-weight:700}.ck i{font-style:normal;color:var(--g);background:#0a2a1a;border-radius:50%;width:32px;height:32px;display:grid;place-items:center}
+.ph{width:min(86%,330px);margin:30px auto 0;border:12px solid #000;border-radius:44px 44px 0 0;border-bottom:0;background:#0a120d;padding:18px;box-shadow:0 0 70px #00ff8833;min-height:360px}
+.ph .t{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--ln);padding-bottom:12px;font:900 18px "Archivo Black";color:var(--g)}.ph .t span{font:700 12px Karla;border:1px solid #0a6b3d;border-radius:20px;padding:5px 12px;letter-spacing:.1em}
+.pd{background:#141a16;border:1px solid var(--ln);border-radius:16px;padding:16px;margin:16px 0 12px;font-size:15px}.pd p{display:flex;justify-content:space-between;margin:8px 0;color:#c4cdc6}.pd .tt{border-top:1px dashed var(--ln);padding-top:12px;font-size:19px;color:var(--tx);font-weight:700}.pd .tt b{color:var(--g)}
+.pix{background:var(--y);color:#000;border-radius:8px;padding:3px 10px;font:700 12px Karla}
+.go{border:1px solid #0a6b3d;background:#0a2a1a;color:var(--g);border-radius:14px;text-align:center;padding:14px;font-weight:700;font-size:15px}
+.mq{border-block:1px solid var(--ln);background:#0b0f0c;overflow:hidden;white-space:nowrap}.mq div{display:inline-block;padding:20px 0;animation:mq 22s linear infinite;font:900 21px "Archivo Black";color:#8a968c;letter-spacing:.06em}.mq span{color:var(--y);margin:0 28px}
+@keyframes mq{to{transform:translateX(-50%)}}@media(prefers-reduced-motion:reduce){.mq div{animation:none}}
+section{padding:44px 0;scroll-margin-top:76px}h2{font-size:clamp(30px,8.5vw,40px);text-align:center;text-transform:uppercase;line-height:1.08;margin:0 0 12px}.sub{text-align:center;color:var(--mu);margin:0 0 26px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.cd{background:var(--cd);border:1px solid var(--ln);border-radius:22px;padding:22px}.cd h3{font-size:19px;margin:12px 0 6px}.cd p{margin:0;color:var(--mu);font-size:16px}
+.ic{width:52px;height:52px;border-radius:14px;background:#0a2a1a;border:1px solid #0a6b3d;display:grid;place-items:center;font-size:24px}
+.st{text-align:center;margin:14px 0}.st .big{font-size:56px;color:var(--y);text-shadow:0 0 22px #ffe50066;line-height:1}.st h3{margin:8px 0;font-size:22px;text-transform:uppercase}
+.pl{position:relative;margin:26px 0}.pl h3{font-size:24px;text-transform:uppercase}.pr{font:900 64px "Archivo Black";margin:14px 0}.pr small{font:400 18px Karla;color:var(--mu)}
+.pl ul{list-style:none;padding:0;margin:0 0 8px}.pl li{padding:13px 0;border-bottom:1px dashed var(--ln);display:flex;gap:12px}.pl li:before{content:"✓";color:var(--g);font-weight:900}
+.pl.top{border-color:var(--g);box-shadow:0 0 34px #00ff8833}.pl.top .pr{color:var(--g)}.bdg{position:absolute;top:-17px;left:50%;transform:translateX(-50%);background:var(--y);color:#000;border-radius:20px;padding:8px 18px;font:900 14px "Archivo Black";letter-spacing:.1em;white-space:nowrap}
+details{background:var(--cd);border:1px solid var(--ln);border-radius:18px;padding:20px;margin:12px 0}summary{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;color:var(--tx)}summary:after{content:"⌄";color:var(--g)}details p{color:var(--mu);margin:12px 0 0}
+.num{text-align:center;padding:30px}.num b{display:block;font:900 52px "Archivo Black";color:var(--g);text-shadow:0 0 22px #00ff8855}.num span{color:var(--mu);font-weight:700}
+.dp{border-left:4px solid var(--y)}.dp .s{color:var(--y);letter-spacing:4px}.dp q{display:block;margin:10px 0;quotes:none}.dp small{color:var(--mu)}
+.fin{background:linear-gradient(160deg,#0f3a1c,#2a2a06);border:1px solid #0a6b3d;border-radius:28px;padding:36px 22px;text-align:center}.fin h2 span{color:var(--y)}.fin .ck{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px}
+.dl .cd{display:flex;flex-direction:column;margin:14px 0}.dl .btn{font-size:18px;padding:16px;margin-bottom:0}.dl small{color:var(--mu);font-size:14px;margin-top:6px}
+footer{padding:30px 0 110px;text-align:center;color:var(--mu);font-size:15px}footer a{color:var(--g)}
+.wa{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0));width:66px;height:66px;border-radius:50%;background:#16a34a;border:0;display:grid;place-items:center;font-size:32px;box-shadow:0 0 0 8px #16a34a33,0 6px 24px #000a;z-index:40;cursor:pointer}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;justify-content:center;z-index:60}.modal.on{display:flex}
+.box{background:var(--cd);border:1px solid var(--ln);width:100%;max-width:520px;border-radius:24px 24px 0 0;padding:22px;max-height:92vh;overflow:auto;padding-bottom:calc(22px + env(safe-area-inset-bottom,0))}
+.box input,.box textarea{width:100%;padding:14px;border-radius:12px;border:2px solid var(--ln);background:#0b0f0c;color:var(--tx);font:inherit;margin-top:6px}.box label{display:block;margin-top:12px;font-weight:700}.ok{color:var(--g);font-weight:700}
 :focus-visible{outline:3px solid var(--y);outline-offset:2px}
-@media(max-width:520px){.cta .btn{width:100%}}
 </style></head><body>
-<header><div class="wrap"><div class="logo">PedeAí <span>Brasil</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><a class="btn bo" href="criador.html">Acesso Criador</a><a class="btn bg" href="#baixar">Baixar o app</a></div></div></header>
+<header><div class="wrap"><div class="logo"><div class="lg">🛒</div><span>PedeAí <b>Brasil</b></span></div><button class="hb" id="hb" aria-label="Menu" onclick="document.getElementById('nv').classList.toggle('on')">☰</button></div>
+<nav id="nv"><a href="#como">Como funciona</a><a href="#planos">Planos</a><a href="#baixar">Baixar os apps</a><a href="#duvidas">Dúvidas</a><a href="criador.html">Acesso Criador</a></nav></header>
 
 <div class="hero"><div class="wrap">
-<h1>Pare de perder pedido e <em>comece a vender mais</em>.</h1>
-<p>Pedidos no WhatsApp, entregador atrasado, caixa no caderno… O PedeAí Brasil junta gestão, loja virtual e entregas em um só lugar, direto no celular.</p>
-<div class="cta"><a class="btn by" href="#baixar">📲 Baixar agora</a><a class="btn bo" href="#dores" style="background:transparent;color:#fff;border-color:#fff">Ver se serve para mim</a></div>
-<div class="chips"><span>✔ Sem precisar de loja de apps</span><span>✔ Pix no pedido</span><span>✔ Aviso sonoro de pedido novo</span></div>
+<span class="pill">● BAIXA · USA · PAGA — 100% AUTOMÁTICO</span>
+<h1>Pedido no <span class="ol">WhatsApp.</span> <span class="yl">Pix na hora.</span> Sem bagunça.</h1>
+<p class="mu">Baixa o app, monta sua loja e começa a receber pedidos hoje. Sem falar com ninguém — é tudo automático.</p>
+<div class="from"><small class="mu">A PARTIR DE</small><b>R$ 49</b><span class="mu">/mês</span></div>
+<a class="btn by" href="#baixar">Baixar agora ⬇</a><a class="btn bo" href="#planos">Ver planos</a>
+<ul class="ck"><li><i>✓</i>Instala em 30 segundos</li><li><i>✓</i>Usa grátis para começar</li><li><i>✓</i>Paga só quando quiser</li></ul>
+<div class="ph"><div class="t">PEDEAÍ<span>ONLINE</span></div><div class="pd"><p class="mu"><span>PEDIDO #1042</span><span class="pix">⬢ PIX</span></p><p><span>1x X-Burger</span><span>R$ 22,90</span></p><p><span>1x Batata frita</span><span>R$ 14,00</span></p><p><span>1x Refrigerante</span><span>R$ 6,00</span></p><p class="tt"><span>Total</span><b>R$ 42,90</b></p></div><div class="go">Pago no Pix — preparar e enviar</div></div>
 </div></div>
+<div class="mq" aria-hidden="true"><div>WHATSAPP<span>◆</span>PIX NA HORA<span>◆</span>ENTREGA COM CÓDIGO<span>◆</span>LOJA COM LINK<span>◆</span>WHATSAPP<span>◆</span>PIX NA HORA<span>◆</span>ENTREGA COM CÓDIGO<span>◆</span>LOJA COM LINK<span>◆</span></div></div>
 
-<section id="dores"><div class="wrap">
-<h2>Você se reconhece aqui?</h2><p class="sub">Escolha o seu caso. Em todos, o app resolve um problema real do dia a dia.</p>
-<div class="grid">
-<div class="card dor"><div class="ic">🏪</div><h3>Dono de loja</h3><p><b>“Perdi o pedido no meio das mensagens.”</b> Pedido, caixa e equipe espalhados em vários lugares, e você sem saber quanto realmente lucrou.</p></div>
-<div class="card dor"><div class="ic">🛵</div><h3>Entregador</h3><p><b>“Não sei de onde vem a corrida.”</b> Corrida sem aviso, retirada confusa e dúvida se a entrega foi confirmada.</p></div>
-<div class="card dor"><div class="ic">📅</div><h3>Salão, clínica, consultório</h3><p><b>“Cliente marca e some.”</b> Agenda no papel, horário duplicado e sinal combinado por conversa.</p></div>
-<div class="card dor"><div class="ic">🧑‍💼</div><h3>Administrador de várias lojas</h3><p><b>“Não consigo ver tudo.”</b> Cada loja com um controle, e fechar a folha e o relatório vira trabalho de dias.</p></div>
+<section><div class="wrap"><div class="g2">
+<div class="cd"><div class="ic">🔔</div><h3>Pedido apita</h3><p>Aviso sonoro na hora. Não perde mais venda no meio da mensagem.</p></div>
+<div class="cd"><div class="ic">⬢</div><h3>Pix na hora</h3><p>Dinheiro cai direto na sua conta. Sem taxa por venda.</p></div>
+<div class="cd"><div class="ic">🛒</div><h3>Loja com link</h3><p>Cliente abre no navegador, pede e paga. Sem baixar nada.</p></div>
+<div class="cd"><div class="ic">🛡️</div><h3>Entrega com código</h3><p>Entregador confirma com código e não vê o valor do pedido.</p></div>
 </div></div></section>
 
-<section class="alt"><div class="wrap">
-<h2>O que muda quando você usa</h2><p class="sub">Cada vantagem é uma função que já está no sistema.</p>
-<div class="grid">
-<div class="card sol"><div class="ic">🔔</div><h3>Pedido novo apita</h3><p>A loja recebe o pedido na hora, com aviso sonoro, e acompanha do preparo até a entrega.</p></div>
-<div class="card sol"><div class="ic">🛒</div><h3>Loja virtual com link</h3><p>O cliente abre o seu link, escolhe e paga por Pix. Sem baixar nada.</p></div>
-<div class="card sol"><div class="ic">📊</div><h3>Caixa e equipe em dia</h3><p>Caixa, histórico de vendas, equipe e folha mensal no mesmo painel.</p></div>
-<div class="card sol"><div class="ic">📅</div><h3>Agenda que se preenche sozinha</h3><p>O cliente escolhe dia e horário, sem duplicar. Você decide cobrar sinal por Pix ou no local.</p></div>
-<div class="card sol"><div class="ic">🛡️</div><h3>Entrega com prova</h3><p>O entregador só vê as corridas da loja a que está vinculado e confirma a entrega com código. Ele não vê o valor do pedido.</p></div>
-<div class="card sol"><div class="ic">🎨</div><h3>Com a sua marca</h3><p>Seu logo e a sua cor principal, com texto sempre legível.</p></div>
-</div></div></section>
-
-<section id="solucoes"><div class="wrap">
-<h2>Escolha a sua solução</h2><p class="sub">Do pedido à entrega, em um só sistema.</p>
-<div class="grid">
-<div class="card"><div class="ic">🏪</div><h3>Aplicativo de Gestão com Loja Virtual</h3><p>Pedidos, caixa, equipe e o link do seu cardápio para o cliente pedir.</p><a class="btn bg" href="lojista.html" style="margin-top:14px;width:100%">Instalar App de Gestão</a></div>
-<div class="card"><div class="ic">🛵</div><h3>Aplicativo de Entrega (Motoboy)</h3><p>Corridas da sua loja, retirada e entrega com código.</p><a class="btn bg" href="motoboy.html" style="margin-top:14px;width:100%">Instalar App do Entregador</a></div>
-<div class="card"><div class="ic">🌐</div><h3>Quero um Site Personalizado</h3><p>Site com a identidade da sua empresa, integrado ao sistema.</p><button class="btn bb" onclick="abre('site')" style="margin-top:14px;width:100%">Quero um site personalizado</button></div>
-<div class="card"><div class="ic">📱</div><h3>Quero Meu Próprio APK</h3><p>Seu aplicativo com nome e ícone próprios.</p><button class="btn bb" onclick="abre('apk')" style="margin-top:14px;width:100%">Quero meu próprio APK</button></div>
-</div></div></section>
-
-<section id="baixar"><div class="wrap dl">
-<h2>Baixe o app do seu perfil</h2><p class="sub">Instala no celular com nome e ícone próprios. É grátis para o entregador.</p>
-<div class="grid">
-<div class="card"><div class="ic">🏪</div><h3>Lojista</h3><p>Pedidos, caixa, produtos, equipe e entregas.</p><a class="btn bg" data-dl="lojista" href="lojista.html">Instalar app do Lojista</a><small data-nt="lojista"></small></div>
-<div class="card"><div class="ic">🛵</div><h3>Entregador</h3><p>Corridas da sua loja, retirada e entrega com código.</p><a class="btn bg" data-dl="motoboy" href="motoboy.html">Instalar app do Entregador</a><small data-nt="motoboy"></small></div>
-<div class="card"><div class="ic">🧑‍💼</div><h3>Administração</h3><p>Lojas, equipe, folha e relatórios para o contador.</p><a class="btn bg" data-dl="adm" href="adm.html">Instalar app da Administração</a><small data-nt="adm"></small></div>
-<div class="card"><div class="ic">🛒</div><h3>Cliente</h3><p>Peça pelo navegador ou instale para pedir mais rápido.</p><a class="btn bb" data-dl="cliente" href="cliente.html">Abrir o app do Cliente</a><small data-nt="cliente"></small></div>
-</div></div></section>
-
-<section class="alt"><div class="wrap">
-<h2>Como funciona</h2><p class="sub">Três passos, sem complicação.</p>
-<div class="grid steps">
-<div class="card"><h3>1. Monte seu catálogo</h3><p>Cadastre seus produtos ou serviços com foto e preço.</p></div>
-<div class="card"><h3>2. Compartilhe o link</h3><p>Mande o link da loja pelo WhatsApp e comece a receber pedidos.</p></div>
-<div class="card"><h3>3. Entregue e receba</h3><p>Acompanhe cada pedido até a entrega e receba pelo Pix.</p></div>
-</div></div></section>
-
-<section><div class="wrap">
-<h2>Quanto custa</h2><p class="sub">Você liga só o que precisa. Valores por loja, por mês.</p>
-<div class="card" style="max-width:560px">
-<div class="price"><span>📋 Gestão</span><span>R$ 49</span></div>
-<div class="price"><span>🛒 Loja Virtual</span><span>R$ 50</span></div>
-<div class="price"><span>📅 Agendamento</span><span>R$ 30</span></div>
-</div></div></section>
-
-<section class="alt"><div class="wrap">
-<h2>Dúvidas comuns</h2>
-<details><summary>Preciso de loja de aplicativos?</summary><p>Não. O app instala direto pelo navegador do celular. Para ter o seu próprio APK com a sua marca, fale com a gente no formulário abaixo.</p></details>
-<details><summary>O cliente precisa baixar algo para pedir?</summary><p>Não. Ele abre o link da loja no navegador, escolhe e paga por Pix.</p></details>
-<details><summary>O entregador vê quanto o cliente pagou?</summary><p>Não. Ele vê só o que precisa para retirar e entregar.</p></details>
-<details><summary>Funciona para quem não vende comida?</summary><p>Sim. Há gestão, loja virtual e agendamento para lojas, salões, clínicas e consultórios.</p></details>
+<section id="como"><div class="wrap"><h2>É assim que funciona</h2><p class="sub">Três passos. Tudo automático. Sem falar com ninguém.</p>
+<div class="cd st"><div class="big">1</div><h3>Baixa</h3><p>Instala pelo navegador em 30 segundos. Sem Play Store, sem cadastro burocrático.</p></div>
+<div class="cd st"><div class="big">2</div><h3>Usa</h3><p>Monta seu catálogo, compartilha o link e começa a receber pedidos pelo WhatsApp e Pix.</p></div>
+<div class="cd st"><div class="big">3</div><h3>Paga</h3><p>Quando quiser, ativa o plano dentro do app. Sem fidelidade, cancela quando quiser.</p></div>
 </div></section>
 
-<section><div class="wrap"><div class="final">
-<h2>Quer algo sob medida?</h2><p>Site com a identidade da sua empresa ou o seu próprio APK, integrado ao sistema.</p>
-<div class="cta" style="justify-content:center"><button class="btn by" onclick="abre('site')">Quero um site personalizado</button><button class="btn bo" onclick="abre('apk')" style="background:transparent;color:#fff;border-color:#fff">Quero meu próprio APK</button></div>
-</div></div></section>
-<footer><div class="wrap">PedeAí Brasil · Gestão, Loja Virtual e Entregas · <a href="index.html">Entrar no sistema</a></div></footer>
+<section id="planos"><div class="wrap"><h2>Planos</h2><p class="sub">Valor por loja, por mês. Ativa dentro do app. Cancele quando quiser.</p>
+<div class="cd pl"><h3>Essencial</h3><p>Pedido, caixa e entrega.</p><div class="pr">R$ 49 <small>/mês</small></div><ul><li>Pedidos com aviso sonoro</li><li>Caixa e equipe</li><li>Entrega com código</li><li>App do entregador grátis</li></ul><a class="btn bo" href="#baixar">Baixar agora</a></div>
+<div class="cd pl top"><span class="bdg">MAIS ESCOLHIDO</span><h3>Loja Completa</h3><p>Gestão + Loja Virtual.</p><div class="pr">R$ 99 <small>/mês</small></div><ul><li>Tudo do Essencial</li><li>Loja virtual com link</li><li>Cliente paga por Pix</li><li>Sua marca (logo e cor)</li></ul><a class="btn bg" href="#baixar">Baixar agora</a></div>
+<div class="cd pl"><h3>Com Agenda</h3><p>Salão, clínica, consultório.</p><div class="pr">R$ 129 <small>/mês</small></div><ul><li>Tudo da Loja Completa</li><li>Agendamento online</li><li>Sinal via Pix</li><li>Relatórios multi-loja</li></ul><a class="btn bo" href="#baixar">Baixar agora</a></div>
+<p class="sub">Site personalizado e APK próprio? Ative dentro do app quando quiser.</p></div></section>
 
+<section id="baixar" class="dl"><div class="wrap"><h2>Baixe o app do seu perfil</h2><p class="sub">Instala no celular com nome e ícone próprios. É grátis para o entregador.</p>
+<div class="cd"><div class="ic">🏪</div><h3>Lojista</h3><p>Pedidos, caixa, produtos, equipe e entregas.</p><a class="btn bg" data-dl="lojista" href="lojista.html">Instalar app do Lojista</a><small data-nt="lojista"></small></div>
+<div class="cd"><div class="ic">🛵</div><h3>Entregador</h3><p>Corridas da sua loja, retirada e entrega com código.</p><a class="btn bg" data-dl="motoboy" href="motoboy.html">Instalar app do Entregador</a><small data-nt="motoboy"></small></div>
+<div class="cd"><div class="ic">🧑‍💼</div><h3>Administração</h3><p>Lojas, equipe, folha e relatórios para o contador.</p><a class="btn bg" data-dl="adm" href="adm.html">Instalar app da Administração</a><small data-nt="adm"></small></div>
+<div class="cd"><div class="ic">🍽️</div><h3>Garçom</h3><p>Lança o pedido na mesa e acompanha quando fica pronto.</p><a class="btn bg" data-dl="garcom" href="garcom.html">Instalar app do Garçom</a><small data-nt="garcom"></small></div>
+<div class="cd"><div class="ic">👨‍🍳</div><h3>Cozinha</h3><p>Recebe os pedidos em ordem e marca como pronto.</p><a class="btn bg" data-dl="cozinha" href="cozinha.html">Instalar app da Cozinha</a><small data-nt="cozinha"></small></div>
+<div class="cd"><div class="ic">🛒</div><h3>Cliente</h3><p>Peça pelo navegador ou instale para pedir mais rápido.</p><a class="btn by" data-dl="cliente" href="cliente.html">Abrir o app do Cliente</a><small data-nt="cliente"></small></div>
+<div class="cd"><div class="ic">✨</div><h3>Sob medida</h3><p>Site com a sua identidade ou o seu próprio APK, ligado ao sistema.</p><button class="btn bo" onclick="abre('site')">Quero um site personalizado</button><button class="btn bo" onclick="abre('apk')">Quero meu próprio APK</button></div>
+</div></section>
+
+<section><div class="wrap"><div class="cd num"><b>[+X]</b><span>lojas no PedeAí</span></div><div class="cd num"><b>[+X mil]</b><span>pedidos por mês</span></div><div class="cd num"><b>[X]</b><span>cidades no Brasil</span></div>
+<div class="cd dp"><div class="s">★★★★★</div><q>"Pedido chega apitando e pago no Pix. Organizei o caixa em dias."</q><small>[Nome] · [Lanchonete] · [Cidade]</small></div>
+<div class="cd dp"><div class="s">★★★★★</div><q>"Cliente marca sozinho e paga sinal. Acabou a falta no salão."</q><small>[Nome] · [Salão] · [Cidade]</small></div>
+<div class="cd dp"><div class="s">★★★★★</div><q>"Entregador não vê mais o valor. Acabou a confusão."</q><small>[Nome] · [Administra lojas] · [Cidade]</small></div></div></section>
+
+<section id="duvidas"><div class="wrap"><h2>Dúvidas</h2>
+<details><summary>Preciso baixar app na Play Store?</summary><p>Não. O app instala direto pelo navegador do celular, em cerca de 30 segundos.</p></details>
+<details><summary>O cliente precisa instalar algo?</summary><p>Não. Ele abre o link da sua loja no navegador, escolhe e paga por Pix.</p></details>
+<details><summary>Como eu pago o plano?</summary><p>Quando quiser, você ativa o plano dentro do app e paga por Pix.</p></details>
+<details><summary>Posso cancelar quando quiser?</summary><p>Sim. Não há fidelidade.</p></details></div></section>
+
+<section><div class="wrap"><div class="fin"><h2>Baixe agora. <span>É grátis para começar.</span></h2><p class="mu">Baixa, usa e paga quando quiser. Instala em 30 segundos pelo navegador — sem Play Store, sem cartão, sem falar com ninguém.</p><a class="btn by" href="#baixar">Baixar agora ⬇</a>
+<ul class="ck"><li><i>✓</i>Instala pelo navegador</li><li><i>✓</i>Sem Play Store</li><li><i>✓</i>Sem cartão de crédito</li><li><i>✓</i>Cancele quando quiser</li></ul></div></div></section>
+<footer><div class="wrap">PedeAí Brasil · Gestão, Loja Virtual e Entregas · <a href="PedeAi.html">Entrar no sistema</a></div></footer>
+<button class="wa" aria-label="Falar no WhatsApp" onclick="abre('site')">💬</button>
 <div class="modal" id="m"><div class="box">
- <div style="display:flex;justify-content:space-between;align-items:center"><b id="mt" style="font-size:22px;color:var(--b)"></b><button onclick="fecha()" aria-label="Fechar" style="background:none;border:0;font-size:26px;padding:8px">✕</button></div>
+ <div style="display:flex;justify-content:space-between;align-items:center"><b id="mt" style="font-size:22px"></b><button onclick="fecha()" aria-label="Fechar" style="background:none;border:0;color:var(--tx);font-size:26px;padding:8px">✕</button></div>
  <div id="fm"><label for="ln">Nome</label><input id="ln" maxlength="80" autocomplete="name">
  <label for="lt">Telefone (com DDD)</label><input id="lt" type="tel" maxlength="20" inputmode="tel">
  <label for="le">E-mail</label><input id="le" type="email" maxlength="120" autocomplete="email">
  <label for="lm">Mensagem</label><textarea id="lm" rows="4" maxlength="1000" placeholder="Conte o que você precisa"></textarea>
- <button class="btn bg" id="enviar" onclick="envia()" style="width:100%;margin-top:14px">Enviar</button><div id="err" style="color:#b30f16;margin-top:8px;font-weight:700"></div></div>
- <div id="fok" style="display:none"><p class="ok">Recebido! Entraremos em contato em breve.</p><button class="btn bb" onclick="fecha()" style="width:100%">Fechar</button></div>
+ <button class="btn by" id="enviar" onclick="envia()">Enviar</button><div id="err" style="color:#ff6b6b;margin-top:8px;font-weight:700"></div></div>
+ <div id="fok" style="display:none"><p class="ok">Recebido! Entraremos em contato em breve.</p><button class="btn bg" onclick="fecha()">Fechar</button></div>
 </div></div>
 <script>
 /* Se você já tem o APK pronto, coloque o endereço do arquivo (.apk) em "apk". Sem isso, o botão abre o app para instalar pelo navegador. */
-const DL={lojista:{apk:"",txt:"Instalar app do Lojista"},motoboy:{apk:"",txt:"Instalar app do Entregador"},adm:{apk:"",txt:"Instalar app da Administração"},cliente:{apk:"",txt:"Abrir o app do Cliente"}};
+const DL={lojista:{apk:"",txt:"Instalar app do Lojista"},motoboy:{apk:"",txt:"Instalar app do Entregador"},adm:{apk:"",txt:"Instalar app da Administração"},garcom:{apk:"",txt:"Instalar app do Garçom"},cozinha:{apk:"",txt:"Instalar app da Cozinha"},cliente:{apk:"",txt:"Abrir o app do Cliente"}};
 document.querySelectorAll("[data-dl]").forEach(a=>{const c=DL[a.dataset.dl];if(c&&c.apk){a.href=c.apk;a.setAttribute("download","");a.textContent="⬇ Baixar APK";const n=document.querySelector('[data-nt="'+a.dataset.dl+'"]');if(n)n.textContent="Ao abrir, permita a instalação de apps desta origem."}});
 let TIPO="site";
 function abre(t){TIPO=t;document.getElementById("mt").textContent=t==="apk"?"Meu próprio APK":"Site personalizado";document.getElementById("m").classList.add("on")}

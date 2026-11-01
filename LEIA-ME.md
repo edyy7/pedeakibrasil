@@ -1,10 +1,26 @@
-# PedeAí Brasil · v6.0.0
+# PedeAí Brasil · v5.9.2 (site no modelo escuro)
+- `app/index.html` refeito no modelo dos prints (fundo escuro, verde neon e amarelo): hero, mockup do pedido, 4 cards, Baixa/Usa/Paga, planos Essencial R$ 49, Loja Completa R$ 99 e Com Agenda R$ 129, dúvidas, CTA final, menu e botão flutuante.
+- Mantidos: 6 botões de instalar (Lojista, Entregador, ADM, Garçom, Cozinha, Cliente), formulário de site/APK (leads), acesso ao Criador pelo menu.
+- Números e depoimentos seguem como [X]/[Nome] até haver dados reais.
 
-**Novo na v6.0.0:** Marketplace removido; entregador sem vínculo só vê “Vincular à Loja”; Diárias reais (`app/diarias.js`, bloco `diarias` no `firestore.rules`, aviso de cancelamento em `api/push.js`). **NÃO publique o `firestore.rules` antes de rodar o emulador** (`cd firebase/teste-rules && npm install && npm test`, 6 testes novos de diárias). Testes do navegador: `sh docs/teste-navegador/rodar-tudo.sh` (t21_diarias.py e t21_push.js novos).
+# PedeAí Brasil · v5.9.1 (links do Gerente, Garçom e Cozinha)
+
+## Publicar
+Só subir a pasta `app/` na Vercel. **As regras do Firestore não mudaram** (não precisa republicar).
+
+## O que mudou
+- **ADM · link do Gerente**: loja que ainda não tem Gerente agora mostra o botão **🔗 Link do Gerente** (em 👥 RH → Minhas lojas e dentro da loja, na tela do ADM). Mostra o mesmo link enquanto ele não foi usado; se foi perdido, gera um novo e apaga o antigo. Copiar e WhatsApp.
+- **Quem abre é o Gerente**: se o próprio ADM abrir o link, o app avisa “Este link é do Gerente” e NÃO o transforma em Gerente (antes ele tomava o lugar do gerente de verdade).
+- **Gerente · apps da equipe**: em 👥 Equipe apareceu “📲 Apps da equipe” com **Link do Garçom** e **Link da Cozinha** (compartilhar/copiar).
+- **Página inicial (index.html)**: cards **Garçom** e **Cozinha** em “Baixe o app do seu perfil”.
+- Teste novo `t32_link_gerente.py` (11 checagens); `t6_site.py` agora espera 6 botões.
+
+## Não mudou
+Design, planos, regras do Firestore, pedidos, caixa, motoboy, Criador, push.
 
 ---
 
-# (base) v5.9.0 (P0 do handoff)
+# PedeAí Brasil · v5.9.0 (P0 do handoff)
 
 ## Publicar (nesta ordem)
 1. Firebase → Firestore → Regras → colar `firebase/firestore.rules` → Publicar.

@@ -207,7 +207,8 @@ async function entrada(F,db,ref,u,d){
   const tok=(()=>{try{return localStorage.getItem("pa_ger")||""}catch(e){return ""}})();
   if(tok){try{const cr=F.doc(db,"gerenteConvites",tok),cs=await F.getDoc(cr);
     if(cs.exists()){const c=cs.data();
-     if(!c.usado){await F.setDoc(cr,{usado:true,uid:u.uid,em:Date.now()},{merge:true});await F.setDoc(F.doc(db,"lojas",c.slug),{dono:u.uid,pendente:false,gerenteToken:tok},{merge:true})}
+     if(!c.usado&&c.admId===u.uid){try{localStorage.removeItem("pa_ger")}catch(x){}await espera('<div style="font-size:42px">🔗</div><div style="font-size:21px;font-weight:800;margin:6px 0">Este link é do Gerente</div><div style="color:#a3a3ad">Quem abre o link é o Gerente da loja. Você é o ADM: mande o link para ele pelo WhatsApp (no app da Administração, em Lojas, toque em “Link do Gerente”).</div>')}
+      if(!c.usado){await F.setDoc(cr,{usado:true,uid:u.uid,em:Date.now()},{merge:true});await F.setDoc(F.doc(db,"lojas",c.slug),{dono:u.uid,pendente:false,gerenteToken:tok},{merge:true})}
      else if(c.uid!==u.uid)throw new Error("usado");
      else{try{await F.setDoc(F.doc(db,"lojas",c.slug),{dono:u.uid,pendente:false,gerenteToken:tok},{merge:true})}catch(e){/* já era sua */}}
      await F.setDoc(ref,{loja:{nome:c.nome,slug:c.slug}},{merge:true});try{localStorage.removeItem("pa_ger")}catch(e){}

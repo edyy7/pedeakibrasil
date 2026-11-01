@@ -84,7 +84,7 @@ function cfg(){const P=PL(),AP=window.PA_ADMP||{},m=/\((\d+)\)/.exec(txBt||""),n
 <div class="card"><b>👤 Perfil do Criador</b><div class="meta" style="margin-top:4px">${esc(u.displayName||"Criador")} · ${esc(u.email||"")}<br>A chave Pix e os valores ficam em Contas e pagamentos.</div></div>
 <div class="card"><b>💳 Planos e valores (os da cobrança atual)</b>${Object.keys(P).map(k=>row("Loja · "+esc(P[k].n),P[k].p?R$(P[k].p):"sem mensalidade")).join("")}${Object.keys(AP).map(k=>row("ADM · "+esc(AP[k].n),AP[k].p?R$(AP[k].p):"sem mensalidade")).join("")}</div>
 <div class="card"><b>🔔 Avisos</b><div class="meta" style="margin:4px 0">Som, vibração e notificação quando entra pagamento ou loja nova.</div><button class="sec" onclick="window.PA_aviso&&PA_aviso('🔔 Teste','Aviso de teste do Criador');toast('Aviso de teste enviado')">Testar aviso</button></div>
-<div class="card"><b>🎛️ Controles do sistema</b><div class="meta" style="margin-top:4px">Motoboys globais e Pagamentos ON/OFF: ainda não ligados nesta versão.</div></div>
+<div class="card"><b>🎛️ Controles do sistema</b><div class="meta" style="margin-top:4px">Motoboys globais e Pagamentos ON/OFF: ainda não ligados nesta versão. O Marketplace não tem chave aqui: cada loja liga ou desliga na própria Gestão.</div></div>
 <button class="sec" style="margin-top:14px" onclick="PA.logout&&PA.logout()">Sair</button>`}
 function lojas(){const q=busca.toLowerCase(),l=D.lojas.filter(x=>((x.nome||x.slug)+" "+((lojista(x)||{}).nome||"")+" "+((lojista(x)||{}).email||"")).toLowerCase().includes(q));
  return `<input id="bq" placeholder="Buscar loja por nome ou responsável" value="${esc(busca)}" oninput="busca=this.value;draw(true)">

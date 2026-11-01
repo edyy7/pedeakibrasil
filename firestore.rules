@@ -115,7 +115,10 @@ service cloud.firestore {
     // ATENÇÃO: toda consulta (query) nos apps precisa ter where('loja','==',…) ou where('mot','==',uid):
     // regra não é filtro, e consulta ampla demais é recusada inteira.
     match /pedidos/{id} {
-      allow read: if signed() && (isCriador() || veLoja(resource.data));
+      allow read: if signed() && (isCriador() || veLoja(resource.data)
+        // Marketplace: motoboy autônomo vê corridas "enviadas" de lojas que abriram para o marketplace
+        || (resource.data.get('mkt', false) == true && resource.data.get('st', '') == 'enviado'
+            && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_motoboy'))));
       // Criar: (a) o CLIENTE, com uid = dele e valor conferido contra o cardápio; ou (b) a própria loja / equipe ativa (pedido do salão).
       allow create: if signed() && lojaLiberada(request.resource.data.get('loja', 'x'))
         && ((request.resource.data.get('uid', '') == request.auth.uid && valorOk(request.resource.data))
@@ -132,7 +135,13 @@ service cloud.firestore {
         || (motoboyDaLoja(resource.data.get('loja', ''))
             && !('mot' in resource.data)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mot', 'motN', 'atualizadoEm'])
-            && request.resource.data.mot == request.auth.uid));
+            && request.resource.data.mot == request.auth.uid)
+        // motoboy autônomo PEGANDO uma corrida do marketplace
+        || (resource.data.get('mkt', false) == true
+            && !('mot' in resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mot', 'motN', 'atualizadoEm'])
+            && request.resource.data.mot == request.auth.uid
+            && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_motoboy'))));
       allow delete: if isCriador() || (signed() && donoDaLoja(resource.data.get('loja', '')));
     }
     // Ocorrências: piloto.
@@ -278,50 +287,6 @@ service cloud.firestore {
         || (signed() && (donoDaLoja(slug) || equipeAtiva(slug))
             && request.resource.data.get('loja', slug) == slug
             && request.resource.data.keys().size() <= 40);
-      allow delete: if isCriador();
-    }
-
-    // ---------- Diárias (v6.0.0): a loja publica, o entregador vinculado aceita ----------
-    // As vagas são controladas AQUI: o aceite só passa se ainda há vaga, a diária não foi cancelada,
-    // o horário fim não passou e o entregador é vinculado à loja. Duas pessoas na última vaga: a 2ª é recusada.
-    // ATENÇÃO: não publicar antes de rodar o emulador (firebase/teste-rules: npm test).
-    function diaVeLoja(l) {
-      return l != '' && (donoDaLoja(l) || equipeAtiva(l) || admDaLoja(l) || motoboyDaLoja(l));
-    }
-    function diaCriar(n) {
-      return n.keys().hasOnly(['loja','lojaN','d','i','f','v','q','o','st','ens','ensN','iniMs','fimMs','criadoEm','atualizadoEm'])
-        && donoDaLoja(n.get('loja', '')) && lojaLiberada(n.get('loja', 'x'))
-        && n.st == 'aberta' && n.ens == [] && n.ensN == []
-        && n.d is string && n.i is string && n.f is string
-        && n.v is number && n.v >= 0 && n.v <= 100000
-        && n.q is int && n.q >= 1 && n.q <= 20
-        && n.iniMs is number && n.fimMs is number && n.fimMs > n.iniMs;
-    }
-    // Gerente (dono): editar a diária aberta ou cancelar com motivo. Nunca mexe em quem aceitou.
-    function diaDono(r, n) {
-      return donoDaLoja(r.get('loja', '')) && n.loja == r.loja
-        && n.ens == r.ens && n.ensN == r.ensN && r.st == 'aberta'
-        && n.keys().hasOnly(['loja','lojaN','d','i','f','v','q','o','st','ens','ensN','iniMs','fimMs','criadoEm','atualizadoEm','motivo','canceladaEm','durante'])
-        && (n.st == 'aberta'
-            ? (n.q is int && n.q >= 1 && n.q <= 20 && n.q >= r.ens.size()
-               && n.v is number && n.v >= 0 && n.v <= 100000 && n.iniMs is number && n.fimMs is number && n.fimMs > n.iniMs)
-            : (n.st == 'cancelada' && n.get('motivo', '') is string && n.motivo.size() >= 3 && n.motivo.size() <= 200
-               && n.canceladaEm is number && n.durante is bool));
-    }
-    // Entregador vinculado: só acrescenta o próprio uid (e o nome) na lista, e só se ainda há vaga.
-    function diaAceite(r, n) {
-      return motoboyDaLoja(r.get('loja', '')) && r.st == 'aberta'
-        && request.time.toMillis() < r.fimMs
-        && n.diff(r).affectedKeys().hasOnly(['ens', 'ensN', 'atualizadoEm'])
-        && r.ens.size() < r.q && !(request.auth.uid in r.ens)
-        && n.ens.size() == r.ens.size() + 1 && n.ens.hasAll(r.ens) && request.auth.uid in n.ens
-        && n.ensN.size() == n.ens.size();
-    }
-    // ATENÇÃO: toda consulta precisa de where('loja','==',…).
-    match /diarias/{id} {
-      allow read: if signed() && (isCriador() || diaVeLoja(resource.data.loja));
-      allow create: if signed() && diaCriar(request.resource.data);
-      allow update: if signed() && (isCriador() || diaDono(resource.data, request.resource.data) || diaAceite(resource.data, request.resource.data));
       allow delete: if isCriador();
     }
 
