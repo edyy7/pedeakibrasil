@@ -1,3 +1,34 @@
+# PedeAí Brasil · v5.9.4 (correção do cardápio no Garçom e na Cozinha)
+
+## Publicar
+Só subir a pasta `app/` na Vercel. **As regras do Firestore não mudaram** (não precisa republicar).
+
+## O que mudou
+- **Único ajuste:** `garcom.html` e `cozinha.html` gravavam o cardápio (`lojas/{slug}.m`) como lista de listas, que o Firestore real recusa. Agora gravam lista de mapas `{n,p,ok,d,em}`, igual à Loja (v5.9.0). O Cliente já lê os dois formatos.
+- Nada mais foi alterado. Marketplace morto, Item 13 e features novas ficam fora desta versão.
+
+---
+
+# PedeAí Brasil · v5.9.3 (ajustes dos 13 itens)
+
+## Publicar (nesta ordem)
+1. **Regras do Firestore** (`firebase/firestore.rules`): o cadastro do motoboy deixa de exigir as 3 fotos (agora exige nome e telefone) e o acesso de motoboy a corridas do Marketplace foi removido.
+2. Subir a pasta `app/` na Vercel.
+
+## O que mudou
+- **Ocorrência do cliente**: a Loja recebe em tempo real (aviso + card em Resumo e Pedidos, botão “Marcar como resolvida”). No ADM, “resolver/repassar” agora grava no servidor.
+- **ADM · Config**: Lojas, Pix e Dossiê passaram para dentro de Config.
+- **Marketplace removido** (Loja, Garçom, Cozinha, Cliente, Motoboy, ADM, Criador e regras).
+- **Indicação Comissionada removida** (a comissão do garçom continua).
+- **Loja**: sem “Pedido do Salão”; abas Resumo, Pedidos, Histórico. O relatório por garçom foi para Gestão.
+- **Cozinha**: só recebe o que o balcão enviou (“Solicitar preparo”); nova aba Histórico com o que ela já liberou.
+- **Garçom**: o pedido vai ao balcão, não direto à cozinha; a aba Pedidos é só de acompanhamento. A tela não é redesenhada enquanto se digita.
+- **Cliente (APK/PWA)**: guarda o código da loja e o último cardápio, o service worker guarda o Firebase, e o app reconecta e recarrega sozinho quando a internet volta (a sacola é preservada). O pedido sai com o código da loja, não com o nome.
+- **Motoboy**: cadastro sem fotos; depois de salvar, o app confere no servidor.
+- Testes novos: t33 (ocorrência), t34 (cadastro motoboy), t35 (cliente APK), t36 (digitação); t11, t14, t16, t18, t31 e o simulador foram atualizados.
+
+---
+
 # PedeAí Brasil · v5.9.2 (site no modelo escuro)
 - `app/index.html` refeito no modelo dos prints (fundo escuro, verde neon e amarelo): hero, mockup do pedido, 4 cards, Baixa/Usa/Paga, planos Essencial R$ 49, Loja Completa R$ 99 e Com Agenda R$ 129, dúvidas, CTA final, menu e botão flutuante.
 - Mantidos: 6 botões de instalar (Lojista, Entregador, ADM, Garçom, Cozinha, Cliente), formulário de site/APK (leads), acesso ao Criador pelo menu.

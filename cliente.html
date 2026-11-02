@@ -38,13 +38,9 @@ input,select,textarea{width:100%;margin-top:6px;padding:11px;border-radius:10px;
 const $=i=>document.getElementById(i),toast=m=>{const t=$("t");t.textContent=m;t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",2200)};
 const R$=n=>"R$ "+n.toFixed(2).replace(".",",");
 const nz=t=>t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-/* Só existe UMA loja: o cliente vê apenas o cardápio (sem Marketplace, sem opções soltas de Entrega/Retirada, sem link da loja) */
+/* Só existe UMA loja: o cliente vê apenas o cardápio (sem opções soltas de Entrega/Retirada, sem link da loja) */
 let X={n:"Lanchonete do Zé",c:"Lanches",ic:"🍔",r:"4,8",t:"25–35 min",m:[["X-Burger",18,true,"Pão, hambúrguer, queijo e salada","🍔"],["Suco de laranja",8,true,"300 ml, natural","🥤"],["Batata frita",12,false,"Porção média","🍟"],["Pastel de carne",9,true,"Recheio caseiro","🥟"]]};
 const X0=X;
-const MKS=[];
-let MKT=false,cur=null;
-function mercado(){return `<h2>🛍️ Marketplace</h2><div class="meta">Todas as lojas aprovadas. Escolha onde pedir.</div>`+MKS.map((s,i)=>`<button class="card" onclick="abre(${i})"><div class="thumb">${s.ic}</div><div style="flex:1"><b>${s.n}</b><div class="meta"><span class="star">★ ${s.r}</span> · ${s.c} · ${s.t}</div><div class="meta">${s.m.length} ${s.tp=="agenda"?"serviços":"produtos"}</div></div>›</button>`).join("")}
-function abre(i){cur=MKS[i];X=cur;cart=[];draw()}
 function agenda(){return `<div class="oc"><b>📅 Agendamento</b><div class="meta">Escolha o serviço e o horário. Esta loja não tem entrega.</div></div>${AG.length?`<button class="card" style="border-color:var(--ac)" onclick="sh='mag';draw()"><div class="thumb" style="color:var(--ac)">📅</div><div><b>Meus agendamentos (${AG.length})</b><div class="meta">Ver, conferir e cancelar</div></div></button>`:""}<h2>Serviços</h2>`+X.m.map((p,i)=>`<div class="oc"><div class="row"><div><b>${p[0]}</b><div class="meta">${p[3]}</div></div><div style="text-align:right"><b>${R$(p[1])}</b><br>${p[2]?`<button class="add" onclick="agIni(${i})">Agendar</button>`:`<button class="add" disabled>Indisponível</button>`}</div></div></div>`).join("")}
 /* ---------- AGENDAMENTO (dia → horário → confirmação → Meus agendamentos) ---------- */
 let AG=[],ag=null,agN=1;
@@ -102,7 +98,7 @@ function fala(txt){const t=" "+nz(txt)+" ";
  for(let i=0;i<a.q;i++)cart.push({n:a.p[0],p:a.p[1]});vr="Anotei "+(a.q>1?a.q+" ":"")+a.p[0]+(a.p[0]=="X-Burger"?". Quer uma bebida? Temos Suco de laranja.":". Mais alguma coisa?");draw()}
 const LB=["Pedido enviado à loja","Loja aceitou e está preparando","Pronto: procurando entregador","Entregador a caminho da loja","Em rota até você","Entregue"];
 const LBR=["Pedido enviado à loja","Loja aceitou e está preparando","Pronto para retirada","Retirado"];
-function home(){const fin=pedido&&(pedido.tipo=="ret"?st>=3:st>=5)?`<button class="card" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ok)">✅</div><div><b>Pedido #${pedido.id} · ${pedido.tipo=="ret"?"Retirado":"Entregue"}</b><div class="meta">Ver detalhes ou reportar um problema</div></div></button>`:"";const trk=pedido&&(pedido.tipo=="ret"?st<3:st<5)?`<button class="card" style="border-color:var(--ac)" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ac)">${pedido.tipo=="ret"?"🏪":"🛵"}</div><div><b>Acompanhar pedido #${pedido.id}</b><div class="meta">${(pedido.tipo=="ret"?LBR:LB)[st]}</div></div></button>`:"";if(MKT&&!cur)return trk+fin+mercado();return (MKT?`<button class="back" onclick="cur=null;X=X0;cart=[];draw()">‹ Marketplace</button>`:"")+trk+fin+pontoLoja()+(X.tp=="agenda"?agenda():cardapio())}
+function home(){const fin=pedido&&(pedido.tipo=="ret"?st>=3:st>=5)?`<button class="card" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ok)">✅</div><div><b>Pedido #${pedido.id} · ${pedido.tipo=="ret"?"Retirado":"Entregue"}</b><div class="meta">Ver detalhes ou reportar um problema</div></div></button>`:"";const trk=pedido&&(pedido.tipo=="ret"?st<3:st<5)?`<button class="card" style="border-color:var(--ac)" onclick="sh='trk';draw()"><div class="thumb" style="color:var(--ac)">${pedido.tipo=="ret"?"🏪":"🛵"}</div><div><b>Acompanhar pedido #${pedido.id}</b><div class="meta">${(pedido.tipo=="ret"?LBR:LB)[st]}</div></div></button>`:"";return trk+fin+pontoLoja()+(X.tp=="agenda"?agenda():cardapio())}
 const sub=()=>cart.reduce((t,i)=>t+i.p,0);
 function sacola(){const SIMPLES=!(window.PA_brand&&window.PA_brand.checkoutSimples===false);const m={};cart.forEach(i=>{m[i.n]=m[i.n]||{...i,q:0};m[i.n].q++});const it=Object.values(m),tt=sub();
  if(!ent())tipo="ret";const fr=tipo=="ent"&&taxa?TAXA:0,blk=tipo=="ent"&&fora&&xs!=2,ex=tipo=="ent"&&fora&&xs==2?TX:0,tot=tt+fr+ex+TS;
@@ -176,7 +172,7 @@ const PA=window.PA={ready:false,online:false,_q:[],_status(on,msg){PA.online=on;
 const strip=d=>{const o={...d};delete o.atualizadoEm;return o};
 PA.strip=strip;
 if(window.PA_MOCK){window.PA_MOCK(PA);return}
-(async()=>{try{
+let _fbN=0;const iniciaFb=async()=>{if(PA.ready||PA._ini)return;PA._ini=true;try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
  const app=A.initializeApp(CFG),db=PA_db(F,app),au=H.getAuth(app);
@@ -197,15 +193,23 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
  PA.setLojaCfg=(slug,d)=>F.setDoc(F.doc(db,"lojas",slug),{...cl(d),atualizadoEm:Date.now()},{merge:true});
  PA.watchLojaCfg=(slug,cb)=>F.onSnapshot(F.doc(db,"lojas",slug),s=>cb(s.exists()?s.data():null));
  PA.ready=true;PA._status(navigator.onLine!==false,"Sem internet · pedidos ficam salvos no aparelho");try{PA_pushInit(PA,F,db,H,au,app)}catch(e){console.warn("push",e)}PA._q.splice(0).forEach(f=>f());
-}catch(e){console.error("Firebase:",e);PA._status(false,"Sem conexão · modo local")}})();
+}catch(e){PA._ini=false;console.error("Firebase:",e);PA._status(false,"Sem conexão · modo local");setTimeout(religa,Math.min(15000,3000*(++_fbN)))}};
+/* O navegador guarda a falha de um módulo que não carregou; por isso, quando a internet volta, o app guarda a sacola e recarrega sozinho. */
+const religa=async()=>{if(PA.ready)return;try{const r=await fetch(B0+"firebase-app.js",{cache:"no-store",mode:"cors"});if(!r.ok)throw 0;
+  try{if(typeof cart!=="undefined"&&cart.length)sessionStorage.setItem("pa_cart_tmp",JSON.stringify(cart))}catch(e){}location.reload()}catch(e){setTimeout(religa,Math.min(15000,3000*(++_fbN)))}};
+const B0="https://www.gstatic.com/firebasejs/10.8.0/";iniciaFb();window.addEventListener("online",()=>{if(!PA.ready)religa()});
 })();
 /* ===== helpers comuns ===== */
+/* Item 9: o app instalado (APK/PWA) abre sem ?loja=. O código da loja fica guardado no aparelho. */
+window.PA_lojaSlug=function(){let q=null;try{q=new URLSearchParams(location.search).get("loja")}catch(e){}
+ try{if(q)localStorage.setItem("pa_loja",q);else q=localStorage.getItem("pa_loja")}catch(e){}return q||""};
 window.PA_toast=m=>{try{toast(m)}catch(e){}};
 window.PA_beep=()=>{try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}};
 /* ===== extras: cardápio/estado da loja ===== */
-PA.whenReady(()=>{const L=new URLSearchParams(location.search).get("loja");if(!L)return;let pl=null;const aplica=()=>{const t=pl&&PA.taxaServ!=null?PA.taxaServ:0;if(t!==TS){TS=t;try{draw()}catch(e){}}};PA.watchLojaCfg(L,d=>{pl=d?(d.plano||"iniciante")==="iniciante":false;aplica()});PA.getCfg().then(s=>{PA.taxaServ=s.exists()&&typeof s.data().taxaServico==="number"?s.data().taxaServico:1;aplica()}).catch(()=>{PA.taxaServ=1;aplica()})});
+PA.whenReady(()=>{const L=window.PA_lojaSlug();if(!L)return;let pl=null;const aplica=()=>{const t=pl&&PA.taxaServ!=null?PA.taxaServ:0;if(t!==TS){TS=t;try{draw()}catch(e){}}};PA.watchLojaCfg(L,d=>{pl=d?(d.plano||"iniciante")==="iniciante":false;aplica()});PA.getCfg().then(s=>{PA.taxaServ=s.exists()&&typeof s.data().taxaServico==="number"?s.data().taxaServico:1;aplica()}).catch(()=>{PA.taxaServ=1;aplica()})});
 </script><script>(function(){
-const _q=new URLSearchParams(location.search).get("loja"),SLUG=_q||"lanchonete-do-ze",LOJA=_q||X0.n;
+const SLUG=window.PA_lojaSlug()||"lanchonete-do-ze",LOJA=SLUG;
+try{const s=sessionStorage.getItem("pa_cart_tmp");if(s){sessionStorage.removeItem("pa_cart_tmp");const c0=JSON.parse(s);if(Array.isArray(c0)&&c0.length){cart=c0}}}catch(e){}
 let unw=null,rs=null,lastPq=pq,prim=true;
 const pgLabel=(p,t)=>p=="din"?"Dinheiro":p=="pix"?"Pix":(t=="ret"?"Pagar na loja":"Cartão na entrega");
 const st2=d=>{if(d.tp=="ret")return({novo:0,aceito:1,preparo:1,pronto:2,retirado:3})[d.st]??0;
@@ -249,18 +253,20 @@ fazer=async function(){
  window.__nid=id;_f();
  if(!pedido||pedido===antes)return;
  const m={};snap.forEach(i=>m[i.n]=(m[i.n]||0)+1);const itens=window.PA_menuSrv?Object.entries(m).map(([n,q])=>({i:X0.m.findIndex(p=>p[0]==n),q})):null;
- const dyn=pgc=="pix"&&!!PIXK&&!window.PA_gw&&!(PA.payLink&&PA.payLink.ligado===true);const d={ts:TS,id:pedido.id,loja:LOJA,lojaN:X0.n,it:Object.entries(m).map(([n,q])=>q+"x "+n).join(", "),...(itens?{itens}:{}),v:pedido.tt,pg:pgLabel(pgc,tp),pgc,tp,st:dyn?"aguardando_pg":"novo",...(dyn?{pixTx:"PA"+pedido.id,pixExp:Date.now()+(window.PA_pixTmo||10)*60000}:{}),cli:nome,bairro:ENDR.bairro||"",rua:ENDR.rua||"",geo:ENDR.lat?{lat:ENDR.lat,lng:ENDR.lng}:null,dl:0,dc:ex?KMC:3.5,entTipo:window.PA_entTipo||"cobrada",...(window.PA_mkt?{mkt:true}:{}),volta:false,maq:pgc=="car"&&tp=="ent",troco:pgc=="din"&&tp=="ent"&&!!String(tr).trim(),trocoPara:String(tr||""),paid:false,ps:0,codRet:pedido.codRet,codEnt:pedido.codEnt,criadoEm:Date.now(),uid:PA.uid};
+ const dyn=pgc=="pix"&&!!PIXK&&!window.PA_gw&&!(PA.payLink&&PA.payLink.ligado===true);const d={ts:TS,id:pedido.id,loja:LOJA,lojaN:X0.n,it:Object.entries(m).map(([n,q])=>q+"x "+n).join(", "),...(itens?{itens}:{}),v:pedido.tt,pg:pgLabel(pgc,tp),pgc,tp,st:dyn?"aguardando_pg":"novo",...(dyn?{pixTx:"PA"+pedido.id,pixExp:Date.now()+(window.PA_pixTmo||10)*60000}:{}),cli:nome,bairro:ENDR.bairro||"",rua:ENDR.rua||"",geo:ENDR.lat?{lat:ENDR.lat,lng:ENDR.lng}:null,dl:0,dc:ex?KMC:3.5,entTipo:window.PA_entTipo||"cobrada",volta:false,maq:pgc=="car"&&tp=="ent",troco:pgc=="din"&&tp=="ent"&&!!String(tr).trim(),trocoPara:String(tr||""),paid:false,ps:0,codRet:pedido.codRet,codEnt:pedido.codEnt,criadoEm:Date.now(),uid:PA.uid};
  rs=0;lastPq=0;
  const _p=PA.setPedido(d.id,d);if(navigator.onLine===false){localStorage.setItem("pa_pedido",d.id);watch(d.id);toast("Sem internet: o pedido ficou salvo no aparelho e será enviado quando a conexão voltar")}_p.then(()=>{if(localStorage.getItem("pa_pedido")!=String(d.id)){localStorage.setItem("pa_pedido",d.id);watch(d.id)}if(pgc=="pix"&&window.PA_gw)gatewayPedido(d.id);const L=PA.payLink;if(pgc=="pix"&&!window.PA_gw&&L&&L.ligado===true&&/^https:\/\//i.test(L.url||"")){toast("Abrindo o pagamento…");setTimeout(()=>{location.href=L.url},900)}}).catch(e=>{console.error(e);pedido=null;st=0;sh=null;draw();toast(e&&e.code==="permission-denied"?"Pedido recusado: a loja está indisponível ou o cardápio mudou. Atualize a página e tente de novo.":"Não foi possível enviar o pedido. Tente de novo.")})};
 window.PA_cancelCli=(p,m)=>{PA.setPedido(p.id,{st:"cancelado_cli",motivoCancel:m});fim()};
 window.PA_report=(p,m,t)=>{PA.setOco(Date.now(),{ped:p?p.id:0,lj:LOJA,cli:localStorage.getItem("pa_nome")||"Cliente",mot:m,txt:t||"",st:"aberta",rep:false,criadoEm:Date.now()})};
 /* cardápio e entrega/retirada vindos da loja */
-PA.whenReady(()=>{PA.watchLojaCfg(SLUG,c=>{if(!c)return;window.PA_modLoja={...(c.modulos||{})};Object.keys(c.modulosLoja||{}).forEach(k=>{if(c.modulosLoja[k]===false)window.PA_modLoja[k]=false});window.PA_entTipo=c.entTipo==="gratis"?"gratis":"cobrada";window.PA_brand=c.brand||{};window.PA_gw=!!c.asaasWalletId;MARCA.aplica(window.PA_brand);draw();
- if(c.nome){X0.n=c.nome;document.title=c.nome}  PIXK=typeof c.pix==="string"?c.pix:"";window.PA_pixTmo=Number(c.pixTmo)||10;window.PA_mkt=c.marketplace===true;
+const aplicaCfg=c=>{if(!c)return;window.PA_modLoja={...(c.modulos||{})};Object.keys(c.modulosLoja||{}).forEach(k=>{if(c.modulosLoja[k]===false)window.PA_modLoja[k]=false});window.PA_entTipo=c.entTipo==="gratis"?"gratis":"cobrada";window.PA_brand=c.brand||{};window.PA_gw=!!c.asaasWalletId;MARCA.aplica(window.PA_brand);draw();
+ if(c.nome){X0.n=c.nome;document.title=c.nome}  PIXK=typeof c.pix==="string"?c.pix:"";window.PA_pixTmo=Number(c.pixTmo)||10;
  if(c.m&&c.m.length){X0.m.length=0;c.m.forEach(p=>X0.m.push(Array.isArray(p)?p:[p.n,p.p,!!p.ok,p.d||"",p.em||"🍽️"]));window.PA_menuSrv=true}
  if((c.ent===false||c.entLoja===false)&&AUT=="ambas"){AUT="ret";tipo="ret"}else if(c.ent===true&&c.entLoja!==false&&AUT=="ret"){AUT="ambas"}
  if(c.fechada||c.suspensa||c.pendente===true){AUT="nada"}else if(AUT=="nada"){AUT=(c.ent===false||c.entLoja===false)?"ret":"ambas"}
- draw()});
+ draw()};
+try{const sv=localStorage.getItem("pa_cfg_"+SLUG);if(sv){aplicaCfg(JSON.parse(sv));PA._status(false,"Sem conexão · cardápio salvo no aparelho")}}catch(e){console.warn("cfg salvo:",e)}
+PA.whenReady(()=>{PA.watchLojaCfg(SLUG,c=>{if(c){try{localStorage.setItem("pa_cfg_"+SLUG,JSON.stringify(c))}catch(e){}}aplicaCfg(c)});
  const pid=localStorage.getItem("pa_pedido");if(pid)watch(+pid)});
 })();
 </script><script>if("serviceWorker"in navigator&&location.protocol!="file:")navigator.serviceWorker.register("sw.js").catch(function(){})</script></body></html>

@@ -115,10 +115,7 @@ service cloud.firestore {
     // ATENÇÃO: toda consulta (query) nos apps precisa ter where('loja','==',…) ou where('mot','==',uid):
     // regra não é filtro, e consulta ampla demais é recusada inteira.
     match /pedidos/{id} {
-      allow read: if signed() && (isCriador() || veLoja(resource.data)
-        // Marketplace: motoboy autônomo vê corridas "enviadas" de lojas que abriram para o marketplace
-        || (resource.data.get('mkt', false) == true && resource.data.get('st', '') == 'enviado'
-            && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_motoboy'))));
+      allow read: if signed() && (isCriador() || veLoja(resource.data));
       // Criar: (a) o CLIENTE, com uid = dele e valor conferido contra o cardápio; ou (b) a própria loja / equipe ativa (pedido do salão).
       allow create: if signed() && lojaLiberada(request.resource.data.get('loja', 'x'))
         && ((request.resource.data.get('uid', '') == request.auth.uid && valorOk(request.resource.data))
@@ -135,13 +132,7 @@ service cloud.firestore {
         || (motoboyDaLoja(resource.data.get('loja', ''))
             && !('mot' in resource.data)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mot', 'motN', 'atualizadoEm'])
-            && request.resource.data.mot == request.auth.uid)
-        // motoboy autônomo PEGANDO uma corrida do marketplace
-        || (resource.data.get('mkt', false) == true
-            && !('mot' in resource.data)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mot', 'motN', 'atualizadoEm'])
-            && request.resource.data.mot == request.auth.uid
-            && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_motoboy'))));
+            && request.resource.data.mot == request.auth.uid));
       allow delete: if isCriador() || (signed() && donoDaLoja(resource.data.get('loja', '')));
     }
     // Ocorrências: piloto.
@@ -199,7 +190,8 @@ service cloud.firestore {
              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['convite']) && resource.data.papel == 'lojista')
              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cad'])
           && resource.data.get('papel', '') == 'motoboy'
-          && request.resource.data.cad.fotos.keys().hasAll(['rosto', 'cnh', 'veiculo']))
+          && request.resource.data.cad.get('nome', '') is string && request.resource.data.cad.get('nome', '').size() >= 5
+          && request.resource.data.cad.get('tel', '') is string && request.resource.data.cad.get('tel', '').size() >= 8)
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pagto']) && request.resource.data.pagto.st == 'analise')));
     }
 
