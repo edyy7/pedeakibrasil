@@ -230,7 +230,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
 (async()=>{try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
- const app=A.initializeApp(CFG),db=PA_db(F,app),au=H.getAuth(app);
+ window.PA_SESSAO="adm";const app=A.initializeApp(CFG,"pa-adm"),db=PA_db(F,app),au=H.getAuth(app);
  await PA_login(H,au);
  PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
  PA.nextId=PA_nextId(F,db);

@@ -168,30 +168,50 @@ function cardEm(idx){
  ${o.maq?`<div class="meta">⚠️ Levar maquininha</div>`:""}
  ${o.troco?`<div class="meta">⚠️ Levar troco</div>`:""}
  <button class="cta b" onclick="PA_maps(decodeURIComponent('${encodeURIComponent((o.rua||'')+', '+(o.bairro||'')).replace(/'/g,'%27')}'))">🗺️ Abrir Google Maps até o cliente</button>
- ${!o.chegou?`<button class="cta g" onclick="EM[${idx}].chegou=true;draw();toast('Cliente avisado')">Cheguei no Cliente</button>`:`
+ ${!o.chegou&&o.estado!=="clientefin"?`<button class="cta g" onclick="EM[${idx}].chegou=true;draw();toast('Cliente avisado')">Cheguei no Cliente</button>`:`
    <div class="meta" style="margin-top:8px;color:var(--ok);font-weight:800">✓ Cliente avisado</div>
-   <div class="meta" style="margin-top:8px"><b>Opção 1 — código de entrega de ${o.cli}:</b></div>
-   <input id="ec${idx}" inputmode="numeric" maxlength="4" placeholder="Código de ${o.cli}">
-   <button class="cta g" onclick="entregarCod(${idx})">✅ Confirmar entrega com código</button>
-   <div class="meta" style="margin-top:14px"><b>Opção 2 — cliente sem o código (por foto):</b></div>
-   <button class="cta b" onclick="enviarFotoLoja(${idx})">📷 Fotografar tela do cliente e enviar à loja</button>
-   
-   
+   ${finUI(idx)}
  `}
  ${chat(true)}</div>`;
 }
-function entregarCod(idx){
- const o=EM[idx],v=($("ec"+idx)||{}).value||"";
- if(v!==o.codEnt){toast("Código de entrega errado");return}
- OK.unshift({id:o.id,loja:o.loja,g:ganho(o),d:HJ(),st:"Entregue",t:o.et==="gratis"?"loja":"cliente",km:Number(o.dc)||0});
- EM.splice(idx,1);draw();toast("✅ Entrega confirmada · "+(o.et==="gratis"?kmf(Number(o.dc)||0):R$(ganho(o))));
-}
-function enviarFotoLoja(idx){
- const o=EM[idx];
- /* Caminho B: foto enviada à loja → pedido sai da tela, vai à carteira e o cliente fica "Entregue" */
- OK.unshift({id:o.id,loja:o.loja,g:ganho(o),d:HJ(),st:"Entregue",t:o.et==="gratis"?"loja":"cliente",km:Number(o.dc)||0});
- EM.splice(idx,1);draw();toast("📷 Foto enviada à loja · cliente marcado como Entregue · "+(o.et==="gratis"?kmf(Number(o.dc)||0):R$(ganho(o))));
-}
+/* v5.9.5 · #002 finalização: foto do produto obrigatória + 2 confirmações + irreversível */
+const FIN={};
+function finFoto(id,k,inp){const f=inp.files&&inp.files[0];if(!f)return;if(!/^image\//.test(f.type)){toast("Escolha uma imagem");return}
+ const F=FIN[id]=FIN[id]||{};if(F[k+"U"]){try{URL.revokeObjectURL(F[k+"U"])}catch(e){}}F[k]=f;F[k+"U"]=URL.createObjectURL(f);draw()}
+function finUI(idx){const o=EM[idx],F=FIN[o.id]=FIN[o.id]||{},cf=o.estado==="clientefin";
+ const ft=(k,t)=>`<div class="oc" style="margin:8px 0"><b>${t} <span style="color:var(--rd)">*</span></b>${F[k+"U"]?`<img src="${F[k+"U"]}" alt="" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin:8px 0">`:`<div class="meta">Obrigatória para finalizar</div>`}<label class="cta b" style="cursor:pointer">📷 ${F[k]?"Tirar outra foto":"Tirar foto"}<input type="file" accept="image/*" capture="environment" style="display:none" onchange="finFoto(${o.id},'${k}',this)"></label></div>`;
+ if(cf)return `<div class="meta" style="margin-top:8px;color:var(--ok);font-weight:800">✓ O cliente finalizou no app dele (detectado automaticamente)</div>
+  <div class="meta">Tire as duas fotos e finalize a entrega.</div>${ft("tela","Foto da tela finalizada do cliente")}${ft("prod","Foto do produto entregue")}
+  <button class="cta g" onclick="finIniciar(${idx})">✅ Finalizar entrega</button>`;
+ return `<div class="meta" style="margin-top:8px;color:var(--ok);font-weight:800">✓ Cliente avisado</div>
+  ${ft("prod","Foto do produto entregue")}
+  <div class="meta" style="margin-top:8px"><b>Código de entrega de ${o.cli}:</b></div>
+  <input id="ec${o.id}" inputmode="numeric" maxlength="4" placeholder="Código de ${o.cli}" value="${F.cod||""}" oninput="FIN[${o.id}].cod=this.value">
+  <button class="cta g" onclick="finIniciar(${idx})">✅ Finalizar entrega</button>
+  <div class="meta" style="margin-top:10px">Cliente sem o código? Peça que ele toque em “Recebi meu pedido” no app dele: o sistema detecta sozinho e libera as fotos.</div>`}
+function finIniciar(idx){const o=EM[idx];if(!o)return;const F=FIN[o.id]=FIN[o.id]||{},cf=o.estado==="clientefin";
+ if(F.busy)return;
+ if(!F.prod){toast("Tire a foto do produto para finalizar");return}
+ if(cf){if(!F.tela){toast("Tire a foto da tela finalizada do cliente");return}}
+ else{const v=String(F.cod||($("ec"+o.id)||{}).value||"").trim();if(!v){toast("Digite o código do cliente");return}if(v!==o.codEnt){toast("Código de entrega errado");return}}
+ finModal(o.id,1)}
+function finModal(id,passo){let el=document.getElementById("finmod");if(!el){el=document.createElement("div");el.id="finmod";el.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px";document.body.appendChild(el)}
+ const t=passo===1?"Confirmar finalização?":"Tem certeza? Após finalizar, a entrega será concluída e a loja será notificada.",b1=passo===1?"Cancelar":"Voltar",b2=passo===1?"Sim, continuar":"Confirmar finalização";
+ el.innerHTML=`<div style="background:var(--bg,#0b0b0d);color:var(--tx,#f4f4f6);border:1px solid var(--br,#2a2a31);border-radius:16px;padding:18px;max-width:420px;width:100%"><div style="font-size:19px;font-weight:800;margin-bottom:6px">${passo===1?"Passo 1 de 2":"Passo 2 de 2"}</div><div style="font-size:17px;margin-bottom:14px">${t}</div><button class="cta g" id="fm2" ${FIN[id]&&FIN[id].busy?"disabled":""}>${b2}</button><button class="cta o" id="fm1" ${FIN[id]&&FIN[id].busy?"disabled":""}>${b1}</button></div>`;
+ el.querySelector("#fm1").onclick=()=>finFecha();
+ el.querySelector("#fm2").onclick=()=>{if(passo===1)finModal(id,2);else finExecuta(id)}}
+function finFecha(){const el=document.getElementById("finmod");if(el)el.remove()}
+async function finExecuta(id){const idx=EM.findIndex(x=>x.id==id);if(idx<0){finFecha();return}const o=EM[idx],F=FIN[o.id]=FIN[o.id]||{},cf=o.estado==="clientefin";
+ if(F.busy)return;if(navigator.onLine===false){toast("Sem internet: conecte-se para enviar as fotos e finalizar");return}
+ F.busy=true;finModal(id,2);const bt=document.getElementById("fm2");if(bt)bt.textContent="Enviando comprovações…";
+ try{const lim=(pr,ms)=>Promise.race([pr,new Promise((_,rj)=>setTimeout(()=>rj(new Error("tempo")),ms))]);
+  const up=async(k,tipo)=>{let b;try{b=await lim(cadRedim(F[k]),15000)}catch(e){b=F[k]}return lim(PA.upFoto("entrega-"+o.id+"-"+tipo,b),60000)};
+  const fp=await up("prod","produto"),ft=cf?await up("tela","tela-cliente"):null,agora=Date.now();
+  await PA.setPedido(o.id,{st:"entregue",entregueEm:cf?(o.entregueEm||agora):agora,fimEm:agora,finalMoto:true,finalMotoEm:agora,finalTipo:cf?"cliente":"codigo",fotoProduto:fp,...(ft?{fotoTelaCliente:ft}:{})});
+  OK.unshift({id:o.id,loja:o.loja,g:ganho(o),d:HJ(),st:"Entregue",t:o.et==="gratis"?"loja":"cliente",km:Number(o.dc)||0});
+  const j=EM.findIndex(x=>x.id==id);if(j>=0)EM.splice(j,1);["probU","telaU"].forEach(k=>{try{F[k]&&URL.revokeObjectURL(F[k])}catch(e){}});delete FIN[id];
+  finFecha();draw();toast("✅ Entrega finalizada · "+(o.et==="gratis"?kmf(Number(o.dc)||0):R$(ganho(o))))}
+ catch(e){console.error(e);F.busy=false;finFecha();toast("Não foi possível finalizar. Verifique a internet e tente de novo")}}
 function finalizarDevolucao(idx){
  const o=EM[idx],v=($("dv"+idx)||{}).value||"";
  if(v!==(o.codDev||"9876")){toast("Código de devolução errado");return}
@@ -274,7 +294,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
 (async()=>{try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
- const app=A.initializeApp(CFG),db=PA_db(F,app),au=H.getAuth(app);
+ window.PA_SESSAO="motoboy";const app=A.initializeApp(CFG,"pa-motoboy"),db=PA_db(F,app),au=H.getAuth(app);
  await PA_login(H,au);
  PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
  PA.nextId=PA_nextId(F,db);
@@ -339,11 +359,12 @@ function rebuild(){
  if(!prim&&on&&novas.length){PA_beep();toast("🛵 Nova corrida disponível");try{PA_overlay(novas[0],novas.length)}catch(e){}}
  const ac=MINE.filter(d=>d.st=="enviado"),antes=AC.map(o=>o.id);
  AC=[...antes.filter(id=>ac.some(d=>d.id==id)).map(id=>toMb(ac.find(d=>d.id==id))),...ac.filter(d=>!antes.includes(d.id)).map(toMb)];
- const emD=MINE.filter(d=>d.st=="emrota"||d.st=="devolucao"||(d.st=="cancelado"&&!d.motoOk&&!d.devolvido)),prevEm=EM;
+ const pendCli=d=>d.st=="entregue"&&d.recebidoCli&&!d.finalMoto&&(Date.now()-(d.entregueEm||0))<1728e5;
+  const emD=MINE.filter(d=>d.st=="emrota"||d.st=="devolucao"||pendCli(d)||(d.st=="cancelado"&&!d.motoOk&&!d.devolvido)),prevEm=EM;
  EM=emD.map(d=>{const o=toMb(d),p=prevEm.find(x=>x.id==d.id);o.chegou=p?p.chegou:false;o.foto=false;
-  o.estado=d.st=="devolucao"?"voltando":d.st=="cancelado"?"descartado":"emrota";return o});
+  o.estado=pendCli(d)?"clientefin":d.st=="devolucao"?"voltando":d.st=="cancelado"?"descartado":"emrota";if(o.estado=="clientefin"){o.chegou=true;o.entregueEm=d.entregueEm}return o});
  OK.length=0;
- MINE.filter(d=>d.st=="entregue"||d.st=="aguardando"||(d.st=="cancelado"&&(d.motoOk||d.devolvido)))
+ MINE.filter(d=>(d.st=="entregue"&&!pendCli(d))||d.st=="aguardando"||(d.st=="cancelado"&&(d.motoOk||d.devolvido)))
   .sort((a,b)=>(b.fimEm||0)-(a.fimEm||0)).forEach(d=>{const o=toMb(d);let g,s;
    if(d.devolvido){g=ganho({...o,volta:false})+ganho({...o,volta:true});s="Devolvido"}
    else if(d.st=="cancelado"){g=ganho({...o,volta:false});s="Descartado"}
@@ -372,12 +393,6 @@ recusarGrupo=function(key){DISP.filter(o=>keyOf(o)===key).forEach(o=>REC.add(o.i
 const _r=retirarGrupo;
 retirarGrupo=function(key){const ids=AC.filter(o=>keyOf(o)===key).map(o=>o.id),n=AC.length;_r(key);
  if(AC.length<n)ids.forEach(id=>PA.setPedido(id,{st:"emrota",retiradoEm:Date.now()}))};
-const _e=entregarCod;
-entregarCod=function(idx){const o=EM[idx],n=EM.length;_e(idx);
- if(EM.length<n)PA.setPedido(o.id,{st:"entregue",entregueEm:Date.now(),fimEm:Date.now()})};
-const _fo=enviarFotoLoja;
-enviarFotoLoja=function(idx){const o=EM[idx];_fo(idx);
- PA.setPedido(o.id,{st:"aguardando",aguardandoDesde:Date.now(),fimEm:Date.now()})};
 const _dv=finalizarDevolucao;
 finalizarDevolucao=function(idx){const o=EM[idx],n=EM.length;_dv(idx);
  if(EM.length<n)PA.setPedido(o.id,{st:"cancelado",motivoCancel:"Devolvido à loja",devolvido:true,motoOk:true,fimEm:Date.now()})};

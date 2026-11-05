@@ -57,12 +57,16 @@ const copia=t=>{try{navigator.clipboard.writeText(t).then(()=>window.PA_toast&&P
 window.PA_copia=copia;
 window.PA_share=(u,t)=>{if(navigator.share)navigator.share({title:"PedeAí",text:t,url:u}).catch(()=>{});else copia(t+" "+u)};
 window.PA_wa=(u,t)=>window.open("https://wa.me/?text="+encodeURIComponent(t+" "+u),"_blank");
+/* v5.9.8 · #008 rastreamento: o link do afiliado (?ref=AFI-XXXXXX) é guardado neste aparelho por 90 dias e usado ao criar a loja */
+try{const c=String(new URLSearchParams(location.search).get("ref")||"").trim().toUpperCase();if(/^AFI-[A-Z0-9]{6}$/.test(c))localStorage.setItem("pa_ref",JSON.stringify({c,t:Date.now()}))}catch(e){}
+window.PA_ref=()=>{try{const r=JSON.parse(localStorage.getItem("pa_ref")||"null");if(r&&/^AFI-[A-Z0-9]{6}$/.test(r.c)&&Date.now()-r.t<90*864e5)return r.c}catch(e){}return ""};
+window.PA_refLimpa=()=>{try{localStorage.removeItem("pa_ref")}catch(e){}};
 window.PA_maps=q=>window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q),"_blank");
 const limpaCod=s=>String(s||"").toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,30);
 try{const q=limpaCod(new URLSearchParams(location.search).get("adm"));if(q)localStorage.setItem("pa_adm",q);const g=String(new URLSearchParams(location.search).get("gerente")||"").replace(/[^A-Za-z0-9]/g,"").slice(0,40);if(g)localStorage.setItem("pa_ger",g)}catch(e){}
 const ALFA="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const rnd=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),x=>ALFA[x%ALFA.length]).join("");
-window.PA_conviteLink=()=>PA.conta&&PA.conta.convite?location.origin+"/motoboy.html?convite="+encodeURIComponent(PA.conta.convite):null;
+window.PA_conviteLink=()=>PA.conta&&PA.conta.convite?location.origin+"/motoboy.html?convite="+encodeURIComponent(PA.conta.convite)+(PA.loja&&PA.loja.slug?"&loja="+encodeURIComponent(PA.loja.slug):""):null;
 window.PA_novoConvite=()=>PA.novoConvite?PA.novoConvite():Promise.reject();
 window.PA_link=()=>window.PA&&PA.loja?location.origin+"/cliente.html?loja="+encodeURIComponent(PA.loja.slug):null;
 
@@ -70,11 +74,18 @@ window.PA_link=()=>window.PA&&PA.loja?location.origin+"/cliente.html?loja="+enco
 window.PA_login=async function(H,au){
  await au.authStateReady();
  try{await H.getRedirectResult(au)}catch(e){console.error("redirect:",e)}
- if(window.PA_PAPEL==="cliente"){if(!au.currentUser)await H.signInAnonymously(au);return au.currentUser}
+ if(window.PA_PAPEL==="cliente"||window.PA_SESSAO==="cozinha"){if(!au.currentUser)await H.signInAnonymously(au);return au.currentUser}
  if(au.currentUser&&!au.currentUser.isAnonymous)return au.currentUser;
  return new Promise(res=>{
-  const o=ov('<div style="text-align:center"><div style="font-size:26px;font-weight:800;margin-bottom:6px">PedeAí Brasil</div><div style="color:#a3a3ad;margin-bottom:18px">Entre com sua conta Google.</div><button id="pa-g" style="'+BTN+';background:#fff;color:#222">Entrar com Google</button><div id="pa-ge" style="color:#ff6b6b;font-size:13px;margin-top:14px;min-height:18px"></div></div>');
+  const o=ov('<div style="text-align:center"><div style="font-size:26px;font-weight:800;margin-bottom:6px">PedeAí Brasil</div><div style="color:#a3a3ad;margin-bottom:18px">Entre com sua conta Google.</div><button id="pa-g" style="'+BTN+';background:#fff;color:#222">Entrar com Google</button><div id="pa-ge" style="color:#ff6b6b;font-size:13px;margin-top:14px;min-height:18px"></div>'+(window.PA_SESSAO==="lojista"?'<div style="border-top:1px solid #2a2a31;margin-top:12px;padding-top:12px"><div style="color:#a3a3ad;margin-bottom:8px">ou entre com e-mail e senha</div><input id="pa-em" type="email" autocomplete="username" placeholder="E-mail" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #2a2a31;background:#0b0b0d;color:#f4f4f6;font:inherit;margin-bottom:8px"><input id="pa-pw" type="password" autocomplete="current-password" placeholder="Senha (mínimo 6)" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #2a2a31;background:#0b0b0d;color:#f4f4f6;font:inherit"><button id="pa-ep" style="'+BTN+';background:#22a559;color:#fff">Entrar</button><button id="pa-ec" style="'+BTN+';background:#2a2a31;color:#f4f4f6">Criar conta</button><button id="pa-er" style="'+BTN+';background:transparent;color:#a3a3ad;margin-top:4px">Esqueci a senha</button></div>':'')+'</div>');
   const btn=o.querySelector("#pa-g"),er=o.querySelector("#pa-ge");
+   const emE=o.querySelector("#pa-em");if(emE){const pw=o.querySelector("#pa-pw"),msg=c=>({"auth/invalid-credential":"E-mail ou senha incorretos.","auth/wrong-password":"E-mail ou senha incorretos.","auth/user-not-found":"E-mail ou senha incorretos.","auth/invalid-email":"E-mail inválido.","auth/email-already-in-use":"Este e-mail já tem conta. Use Entrar (ou Esqueci a senha).","auth/weak-password":"Senha fraca: use pelo menos 6 caracteres.","auth/too-many-requests":"Muitas tentativas. Aguarde um pouco.","auth/operation-not-allowed":"Login por e-mail e senha não está ativado no Firebase (Authentication → Método de login)."}[c]||"Não foi possível entrar ("+c+").");
+    const verif=async(u,novo)=>{try{await H.sendEmailVerification(u)}catch(e){}await H.signOut(au);er.style.color="#ffd54a";er.textContent=(novo?"Conta criada. ":"")+"Enviamos um link de confirmação para "+u.email+". Confirme o e-mail e depois toque em Entrar."};
+    const ent=async novo=>{er.style.color="#ff6b6b";er.textContent="";const e1=emE.value.trim().toLowerCase(),s1=pw.value;if(!e1||!s1){er.textContent="Informe e-mail e senha.";return}
+     try{const r=novo?await H.createUserWithEmailAndPassword(au,e1,s1):await H.signInWithEmailAndPassword(au,e1,s1);
+      if(!r.user.emailVerified){await verif(r.user,novo);return}o.remove();res(r.user)}catch(e){console.error(e);er.textContent=msg(e.code)}};
+    o.querySelector("#pa-ep").onclick=()=>ent(false);o.querySelector("#pa-ec").onclick=()=>ent(true);
+    o.querySelector("#pa-er").onclick=async()=>{const e1=emE.value.trim().toLowerCase();if(!e1){er.style.color="#ff6b6b";er.textContent="Digite o e-mail para receber o link.";return}try{await H.sendPasswordResetEmail(au,e1);er.style.color="#ffd54a";er.textContent="Se o e-mail tiver conta, enviamos o link para criar uma nova senha."}catch(e){er.style.color="#ff6b6b";er.textContent=msg(e.code)}}}
   btn.onclick=async()=>{er.textContent="";btn.disabled=true;
    const p=new H.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});
    try{const r=await H.signInWithPopup(au,p);o.remove();res(r.user)}
@@ -101,8 +112,14 @@ window.PA_estado=function(d,now){const v=vencDe(d),dias=Math.ceil((v-now)/DIA);
 window.PA_conta=async function(F,db,H,au){
  const papel=window.PA_PAPEL,u=au.currentUser;
  PA.fb={F,db,H,au};
- PA.logout=()=>H.signOut(au).then(()=>location.reload());
+ /* v5.9.5 · sessão: token (Firebase, persistente) + e-mail + ID da loja. Só o logout explícito encerra. */
+ const SESS=window.PA_SESSAO||papel,SK="pa_sessao_"+SESS,LK="pa_loja_"+SESS;
+ try{const q=String(new URLSearchParams(location.search).get("loja")||"").replace(/[^A-Za-z0-9_-]/g,"").slice(0,60);if(q&&papel!=="cliente")localStorage.setItem(LK,q)}catch(e){}
+ PA.sessao=(loja)=>{try{const o=JSON.parse(localStorage.getItem(SK)||"null")||{};const n={uid:u.uid,email:u.email||"",loja:loja||o.loja||localStorage.getItem(LK)||"",papel:SESS,t:Date.now()};localStorage.setItem(SK,JSON.stringify(n))}catch(e){}};
+ PA.sessao();
+ PA.logout=()=>{try{localStorage.removeItem(SK);localStorage.removeItem(LK)}catch(e){}return H.signOut(au).then(()=>location.reload())};
  if(papel==="cliente")return;
+ if(SESS==="cozinha")return cozinhaConta(F,db,u);
  let cfg={};try{const s=await F.getDoc(F.doc(db,"meta","config"));if(s.exists())cfg=s.data()}catch(e){}
  if(papel==="criador")return criador(F,db,u,cfg);
  const ref=F.doc(db,"contas",u.uid+"_"+papel);
@@ -118,6 +135,7 @@ window.PA_conta=async function(F,db,H,au){
   if(!d.loja)d=await entrada(F,db,ref,u,d);else await papelNaLoja(F,db,u,d);
   if(PA.equipe){try{const ls=await F.getDoc(F.doc(db,"lojas",d.loja.slug));const dn=ls.exists()?ls.data().dono:null;if(dn)F.onSnapshot(F.doc(db,"contas",dn+"_lojista"),sn=>{if(sn.exists()){PA.donoConta=sn.data();window.PA_rr&&PA_rr()}},e=>console.error("dono:",e))}catch(e){console.error(e)}}
   PA.loja=d.loja;PA.conta=d;
+   PA.sessao(d.loja&&d.loja.slug);
   const gerar=async()=>{const slug=d.loja.slug,velho=d.convite;
    const code=(slug.replace(/[^a-z]/g,"").slice(0,2).toUpperCase()||"LJ")+"-"+rnd(6);
    let vg={};if(velho){try{const os=await F.getDoc(F.doc(db,"convites",velho));if(os.exists()){const od=os.data();if(typeof od.vagas==="number")vg.vagas=od.vagas;if(od.motos)vg.motos=od.motos}}catch(e){}}
@@ -146,8 +164,8 @@ window.PA_conta=async function(F,db,H,au){
   if(!bar){bar=document.createElement("div");bar.style.cssText="background:#16161a;color:#f4f4f6;font:12.5px system-ui,sans-serif;padding:6px 10px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center";
    const st=document.getElementById("pa-st");if(st&&st.parentNode)st.parentNode.insertBefore(bar,st.nextSibling);else document.body.prepend(bar)}
   const b=(id,t)=>'<button data-a="'+id+'" style="background:#2a2a31;color:#f4f4f6;border:0;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer">'+t+'</button>';
-  bar.innerHTML='<span>'+e.ico+' '+esc(e.t)+(gratis?'':' · até '+fmt(e.v))+'</span><span style="flex:1"></span>'+(PA_link()?b("link","🔗 Link da loja"):"")+(papel==="adm"?b("rh","👥 RH"+(PA.rhN?" ("+PA.rhN+")":"")):"")+(papel==="lojista"&&!PA.equipe?b("eq","👥 Equipe"):"")+(gratis||PA.equipe?"":b("pagar","💳 Pagar"))+b("sair","Sair");
-  bar.onclick=ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(a==="link")PA_copia(PA_link());else if(a==="pagar")paywall(false);else if(a==="rh")PA_RH.adm();else if(a==="eq")PA_RH.equipe();else if(a==="sair")PA.logout()};
+  bar.innerHTML='<span>'+e.ico+' '+esc(e.t)+(gratis?'':' · até '+fmt(e.v))+'</span><span style="flex:1"></span>'+(PA_link()?b("link","🔗 Link da loja"):"")+(papel==="adm"?b("rh","👥 RH"+(PA.rhN?" ("+PA.rhN+")":"")):"")+((papel==="motoboy"||(papel==="lojista"&&!PA.equipe))?b("afi","🤝 Indique e Ganhe"):"")+(gratis||PA.equipe?"":b("pagar","💳 Pagar"))+b("sair","Sair");
+  bar.onclick=ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(a==="link")PA_copia(PA_link());else if(a==="pagar")paywall(false);else if(a==="rh")PA_RH.adm();else if(a==="afi")window.open("indicador.html","_blank");else if(a==="eq")PA_RH.equipe();else if(a==="sair")PA.logout()};
   try{localStorage.setItem(SYNC,JSON.stringify({srv:agora(),dev:Date.now()}));PA.contaOk=true;offCheck()}catch(x){}
   {const dd=Math.ceil((e.v-agora())/DIA),lv=gratis?0:e.k==="avencer"?(dd<=1?3:dd<=3?2:1):(e.k==="carencia"||e.k==="travada")?3:0;let bn=document.getElementById("pa-bn");
    if(!lv){if(bn)bn.remove()}else{if(!bn){bn=document.createElement("div");bn.id="pa-bn";bar.parentNode.insertBefore(bn,bar.nextSibling)}
@@ -216,13 +234,25 @@ async function entrada(F,db,ref,u,d){
     try{localStorage.removeItem("pa_ger")}catch(e){}}
    catch(e){console.error("gerente:",e);try{localStorage.removeItem("pa_ger")}catch(x){}
     await espera('<div style="font-size:42px">⚠️</div><div style="font-size:21px;font-weight:800;margin:6px 0">Link de convite inválido ou já usado</div><div style="color:#a3a3ad">Peça ao seu ADM um novo link.</div>');continue}}
-  let eq=null;try{const s=await F.getDocs(F.query(F.collection(db,"equipe"),F.where("email","==",email)));s.forEach(x=>{if(!eq||x.data().st==="ativo")eq={id:x.id,...x.data()}})}catch(e){console.error("equipe:",e)}
+  let eq=null;try{const s=await F.getDocs(F.query(F.collection(db,"equipe"),F.where("email","==",email)));const lk=(()=>{try{return localStorage.getItem("pa_loja_"+(window.PA_SESSAO||"lojista"))||""}catch(e){return ""}})();s.forEach(x=>{const dd=x.data();if(!eq||(dd.st==="ativo"&&!(eq.st==="ativo"&&eq.slug===lk)))eq={id:x.id,...dd}})}catch(e){console.error("equipe:",e)}
   if(eq&&eq.st==="ativo"){PA.equipe=eq;try{const l=await F.getDoc(F.doc(db,"lojas",eq.slug));await F.setDoc(ref,{loja:{nome:l.exists()?l.data().nome:eq.slug,slug:eq.slug}},{merge:true});return {...d,loja:{nome:l.exists()?l.data().nome:eq.slug,slug:eq.slug}}}catch(e){console.error(e)}}
   if(eq){/* sala de espera: o ADM autoriza e escolhe o cargo */
    await new Promise(res=>{const o=ov('<div style="text-align:center"><div style="font-size:42px">⏳</div><div style="font-size:22px;font-weight:800;margin:6px 0">Aguardando autorização</div><div style="color:#a3a3ad;margin-bottom:14px">O ADM da loja precisa autorizar seu acesso e definir o seu cargo. Esta tela libera sozinha.</div><button data-a="sair" style="'+BTN+';background:#2a2a31;color:#f4f4f6">Sair da conta</button></div>');
     o.onclick=ev=>{if(ev.target.dataset&&ev.target.dataset.a==="sair")PA.logout()};
     F.onSnapshot(F.doc(db,"equipe",eq.id),sn=>{if(sn.exists()&&sn.data().st==="ativo"){o.remove();res()}})});continue}
   await espera('<div style="font-size:42px">🏪</div><div style="font-size:21px;font-weight:800;margin:6px 0">Acesso só por convite</div><div style="color:#a3a3ad">A loja é criada pelo seu ADM. Abra o link de convite que ele enviou. Se você é funcionário, peça ao gerente para cadastrar o seu e-mail ('+esc(email)+').</div>')}}
+/* v5.9.6 · #004: Cozinha SEM login. Entra anônima; o link traz o ID da loja (?loja=) e a chave (&k=). */
+async function cozinhaConta(F,db,u){
+ const q=new URLSearchParams(location.search),san=(v,n)=>String(v||"").replace(/[^A-Za-z0-9_-]/g,"").slice(0,n);
+ try{const l=san(q.get("loja"),60),k=san(q.get("k"),60);if(l&&k){localStorage.setItem("pa_loja_cozinha",l);localStorage.setItem("pa_cz_k",k)}}catch(e){}
+ let slug="",tk="";try{slug=localStorage.getItem("pa_loja_cozinha")||"";tk=localStorage.getItem("pa_cz_k")||""}catch(e){}
+ const bloq=(t,m)=>new Promise(()=>{ov('<div style="text-align:center"><div style="font-size:42px">🔒</div><div style="font-size:22px;font-weight:800;margin:6px 0">'+t+'</div><div style="color:#a3a3ad">'+m+'</div></div>')});
+ if(!slug||!tk)return bloq("Abra o link da Cozinha","Peça à loja o link da Cozinha: ele já traz o código da loja.");
+ let ls;try{await F.setDoc(F.doc(db,"cozinhaAcessos",u.uid),{slug,token:tk,criadoEm:Date.now()});ls=await F.getDoc(F.doc(db,"lojas",slug))}
+ catch(e){console.error("cozinha:",e);return bloq("Link da Cozinha inválido","O link foi trocado ou está incompleto. Peça ao gerente um novo link da Cozinha.")}
+ if(!ls.exists())return bloq("Loja não encontrada","Confira o link da Cozinha com o gerente.");
+ PA.loja={nome:ls.data().nome||slug,slug};PA.conta={papel:"lojista",loja:PA.loja};PA.equipe={cargo:"Cozinha",nome:"Cozinha",st:"ativo",anonimo:true};PA.anonCoz=true;PA.sessao&&PA.sessao(slug);
+ let sp=null;F.onSnapshot(F.doc(db,"lojas",slug),sn=>{const s=sn.exists()&&sn.data().suspensa===true;if(s&&!sp)sp=ov('<div style="text-align:center"><div style="font-size:42px">⛔</div><div style="font-size:22px;font-weight:800;margin:6px 0">Loja suspensa</div><div style="color:#a3a3ad">Fale com o gerente da loja.</div></div>');else if(!s&&sp){sp.remove();sp=null}},e=>console.error("loja:",e))}
 function espera(h){return new Promise(()=>{const o=ov('<div style="text-align:center">'+h+'<button data-a="sair" style="'+BTN+';background:#2a2a31;color:#f4f4f6">Sair da conta</button></div>');o.onclick=ev=>{if(ev.target.dataset&&ev.target.dataset.a==="sair")PA.logout()}})}
 async function papelNaLoja(F,db,u,d){
  let l=null;try{const s=await F.getDoc(F.doc(db,"lojas",d.loja.slug));l=s.exists()?s.data():null}catch(e){console.error(e)}
@@ -291,8 +321,25 @@ async function criador(F,db,u,cfg){
  /* painel do Criador: a tela inicial chama estas ações; as bolhas ficam escondidas */
  window.PA_criadorAcoes={contas:()=>bt.onclick(),lojas:()=>b2.onclick(),pag:()=>b3.onclick(),mod:()=>modulosCriador(F,db),leads:()=>leadsCriador(F,db)};
  /* dados para as abas do painel do Criador (só leitura) + suspender/reativar loja */
- window.PA_criadorDados=async()=>{const [ls,cs,ps]=await Promise.all([F.getDocs(F.collection(db,"lojas")),F.getDocs(F.collection(db,"contas")),F.getDocs(F.collection(db,"pedidos"))]);
-  return {lojas:ls.docs.map(d=>({slug:d.id,...d.data()})),contas:cs.docs.map(d=>({id:d.id,...d.data()})),pedidos:ps.docs.map(d=>{const x=d.data();return {id:x.id,loja:x.loja,tt:x.tt,st:x.st,criadoEm:x.criadoEm}})}};
+ window.PA_criadorDados=async()=>{const [ls,cs,ps,afs,cms]=await Promise.all([F.getDocs(F.collection(db,"lojas")),F.getDocs(F.collection(db,"contas")),F.getDocs(F.collection(db,"pedidos")),F.getDocs(F.collection(db,"afiliados")),F.getDocs(F.collection(db,"comissoes"))]);
+  return {afiliados:afs.docs.map(d=>({id:d.id,...d.data()})),comissoes:cms.docs.map(d=>({id:d.id,...d.data()})),lojas:ls.docs.map(d=>({slug:d.id,...d.data()})),contas:cs.docs.map(d=>({id:d.id,...d.data()})),pedidos:ps.docs.map(d=>{const x=d.data();return {id:x.id,loja:x.loja,tt:x.tt,st:x.st,criadoEm:x.criadoEm}})}};
+ /* v5.9.5 · #001 comissão do Criador: % por plano (padrão 7% = a estimativa que o painel já usava; sobrescreve em meta/config.comissaoCriador) e leitura ao vivo */
+ {const pd={},base=7;Object.keys(PLANOS).forEach(k=>{pd[k]=base});const ov2=cfg&&cfg.comissaoCriador&&typeof cfg.comissaoCriador==="object"?cfg.comissaoCriador:{};Object.keys(ov2).forEach(k=>{const v=Number(ov2[k]);if(isFinite(v)&&v>=0&&v<=100)pd[k]=v});window.PA_COMISSAO_PCT=pd}
+ const mapPed=d=>{const x=d.data();return {id:x.id,loja:x.loja,tt:x.tt,st:x.st,criadoEm:x.criadoEm}};
+ window.PA_criadorLive=()=>{if(window.__crLive)return;window.__crLive=true;
+  F.onSnapshot(F.collection(db,"pedidos"),s=>{try{window.PA_onPedidos&&PA_onPedidos(s.docs.map(mapPed))}catch(e){console.error(e)}},e=>console.error("pedidos:",e));
+  F.onSnapshot(F.collection(db,"lojas"),s=>{try{window.PA_onLojas&&PA_onLojas(s.docs.map(d=>({slug:d.id,...d.data()})))}catch(e){console.error(e)}},e=>console.error("lojas:",e));
+  /* v5.9.7 · #008: afiliados e comissões ao vivo (repasses pendentes, baixa, histórico) */
+  F.onSnapshot(F.collection(db,"comissoes"),s=>{try{window.PA_onComissoes&&PA_onComissoes(s.docs.map(d=>({id:d.id,...d.data()})))}catch(e){console.error(e)}},e=>console.error("comissoes:",e));
+  F.onSnapshot(F.collection(db,"afiliados"),s=>{try{window.PA_onAfiliados&&PA_onAfiliados(s.docs.map(d=>({id:d.id,...d.data()})))}catch(e){console.error(e)}},e=>console.error("afiliados:",e))};
+ {const ok=a=>{if(!(a.nome||"").trim()||(a.nome||"").trim().length<2)throw new Error("Informe o nome do afiliado.");const p=Number(a.pct);if(!(p>0&&p<=100))throw new Error("A comissão (%) deve ser maior que 0 e no máximo 100.");if(!String(a.pix||"").trim())throw new Error("Informe a chave Pix do afiliado (o repasse é feito por Pix).")};
+  window.PA_AFI_PCT=60;
+  window.PA_afi={
+   /* o afiliado se cadastra sozinho (indicador.html, login Google); o Criador só ajusta dados, % (padrão 60) e situação */
+   salvar:async a=>{ok(a);const d={nome:a.nome.trim(),whats:String(a.whats||"").replace(/\D/g,""),pix:String(a.pix||"").trim(),pct:Math.round(Number(a.pct)*100)/100,ativo:a.ativo!==false};await F.setDoc(F.doc(db,"afiliados",a.id),d,{merge:true});if(a.cod)await F.setDoc(F.doc(db,"afiliadoCodigos",a.cod),{afiliadoId:a.id,nome:d.nome},{merge:true});return a.id},
+   vincular:async(slug,af)=>{if(af)await F.setDoc(F.doc(db,"lojas",slug),{afiliadoId:af.id,afiliadoCodigo:af.cod||"",afiliadoVia:"criador",semIndicador:false},{merge:true});else await F.setDoc(F.doc(db,"lojas",slug),{afiliadoId:F.deleteField(),afiliadoCodigo:F.deleteField(),afiliadoVia:"direta",semIndicador:true},{merge:true})},
+   baixa:async(id,obs)=>F.setDoc(F.doc(db,"comissoes",id),{st:"paga",baixaEm:Date.now(),baixaPor:(PA.user&&PA.user.email)||"criador",obs:String(obs||"").slice(0,200)},{merge:true}),
+   desfazer:async id=>F.setDoc(F.doc(db,"comissoes",id),{st:"pendente",baixaEm:F.deleteField(),baixaPor:F.deleteField(),obs:F.deleteField()},{merge:true})}}
  window.PA_criadorSuspender=(slug,v)=>F.setDoc(F.doc(db,"lojas",slug),{suspensa:!!v},{merge:true});
  try{window.PA_onCriadorPronto&&PA_onCriadorPronto()}catch(e){}
  /* contador de leads novos (aparece no painel) */
@@ -441,6 +488,24 @@ async function leadsCriador(F,db){
  await draw();
 }
 
+/* v5.9.7 · #008 Programa de Afiliados: pagamento de loja confirmado -> comissão RECORRENTE do indicador (uma por pagamento: id = conta + data do pagamento, não duplica).
+   Pix ao indicador em até 48 h; o aviso aparece no painel do indicador (indicador.html) e o Criador pode avisar pelo WhatsApp. */
+async function gerarComissao(F,db,x){
+ try{
+  if(!x||x.papel!=="lojista"||!x.loja||!x.pagto||x.pagto.st!=="analise")return null;
+  const valor=Number(x.pagto.valor)||0;if(!(valor>0))return null;
+  const ls=await F.getDoc(F.doc(db,"lojas",x.loja.slug));if(!ls.exists())return null;
+  const l=ls.data(),afId=l.afiliadoId||"";if(!afId)return null;
+  const as=await F.getDoc(F.doc(db,"afiliados",afId));if(!as.exists())return null;
+  const a=as.data();if(a.ativo===false)return null;
+  const pct=Number(a.pct);if(!(pct>0&&pct<=100))return null;
+  const id=x.id+"_"+(x.pagto.em||0),ex=await F.getDoc(F.doc(db,"comissoes",id));if(ex.exists())return {id,ja:true,...ex.data()};
+  const ag=Date.now(),c={afiliadoId:afId,afiliadoNome:a.nome||"",loja:x.loja.slug,lojaNome:l.nome||x.loja.nome||x.loja.slug,contaId:x.id,plano:x.pagto.plano||x.plano||"",valorPago:valor,pct,pctCriador:Math.round((100-pct)*100)/100,valor:Math.round(valor*pct)/100,valorCriador:(Math.round(valor*100)-Math.round(valor*pct))/100,confirmadoEm:ag,prazoEm:ag+48*36e5,st:"pendente",visto:false,criadoEm:ag};
+  await F.setDoc(F.doc(db,"comissoes",id),c);return {id,whats:a.whats||"",...c};
+ }catch(e){console.error("comissão:",e);alert("⚠️ O pagamento foi confirmado, mas a comissão do indicador NÃO foi registrada ("+(e.code||e.message)+"). Anote e registre manualmente.");return null}}
+function avisoComissao(c){
+ const o=ov('<div style="text-align:center"><div style="font-size:40px">🤝</div><div style="font-size:20px;font-weight:800;margin:6px 0">Comissão de indicação gerada</div><div style="color:#a3a3ad;margin-bottom:12px">'+esc(c.afiliadoNome||"Indicador")+' indicou '+esc(c.lojaNome)+'.<br>Pagamento confirmado: '+R(c.valorPago)+' · comissão do afiliado <b style="color:#22a559">'+R(c.valor)+'</b> ('+c.pct+'%) · fica com você '+R(c.valorCriador)+' ('+c.pctCriador+'%).<br>Pagar via Pix até '+fmt(c.prazoEm)+' (48 h). Dê baixa em Faturamento → Repasses.</div>'+(c.whats?'<button data-a="w" style="'+BTN+';background:#25d366;color:#fff">📲 Avisar o indicador no WhatsApp</button>':'')+'<button data-a="f" style="'+BTN+';background:#2a2a31;color:#f4f4f6">Fechar</button></div>');
+ o.onclick=ev=>{const a=ev.target.dataset&&ev.target.dataset.a;if(a==="f")o.remove();else if(a==="w"){let n=String(c.whats).replace(/\D/g,"");if(n.length<=11)n="55"+n;window.open("https://wa.me/"+n+"?text="+encodeURIComponent("Olá, "+(c.afiliadoNome||"")+"! O pagamento da loja "+c.lojaNome+" foi confirmado. Sua comissão de "+R(c.valor)+" será paga por Pix em até 48 h."),"_blank")}}}
 async function painel(F,db,cfg){
  const o=ov('<div id="pc">Carregando…</div>');o.firstChild.style.maxWidth="440px";
  const draw=async()=>{
@@ -458,7 +523,8 @@ async function painel(F,db,cfg){
     if(a==="x"){o.remove();return}
     if(a==="cfg"){const nv=(id,p)=>{const x=parseFloat(String(o.querySelector(id).value).replace(",","."));return isFinite(x)&&x>=0?Math.round(x*100)/100:DEF[p]};const v={valores:{lojista:nv("#cvl","lojista"),motoboy:nv("#cvm","motoboy"),adm:nv("#cva","adm")},pix:o.querySelector("#cp").value.trim(),titular:o.querySelector("#ct").value.trim(),whats:o.querySelector("#cw").value.trim(),taxaServico:nv("#cts","taxa")};await F.setDoc(F.doc(db,"meta","config"),v);Object.assign(cfg,v);window.PA_toast&&PA_toast("Cobrança salva ✔");return}
     if(a==="ok"||a==="mais"){const base=Math.max(Date.now(),vencDe(x));await F.setDoc(F.doc(db,"contas",id),{venc:base+((x.papel==="adm"?ADMP:PLANOS)[(x.pagto&&x.pagto.plano)||"iniciante"]||{d:30}).d*DIA,plano:(x.pagto&&x.pagto.plano)||x.plano||"iniciante",pagto:{st:"ok",em:Date.now()},admAlt:0,vencBase:F.deleteField()},{merge:true});
-     if(x.papel==="lojista"&&x.loja&&x.pagto&&x.pagto.plano)await F.setDoc(F.doc(db,"lojas",x.loja.slug),{plano:x.pagto.plano},{merge:true})}
+     if(x.papel==="lojista"&&x.loja&&x.pagto&&x.pagto.plano)await F.setDoc(F.doc(db,"lojas",x.loja.slug),{plano:x.pagto.plano},{merge:true});
+     if(a==="ok"){const cm=await gerarComissao(F,db,x);if(cm&&!cm.ja)avisoComissao(cm)}}
     if(a==="no")await F.setDoc(F.doc(db,"contas",id),{pagto:{st:"recusado",em:Date.now()}},{merge:true});
     await draw()}catch(e){console.error(e);alert("Erro: "+(e.code||e.message))}};
  };
@@ -487,6 +553,7 @@ window.addEventListener("online",()=>{try{window.PA&&PA.ready&&PA._status(true)}
 /* (2) PUSH (FCM). Preencha a chave pública Web Push: Firebase Console → Configurações do projeto → Cloud Messaging →
    Certificados push da Web → "Gerar par de chaves" → copie a chave e cole abaixo. Enquanto estiver vazia, o push fica desligado. */
 window.PA_VAPID=window.PA_VAPID||"";
+window.PA_badge=n=>{try{if(navigator.setAppBadge){n>0?navigator.setAppBadge(n):navigator.clearAppBadge()}}catch(e){}};
 window.PA_pushAvisa=async function(PA,id){
  try{if(navigator.onLine===false||!PA.user)return;const t=await PA.user.getIdToken();
   fetch("/api/push",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+t},body:JSON.stringify({pedido:String(id)}),keepalive:true}).catch(()=>{})}catch(e){}};

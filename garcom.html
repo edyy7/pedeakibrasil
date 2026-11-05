@@ -370,7 +370,7 @@ function ordCard(o){const tag={novo:"Novo",aceito:"Aceito",preparo:"Em preparo"+
   <div class="oc" style="background:var(--bg);margin:8px 0;padding:10px"><b>Código de devolução (informe ao motoboy quando ele chegar):</b><div style="font-size:28px;letter-spacing:.2em;font-weight:800;color:var(--yl);margin-top:6px">${o.codDev}</div></div>`;
  const fimSt=["entregue","retirado","cancelado","cancelado_cli"].includes(o.st),comMoto=["enviado","emrota","aguardando","devolucao"].includes(o.st);
  const chats="";
- return `<div class="oc"><div class="row"><b>Pedido #${o.id} · ${o.mesa?"Mesa "+he(o.mesa):(o.tp=="ret"?"Retirada":"Entrega")}</b><span class="tag">${tag}</span></div><div class="meta">${o.it} · ${R$(o.v)} · ${o.pg}${o.tp=="ent"&&ent?" · taxa de entrega R$ 9,00":""}</div>${infoG(o)}${b}${!["cancelado","cancelado_cli"].includes(o.st)?(ehSalao(o)?salaoBtns(o):btnCom(o)):""}${chats}${tlHtml(o)}</div>`}
+ return `<div class="oc" id="ped${o.id}"><div class="row"><b>Pedido #${o.id} · ${o.mesa?"Mesa "+he(o.mesa):(o.tp=="ret"?"Retirada":"Entrega")}</b><span class="tag">${tag}</span></div><div class="meta">${o.it} · ${R$(o.v)} · ${o.pg}${o.tp=="ent"&&ent?" · taxa de entrega R$ 9,00":""}</div>${infoG(o)}${b}${!["cancelado","cancelado_cli"].includes(o.st)?(ehSalao(o)?salaoBtns(o):btnCom(o)):""}${chats}${tlHtml(o)}</div>`}
 function emRota(id){ORD.find(o=>o.id==id).st="emrota";draw();toast("🛵 Entregador retirou o pedido #"+id+" — em rota")}
 function simFoto(id){const o=ORD.find(x=>x.id==id);o.st="aguardando";o.aguardandoDesde=Date.now();draw();toast("📷 Motoboy enviou a foto · confirme a entrega (fecha sozinho em 6h)")}
 function cancCli(id){const o=ORD.find(x=>x.id==id);o.st="cancelado_cli";o.motivoCancel="Desisti";draw();toast("❌ Cliente cancelou o pedido #"+id+" · motivo: Desisti")}
@@ -449,8 +449,7 @@ function compart(){
  return B("cardapio","📤","Compartilhar cardápio","Link do seu cardápio para o cliente")+(ent?B("motolink","📤","Compartilhar link do motoboy","Link de cadastro para o entregador")+B("motoboys","👥","Motoboys"+(pend?" ("+pend+" aguardando)":""),MB.length+" cadastrado(s) pela sua loja"):"")+B("bkp","💾","Backup da loja","Exportar os dados desta loja")+B("rst","⬆️","Restauração","Restaurar um backup desta loja")}
 /* ---------- GESTÃO ---------- */
 let PIXK="";
-function salvaPix(){const v=V("pixk").trim();if(v.length<5){toast("Informe a chave Pix");return}PIXK=v;PA.setLojaCfg(SLUG,{pix:v}).then(()=>toast("Chave Pix salva")).catch(e=>{console.error(e);toast("Não foi possível salvar a chave")})}
-function gestao0(){return marcaCard()+(window.PA&&PA.equipe?"":`<div class="oc"><b>💠 Chave Pix da loja</b><div class="meta" style="margin:4px 0">Aparece para o cliente que escolher pagar com Pix.</div><input id="pixk" maxlength="80" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" value="${he(PIXK)}"><button class="cta" onclick="salvaPix()">Salvar chave Pix</button></div>`)+`<div class="oc"><b>🛵 Entrega da minha loja</b><div class="meta" style="margin-top:4px">${ent?"LIGADA pela administração: você vê a aba Entregas e o cliente escolhe entrega ou retirada.":"DESLIGADA pela administração: você vê só a gestão de vendas e o estoque. Quem liga a entrega é a administração."}</div></div>
+function gestao0(){return `<div class="oc"><b>🛵 Entrega da minha loja</b><div class="meta" style="margin-top:4px">${ent?"LIGADA pela administração: você vê a aba Entregas e o cliente escolhe entrega ou retirada.":"DESLIGADA pela administração: você vê só a gestão de vendas e o estoque. Quem liga a entrega é a administração."}</div></div>
  <div class="oc"><b>🕒 Horário${ent?" e área de entrega":""}</b><div class="meta" style="margin:4px 0">${HOR.fechada?"🔴 Loja FECHADA agora (fechada à mão)":"🟢 Loja aberta conforme o horário"}</div>
  <label class="l">Dias de funcionamento</label><div class="chk">${NDIA.map((n,i)=>`<button class="${HOR.dias.includes(i)?"on":""}" onclick="HOR.dias=HOR.dias.includes(${i})?HOR.dias.filter(x=>x!=${i}):[...HOR.dias,${i}];draw()">${n}</button>`).join("")}</div>
  <div class="two"><div><label class="l">Abre às</label><input id="hi" type="time" value="${HOR.ini}"></div><div><label class="l">Fecha às</label><input id="hf" type="time" value="${HOR.fim}"></div></div>
@@ -466,7 +465,7 @@ function fala(txt){const t=" "+nz(txt)+" ",r=$("vr");
  if(!a){r.textContent="Não encontrei esse item no cardápio de hoje. Pode repetir?";return cv()}
  for(let i=0;i<a.q;i++)cart.push(a.p.n);ult.push(a.p.n);r.textContent="Anotei "+(a.q>1?a.q+" ":"")+a.p.n+(a.p.n=="X-Burger"?". Quer uma bebida? Temos Suco de laranja.":". Mais alguma coisa?");cv()}
 function cv(){$("vc").textContent="Sacola: "+(cart.join(", ")||"vazia")}
-function hist(){return fbox("hist",1)+feitos().filter(fo("hist")).map(o=>`<div class="oc"><div class="row"><b>Pedido #${o.id}</b><span class="tag" style="color:${["cancelado","cancelado_cli"].includes(o.st)?"var(--rd)":"var(--ok)"}">${{entregue:"Entregue",retirado:"Retirado",cancelado:"Cancelado",cancelado_cli:"Cancelado pelo cliente"}[o.st]}</span></div><div class="meta">${o.it} · ${R$(o.v)} · ${o.tp=="ret"?"Retirada":"Entrega"}</div>${["cancelado","cancelado_cli"].includes(o.st)?`<div class="meta" style="color:var(--rd)">Motivo: ${o.motivoCancel||(o.st=="cancelado"?"Recusado pela loja":"—")}</div>`:""}</div>`).join("")}
+function hist(){return fbox("hist",1)+feitos().filter(fo("hist")).map(o=>`<div class="oc" id="ped${o.id}"><div class="row"><b>Pedido #${o.id}</b><span class="tag" style="color:${["cancelado","cancelado_cli"].includes(o.st)?"var(--rd)":"var(--ok)"}">${{entregue:"Entregue",retirado:"Retirado",cancelado:"Cancelado",cancelado_cli:"Cancelado pelo cliente"}[o.st]}</span></div><div class="meta">${o.it} · ${R$(o.v)} · ${o.tp=="ret"?"Retirada":"Entrega"}</div>${["cancelado","cancelado_cli"].includes(o.st)?`<div class="meta" style="color:var(--rd)">Motivo: ${o.motivoCancel||(o.st=="cancelado"?"Recusado pela loja":"—")}</div>`:""}</div>`).join("")}
 function draw(){
  ent=perm&&eo&&ENT_LOJA;if(!ent&&tab=="diarias")tab="pedidos";if(trav())showAv=false;
  $("ln").textContent=(ent?(window.PA&&PA.loja?PA.loja.nome:"Lanchonete do Zé"):"Depósito Construir")+(HOR.fechada?" · FECHADA":"");
@@ -502,7 +501,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
 (async()=>{try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
- const app=A.initializeApp(CFG),db=PA_db(F,app),au=H.getAuth(app);
+ window.PA_SESSAO="garcom";const app=A.initializeApp(CFG,"pa-garcom"),db=PA_db(F,app),au=H.getAuth(app);
  await PA_login(H,au);
  PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
  PA.nextId=PA_nextId(F,db);
@@ -528,6 +527,7 @@ PA.whenReady(()=>{});
 </script><script>(function(){
 let LOJA="Lanchonete do Zé",SLUG="lanchonete-do-ze";
 PA.whenReady(()=>{if(PA.loja){LOJA=PA.loja.slug;SLUG=PA.loja.slug}});
+try{const q=(new URLSearchParams(location.search).get("pedido")||"").replace(/\D/g,"");if(q){window.PA_FOCO=q;tab=modo()=="cozinha"?"cozinha":"pedidos"}}catch(e){}
 window.PA_onConta=i=>{const d=new Date(i.venc);VENC=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");ST=i.estado.k;try{draw()}catch(e){}};
 const sj=o=>JSON.stringify(o,Object.keys(o).sort());
 let RO={},prim=true,cfgS="";
@@ -547,12 +547,12 @@ PA.whenReady(()=>{
  PA.watchLoja(LOJA,docs=>{let ch=false;const novos=[],mud=[];
   docs.forEach(d=>{const prev=RO[d.id];if(prev&&sj(prev)===sj(d))return;ch=true;RO[d.id]=JSON.parse(sj(d));
    const i=ORD.findIndex(o=>o.id==d.id);
-   if(i<0){ORD.push({...d});if(!prim&&(modo()=="cozinha"?d.st=="preparo":(d.st=="novo"||d.st=="aguardando_pg")))novos.push(d)}else{const ps=ORD[i].st;Object.assign(ORD[i],d);if(!prim&&ps!==d.st)mud.push(d)}});
+   if(i<0){ORD.push({...d});if(!prim&&modo()!="garcom"&&(modo()=="cozinha"?d.st=="preparo":(d.st=="novo"||d.st=="aguardando_pg")))novos.push(d)}else{const ps=ORD[i].st;Object.assign(ORD[i],d);if(!prim&&ps!==d.st)mud.push(d)}});
   ORD.sort((a,b)=>b.id-a.id);
   if(novos.length){PA_beep();toast("🔔 Novo pedido #"+novos.map(o=>o.id).join(", #"));PA_aviso(modo()=="cozinha"?"👨‍🍳 Novo pedido na cozinha":"🔔 Novo pedido na loja","Pedido #"+novos.map(o=>o.id).join(", #"),"pedido-novo")}
-  mud.forEach(o=>{if(modo()=="cozinha"&&o.st=="preparo"){PA_aviso("👨‍🍳 Novo pedido na cozinha","#"+o.id+(o.mesa?" · Mesa "+o.mesa:""),"coz-"+o.id);toast("🔔 Novo pedido na cozinha #"+o.id)}
+  mud.forEach(o=>{if(modo()=="loja"&&o.st=="pronto"){PA_aviso("✅ Pedido pronto no balcão","#"+o.id+(o.mesa?" · Mesa "+o.mesa:""),"pronto-"+o.id);toast("✅ Pedido #"+o.id+" pronto")}if(modo()=="cozinha"&&o.st=="preparo"){PA_aviso("👨‍🍳 Novo pedido na cozinha","#"+o.id+(o.mesa?" · Mesa "+o.mesa:""),"coz-"+o.id);toast("🔔 Novo pedido na cozinha #"+o.id)}
    if(modo()=="garcom"&&o.st=="pronto"&&o.mesa&&(!o.garcomUid||o.garcomUid==PA.uid)){PA_aviso("✅ Pedido pronto","Mesa "+o.mesa+" · #"+o.id,"pronto-"+o.id);toast("✅ Mesa "+o.mesa+": pedido pronto")}});
-  prim=false;if(ch)dsoft(_d)});
+  prim=false;if(ch)dsoft(_d);try{PA_badge(modo()=="cozinha"?ORD.filter(o=>o.st=="preparo").length:modo()=="garcom"?ORD.filter(o=>o.st=="pronto"&&o.mesa&&(!o.garcomUid||o.garcomUid==PA.uid)).length:ORD.filter(o=>o.st=="novo"||o.st=="aguardando_pg").length)}catch(e){}try{if(window.PA_FOCO){const e=document.getElementById("ped"+PA_FOCO);if(e){e.scrollIntoView({block:"center"});e.style.outline="3px solid var(--ac)";window.PA_FOCO=null}}}catch(e){}});
  ocWatch();
  PA.watchLojaCfg(SLUG,d=>{if(!d)return;window.MODS_ADM=d.modulos||{};window.MODS_LOJA=d.modLoja||{};window.MODS={...(d.modulos||{})};Object.keys(d.modLoja||{}).forEach(k=>{if(d.modLoja[k]===false)window.MODS[k]=false});PIX_TMO=Number(d.pixTmo)||10;TPREP=Number(d.tempoPrep)||20;ENT_LOJA=d.entLoja!==false;ENT_TIPO=d.entTipo||null;ML=d.modulosLoja||{};window.MARCA_CFG=d.brand||{};window.AGC=d.agenda||{};window.AWID=d.asaasWalletId||"";MARCA.aplica(window.MARCA_CFG);if(typeof d.ent==="boolean"&&d.ent!==eo){eo=d.ent;draw()}if(typeof d.pix==="string"&&d.pix!==PIXK&&!document.getElementById("pixk")){PIXK=d.pix}dsoft(draw)});
  push();pushCfg()});

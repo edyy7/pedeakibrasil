@@ -29,6 +29,26 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/admCodigos/$(code)).data.uid == a);
     }
 
+    // v5.9.8 · #008 Afiliados: a loja nasce com um indicador (código AFI-… que existe em afiliadoCodigos e aponta para o afiliadoId gravado;
+    // vem do link ?ref= capturado automaticamente ou do campo manual) ou sem indicador (venda direta, nada gravado).
+    // O próprio afiliado não pode indicar a loja que ele mesmo cria. Depois disso só o Criador troca o indicador.
+    function afiliadoValido(d) {
+      let code = d.get('afiliadoCodigo', '');
+      return (code == '' && !('afiliadoId' in d) && d.get('afiliadoVia', '') in ['', 'direta'])
+        || (code.matches('AFI-[A-Z0-9]+')
+            && exists(/databases/$(database)/documents/afiliadoCodigos/$(code))
+            && get(/databases/$(database)/documents/afiliadoCodigos/$(code)).data.get('afiliadoId', '') == d.get('afiliadoId', 'x')
+            && d.get('afiliadoId', 'x') != request.auth.uid
+            && d.get('afiliadoVia', '') in ['link', 'codigo']
+            && d.get('semIndicador', false) != true);
+    }
+    // dados válidos do afiliado (login Google): nome, telefone e Pix
+    function afiliadoDadosOk(d) {
+      return d.nome is string && d.nome.size() >= 2 && d.nome.size() <= 80
+        && d.whats is string && d.whats.size() <= 20
+        && d.pix is string && d.pix.size() >= 3 && d.pix.size() <= 120;
+    }
+
     // TRAVA NO SERVIDOR: pedido novo só é criado se a conta da loja estiver em dia
     // (período grátis de 30 dias + 33 dias até o bloqueio total, ou renovada pelo Criador).
     // Prazos: 2592000000 ms = 30 dias · 2851200000 ms = 33 dias (iguais a TRIAL e CAR em conta.js).
@@ -73,7 +93,17 @@ service cloud.firestore {
     // Funcionário: só acessa a loja depois que o ADM mudou equipe/{loja}__{e-mail}.st para 'ativo'.
     function equipeAtiva(loja) {
       let e = /databases/$(database)/documents/equipe/$(loja + '__' + request.auth.token.email.lower());
-      return signed() && loja != '' && request.auth.token.email != null && exists(e) && get(e).data.get('st', '') == 'ativo';
+      return signed() && loja != '' && request.auth.token.email != null && request.auth.token.get('email_verified', false) == true && exists(e) && get(e).data.get('st', '') == 'ativo';  // v5.9.6: e-mail/senha só vale com e-mail verificado
+    }
+    // v5.9.6 · #004: Cozinha SEM login. O link traz o ID da loja + uma chave (lojaSegredos/{loja}.cozinhaToken, só o dono lê).
+    // Quem abre o link grava cozinhaAcessos/{uid} com a chave certa; trocar a chave no servidor revoga o acesso.
+    function cozinhaDaLoja(loja) {
+      let a = /databases/$(database)/documents/cozinhaAcessos/$(request.auth.uid);
+      let sg = /databases/$(database)/documents/lojaSegredos/$(loja);
+      return signed() && loja != '' && exists(a) && exists(sg)
+        && get(a).data.get('slug', '') == loja
+        && get(sg).data.get('cozinhaToken', '') != ''
+        && get(a).data.get('token', '') == get(sg).data.get('cozinhaToken', '');
     }
     function veLoja(p) {
       return p.get('uid', '') == request.auth.uid      // o cliente que pediu
@@ -81,7 +111,8 @@ service cloud.firestore {
         || donoDaLoja(p.get('loja', ''))               // a loja que vende
         || equipeAtiva(p.get('loja', ''))              // funcionário autorizado pelo ADM
         || admDaLoja(p.get('loja', ''))                // o ADM dessa loja (faturamento/ocorrências)
-        || motoboyDaLoja(p.get('loja', ''));           // motoboys vinculados à loja (veem os "enviados" dela)
+        || motoboyDaLoja(p.get('loja', ''))            // motoboys vinculados à loja (veem os "enviados" dela)
+        || cozinhaDaLoja(p.get('loja', ''));           // cozinha (link com chave): vê os pedidos da loja
     }
 
     // ---------- Valor do pedido validado NO SERVIDOR (v5.9.0) ----------
@@ -127,7 +158,11 @@ service cloud.firestore {
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['v', 'tt', 'itens', 'loja', 'uid', 'mot', 'motN', 'paid', 'ps', 'entTipo', 'dc', 'dl']))
         || donoDaLoja(resource.data.get('loja', ''))                   // loja (aceitar, preparar, enviar…)
         || equipeAtiva(resource.data.get('loja', ''))                  // funcionário autorizado
-        || resource.data.get('mot', '') == request.auth.uid            // motoboy dono da corrida
+        || (cozinhaDaLoja(resource.data.get('loja', ''))               // cozinha sem login: só marca preparo/pronto
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'hist', 'prontoEm', 'min', 'atrasou', 'atualizadoEm'])
+            && request.resource.data.get('st', '') in ['preparo', 'pronto'])
+        || (resource.data.get('mot', '') == request.auth.uid && resource.data.get('finalMoto', false) != true)  // v5.9.5: após finalizar, irreversível para o motoboy
+                // motoboy dono da corrida
         // motoboy da loja PEGANDO uma corrida livre: só grava mot/motN, e mot = ele mesmo
         || (motoboyDaLoja(resource.data.get('loja', ''))
             && !('mot' in resource.data)
@@ -315,6 +350,21 @@ service cloud.firestore {
     }
 
     // Tokens de push (FCM): cada pessoa grava só o PRÓPRIO documento (tokens/{uid}); o servidor (Admin SDK) lê para enviar.
+    // v5.9.6 · #004: chave secreta da Cozinha (só o dono da loja e o Criador) e acessos de cozinha por link.
+    match /lojaSegredos/{slug} {
+      allow read, write: if isCriador() || (signed() && donoDaLoja(slug));
+    }
+    match /cozinhaAcessos/{uid} {
+      allow get: if signed() && (uid == request.auth.uid || isCriador() || donoDaLoja(resource.data.get('slug', '')));
+      allow list: if isCriador();
+      allow create, update: if signed() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['slug', 'token', 'criadoEm'])
+        && request.resource.data.slug is string && request.resource.data.token is string
+        && request.resource.data.token != ''
+        && exists(/databases/$(database)/documents/lojaSegredos/$(request.resource.data.slug))
+        && get(/databases/$(database)/documents/lojaSegredos/$(request.resource.data.slug)).data.get('cozinhaToken', '') == request.resource.data.token;
+      allow delete: if signed() && (uid == request.auth.uid || isCriador() || donoDaLoja(resource.data.get('slug', '')));
+    }
     match /tokens/{uid} {
       allow get: if signed() && uid == request.auth.uid;
       allow create, update: if signed() && uid == request.auth.uid
@@ -325,6 +375,56 @@ service cloud.firestore {
     }
     // Registro de envios de push (idempotência): só o servidor escreve (Admin SDK ignora as regras).
     match /pushLog/{id} { allow read, write: if false; }
+
+    // ---------- v5.9.8 · #008 Programa de Afiliados (login Google) ----------
+    // afiliados/{uid}: o próprio afiliado cria o cadastro no 1º acesso (nome, telefone, Pix). A regra oficial é FIXA no servidor:
+    // 60% para o afiliado (pct) e 40% para o Criador. Só o Criador altera % e situação. O afiliado edita só nome, telefone e Pix.
+    match /afiliados/{id} {
+      allow get: if isCriador() || (signed() && id == request.auth.uid);
+      allow list: if isCriador();
+      allow create: if (signed() && id == request.auth.uid
+          && request.auth.token.email != null && request.auth.token.get('email_verified', false) == true
+          && request.resource.data.keys().hasOnly(['uid', 'email', 'nome', 'whats', 'pix', 'pct', 'ativo', 'cod', 'criadoEm'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.pct == 60 && request.resource.data.ativo == true
+          && afiliadoDadosOk(request.resource.data)
+          && request.resource.data.cod is string && request.resource.data.cod.matches('AFI-[A-Z0-9]{6}')
+          && exists(/databases/$(database)/documents/afiliadoCodigos/$(request.resource.data.cod))
+          && get(/databases/$(database)/documents/afiliadoCodigos/$(request.resource.data.cod)).data.get('afiliadoId', '') == request.auth.uid)
+        || isCriador();
+      allow update: if isCriador()
+        || (signed() && id == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nome', 'whats', 'pix'])
+            && afiliadoDadosOk(request.resource.data));
+      allow delete: if isCriador();
+    }
+    // afiliadoCodigos/{AFI-…}: o código/ID do link de indicação (?ref=). O afiliado reserva o dele (só se ainda não existir);
+    // qualquer logado lê por código exato (para vincular a loja); não dá para listar.
+    match /afiliadoCodigos/{code} {
+      allow get: if signed();
+      allow list: if false;
+      allow create: if (signed() && code.matches('AFI-[A-Z0-9]{6}')
+          && request.resource.data.keys().hasOnly(['afiliadoId', 'nome'])
+          && request.resource.data.afiliadoId == request.auth.uid
+          && request.resource.data.nome is string && request.resource.data.nome.size() <= 80)
+        || isCriador();
+      allow update: if isCriador()
+        || (signed() && resource.data.afiliadoId == request.auth.uid
+            && request.resource.data.afiliadoId == request.auth.uid
+            && request.resource.data.keys().hasOnly(['afiliadoId', 'nome'])
+            && request.resource.data.nome is string && request.resource.data.nome.size() <= 80);
+      allow delete: if isCriador();
+    }
+    // comissoes/{contaId_pagamentoEm}: uma por pagamento confirmado de loja indicada (id fixo = não duplica). Criador cria e dá baixa;
+    // o afiliado só lê as suas e marca "visto".
+    match /comissoes/{id} {
+      allow get, list: if isCriador() || (signed() && resource.data.get('afiliadoId', '') == request.auth.uid);
+      allow create, delete: if isCriador();
+      allow update: if isCriador()
+        || (signed() && resource.data.get('afiliadoId', '') == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visto', 'vistoEm']));
+    }
 
     // Lojas
     //  · get: qualquer app logado (o cliente precisa ler o cardápio pelo link).
@@ -391,7 +491,8 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/contas/$(request.auth.uid + '_adm'))
         && request.resource.data.get('pendente', false) == true
         && !('dono' in request.resource.data) && !('suspensa' in request.resource.data)
-        && request.resource.data.plano in ['iniciante', 'mensal', 'anual', '3anos', '5anos'];
+        && request.resource.data.plano in ['iniciante', 'mensal', 'anual', '3anos', '5anos']
+        && afiliadoValido(request.resource.data);
       allow update: if isCriador()
         // Gerente automático: o 1º que abrir o link do ADM (convite ainda não usado por outro) vira dono.
         || (signed() && !('dono' in resource.data) && resource.data.get('pendente', false) == true
@@ -403,7 +504,7 @@ service cloud.firestore {
             && resource.data.get('pendente', false) != true
             && resource.data.get('dono', request.auth.uid) == request.auth.uid
             && request.resource.data.get('dono', request.auth.uid) == resource.data.get('dono', request.auth.uid)
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['admId', 'admCodigo', 'suspensa', 'suspEm', 'plano', 'pendente', 'gerenteToken', 'modulos', 'valorModulos']))
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['admId', 'admCodigo', 'suspensa', 'suspEm', 'plano', 'pendente', 'gerenteToken', 'modulos', 'valorModulos', 'afiliadoId', 'afiliadoCodigo', 'afiliadoVia', 'semIndicador']))
         || (signed()
             && resource.data.get('admId', '') == request.auth.uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspensa', 'suspEm']));

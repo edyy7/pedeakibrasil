@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sou Afiliado · PedeAí Brasil</title>
+<style>
+:root{--bg:#0b0b0d;--cd:#16161a;--br:#2a2a31;--tx:#f4f4f6;--mu:#a3a3ad;--ac:#22a559;--rd:#ff4d55;--yl:#e0a800}
+@media(prefers-color-scheme:light){:root{--bg:#f6f6f8;--cd:#fff;--br:#dcdce3;--tx:#15151a;--mu:#5d5d68}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.4 system-ui,sans-serif;padding-bottom:40px}
+.pv{background:#111;color:#e0a800;font-size:12.5px;font-weight:700;padding:6px 12px;text-align:center}
+.top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-weight:800;color:var(--ac);border-bottom:1px solid var(--br)}.top button{background:none;border:1px solid var(--br);color:var(--mu);border-radius:10px;padding:6px 10px;font:inherit;font-size:14px}
+.pg{padding:4px 14px;max-width:720px;margin:0 auto}.card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:12px;margin:10px 0}
+.meta{color:var(--mu);font-size:15.5px}.row{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid>div{background:var(--bg);border:1px solid var(--br);border-radius:12px;padding:10px}.num{font-size:22px;font-weight:800}
+.tag{font-size:13.5px;font-weight:800;border:1px solid var(--br);border-radius:999px;padding:2px 9px;white-space:nowrap}.ok{color:var(--ac)}.bad{color:var(--rd)}.yl{color:var(--yl)}
+.cta{display:flex;justify-content:center;width:100%;margin-top:8px;padding:12px;border:0;border-radius:12px;background:var(--ac);color:#fff;font:inherit;font-weight:800}.cta.b{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+label{display:block;margin-top:10px;font-weight:700}input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--br);background:var(--bg);color:var(--tx);font:inherit;margin-top:4px}
+.chk{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.chk button{padding:8px 12px;border-radius:999px;border:1px solid var(--br);background:var(--cd);color:var(--tx);font:inherit;font-size:15.5px}.chk .on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:800}
+.aviso{border:2px solid var(--ac);background:rgba(34,165,89,.12)}.err{color:var(--rd);margin-top:8px;font-size:15px;min-height:18px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;display:none;z-index:9}
+button:active{transform:scale(.97)}
+</style><link rel="manifest" href="manifest-indicador.json"><meta name="theme-color" content="#22a559"><link rel="icon" href="icon-indicador-192.png"><link rel="apple-touch-icon" href="icon-indicador-192.png"></head><body>
+<div class="pv" id="pa-st">○ Conectando…</div>
+<div class="top"><span>🤝 Sou Afiliado · <span id="nm"></span></span><button id="sair" style="display:none" onclick="sair()">Sair</button></div>
+<div class="pg" id="v"><div class="card"><div class="meta">Conectando…</div></div></div><div class="toast" id="t"></div>
+<script>
+const $=i=>document.getElementById(i),toast=m=>{const t=$("t");t.textContent=m;t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",2600)};
+const R$=n=>"R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const dt=ms=>ms?new Date(ms).toLocaleDateString("pt-BR"):"—";
+const mask=v=>{const d=String(v||"").replace(/\D/g,"").slice(0,11);return d.length>6?"("+d.slice(0,2)+") "+d.slice(2,d.length-4)+"-"+d.slice(-4):d.length>2?"("+d.slice(0,2)+") "+d.slice(2):d};
+let USER=null,AF=null,CM=[],MODO="boot",ERRO="",FIL="todas",PGN=8,EDIT=false,vistoAntes=null,MSG="";
+const pend=()=>CM.filter(c=>c.st!=="paga").sort((a,b)=>(a.prazoEm||0)-(b.prazoEm||0));
+const linkRef=()=>location.origin+"/?ref="+encodeURIComponent(AF.cod||"");
+function form(titulo,ini,btn,acao,extra){return `<div class="card"><b>${titulo}</b>${extra||""}<label for="f_nome">Nome</label><input id="f_nome" maxlength="80" autocomplete="name" value="${esc(ini.nome)}"><label for="f_tel">Telefone (com DDD)</label><input id="f_tel" type="tel" inputmode="tel" maxlength="16" autocomplete="tel" value="${esc(mask(ini.whats))}" oninput="this.value=mask(this.value)"><label for="f_pix">Chave Pix (para receber suas comissões)</label><input id="f_pix" maxlength="120" placeholder="CPF, e-mail, telefone ou chave aleatória" value="${esc(ini.pix)}"><div class="err" id="f_err">${esc(MSG)}</div><button class="cta" onclick="${acao}">${btn}</button></div>`}
+function draw(){
+ if(ERRO){$("v").innerHTML=`<div class="card"><b>Não foi possível abrir</b><div class="meta" style="margin-top:6px">${esc(ERRO)}</div><button class="cta" onclick="location.reload()">Tentar de novo</button></div>`;return}
+ if(MODO==="boot"){$("v").innerHTML=`<div class="card"><div class="meta">Conectando…</div></div>`;return}
+ if(MODO==="novo"){$("v").innerHTML=`<div class="card"><b style="font-size:20px">Bem-vindo, afiliado! 🎉</b><div class="meta" style="margin-top:6px">Você ganha <b class="ok">60%</b> de cada mensalidade das lojas que indicar, todo mês, com Pix em até 48 h. Entrou como <b>${esc(USER.email||"")}</b>. Complete o primeiro acesso:</div></div>`+form("Seus dados",{nome:USER.displayName||"",whats:"",pix:""},"Criar meu cadastro de afiliado","cadastra()");return}
+ $("nm").textContent=AF.nome||"";
+ const P=pend(),pd=P.reduce((s,c)=>s+(Number(c.valor)||0),0),pg=CM.filter(c=>c.st==="paga").reduce((s,c)=>s+(Number(c.valor)||0),0),novos=CM.filter(c=>c.visto===false),lojas={};
+ CM.forEach(c=>{const k=c.loja;lojas[k]=lojas[k]||{n:c.lojaNome||k,q:0,v:0};lojas[k].q++;lojas[k].v+=Number(c.valor)||0});
+ const L=CM.filter(c=>FIL==="todas"||(FIL==="pend"?c.st!=="paga":c.st==="paga")).sort((a,b)=>(b.confirmadoEm||0)-(a.confirmadoEm||0)),V=L.slice(0,PGN);
+ const Ch=(k,t)=>`<button class="${FIL===k?"on":""}" onclick="FIL='${k}';PGN=8;draw()">${t}</button>`;
+ $("v").innerHTML=(novos.length?`<div class="card aviso" id="aviso"><b>💰 Pagamento confirmado!</b>${novos.map(c=>`<div style="margin-top:6px">A loja <b>${esc(c.lojaNome||c.loja)}</b> pagou ${R$(c.valorPago)}. Sua comissão de <b class="ok">${R$(c.valor)}</b> será paga por Pix em até 48 h (até ${dt(c.prazoEm)}).</div>`).join("")}<button class="cta" onclick="marcaVisto()">OK, vi</button></div>`:"")
+ +`<div class="card"><div class="row"><b>${esc(AF.nome||"")}</b><span class="tag">${AF.pct}% para você</span></div><div class="meta">${esc(AF.email||"")}</div><div class="meta">Pix do repasse: ${esc(AF.pix||"—")} · ${esc(mask(AF.whats))}</div><div class="grid" style="margin-top:10px"><div><div class="num yl">${R$(pd)}</div><div class="meta">A receber</div></div><div><div class="num ok">${R$(pg)}</div><div class="meta">Já recebido</div></div></div>${P.length?`<div class="meta" style="margin-top:8px">Próximo repasse até ${dt(P[0].prazoEm)}</div>`:""}<button class="cta b" onclick="EDIT=!EDIT;MSG='';draw()">✏️ ${EDIT?"Fechar edição":"Editar meus dados"}</button><button class="cta b" onclick="ativaAviso()">🔔 Ativar avisos neste aparelho</button></div>`
+ +(EDIT?form("Editar meus dados",AF,"Salvar alterações","salva()"):"")
+ +`<div class="card"><b>🔗 Meu link de indicação</b><div class="meta" style="margin:4px 0">Quem abrir este link e criar a loja fica vinculado a você automaticamente. Seu ID: <b>${esc(AF.cod||"")}</b></div><div class="meta" id="lk" style="word-break:break-all">${esc(linkRef())}</div><button class="cta" onclick="copia()">📋 Copiar link</button><button class="cta b" onclick="zap()">Enviar no WhatsApp</button></div>`
+ +`<div class="card"><b>🏪 Lojas indicadas (${Object.keys(lojas).length})</b>${Object.values(lojas).map(l=>`<div class="row" style="margin-top:6px"><span>${esc(l.n)}</span><span class="meta">${l.q} pagamento(s) · ${R$(l.v)}</span></div>`).join("")||`<div class="meta">Quando uma loja indicada por você pagar, ela aparece aqui.</div>`}</div>`
+ +`<div class="card"><b>📜 Histórico de comissões</b><div class="chk">${Ch("todas","Todas ("+CM.length+")")}${Ch("pend","A receber ("+P.length+")")}${Ch("paga","Pagas ("+(CM.length-P.length)+")")}</div>${V.map(c=>`<div style="padding:8px 0;border-top:1px solid var(--br)"><div class="row"><b>${esc(c.lojaNome||c.loja)}</b><span class="tag ${c.st==="paga"?"ok":"yl"}">${c.st==="paga"?"✅ Paga":"⏳ A receber"} · ${R$(c.valor)}</span></div><div class="meta">Pagamento ${R$(c.valorPago)} × ${c.pct}% · confirmado em ${dt(c.confirmadoEm)}</div><div class="meta">${c.st==="paga"?"Pix enviado em "+dt(c.baixaEm):"Pix em até 48 h (até "+dt(c.prazoEm)+")"}</div></div>`).join("")||`<div class="meta" style="margin-top:8px">Nenhuma comissão neste filtro.</div>`}${L.length>V.length?`<button class="cta b" onclick="PGN+=8;draw()">Ver mais (${L.length-V.length})</button>`:""}</div>`}
+function ler(){const g=i=>($(i)||{}).value||"",d={nome:g("f_nome").trim(),whats:g("f_tel").replace(/\D/g,""),pix:g("f_pix").trim()},er=$("f_err");
+ const m=d.nome.length<2?"Informe seu nome.":d.whats.length<10?"Informe o telefone com DDD.":d.pix.length<3?"Informe sua chave Pix.":"";if(m){er.textContent=m;return null}return d}
+const rnd=n=>{const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789";return Array.from(crypto.getRandomValues(new Uint8Array(n)),x=>A[x%A.length]).join("")};
+async function cadastra(){const d=ler();if(!d)return;const {F,db}=window.PA.fb;$("f_err").textContent="";
+ try{let cod="",ok=false;for(let i=0;i<6&&!ok;i++){cod="AFI-"+rnd(6);try{await F.setDoc(F.doc(db,"afiliadoCodigos",cod),{afiliadoId:USER.uid,nome:d.nome});ok=true}catch(e){if(e.code!=="permission-denied")throw e}}
+  if(!ok)throw new Error("Não foi possível reservar seu ID. Tente de novo.");
+  const af={uid:USER.uid,email:USER.email,nome:d.nome,whats:d.whats,pix:d.pix,pct:60,ativo:true,cod,criadoEm:Date.now()};
+  await F.setDoc(F.doc(db,"afiliados",USER.uid),af);AF={id:USER.uid,...af};MODO="painel";escuta();draw();toast("Cadastro criado! Seu link já está pronto.")}
+ catch(e){console.error(e);$("f_err").textContent="Não foi possível salvar ("+(e.code||e.message)+"). Tente de novo."}}
+async function salva(){const d=ler();if(!d)return;const {F,db}=window.PA.fb;
+ try{await F.setDoc(F.doc(db,"afiliados",USER.uid),d,{merge:true});await F.setDoc(F.doc(db,"afiliadoCodigos",AF.cod),{afiliadoId:USER.uid,nome:d.nome},{merge:true});Object.assign(AF,d);EDIT=false;draw();toast("Dados salvos")}
+ catch(e){console.error(e);$("f_err").textContent="Não foi possível salvar ("+(e.code||e.message)+")."}}
+function copia(){const t=linkRef();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast("Link copiado")).catch(()=>{const i=document.createElement("input");i.value=t;document.body.appendChild(i);i.select();try{document.execCommand("copy")}catch(e){}i.remove();toast("Link copiado")})}
+function zap(){window.open("https://wa.me/?text="+encodeURIComponent("Quer receber pedidos no WhatsApp e Pix sem pagar comissão por venda? Conheça o PedeAí Brasil: "+linkRef()),"_blank")}
+async function marcaVisto(){try{const {F,db}=window.PA.fb;await Promise.all(CM.filter(c=>c.visto===false).map(c=>F.setDoc(F.doc(db,"comissoes",c.id),{visto:true,vistoEm:Date.now()},{merge:true})));CM.forEach(c=>{if(c.visto===false)c.visto=true});draw()}catch(e){console.error(e);toast("Não foi possível marcar agora")}}
+function ativaAviso(){if(!window.Notification){toast("Este aparelho não permite avisos");return}Notification.requestPermission().then(p=>toast(p==="granted"?"Avisos ativados (com o app aberto)":"Avisos não permitidos"))}
+function avisaNovos(l){if(vistoAntes===null){vistoAntes=new Set(l.map(c=>c.id));return}
+ const n=l.filter(c=>!vistoAntes.has(c.id));l.forEach(c=>vistoAntes.add(c.id));if(!n.length)return;
+ const c=n[0],tx="Pagamento confirmado: "+(c.lojaNome||c.loja)+". Comissão de "+R$(c.valor)+" por Pix em até 48 h.";toast("💰 "+tx);try{navigator.vibrate&&navigator.vibrate([300,120,300])}catch(_){}try{if(window.Notification&&Notification.permission==="granted")new Notification("PedeAí · Afiliado",{body:tx})}catch(_){}}
+function escuta(){const {F,db}=window.PA.fb;F.onSnapshot(F.query(F.collection(db,"comissoes"),F.where("afiliadoId","==",USER.uid)),sn=>{CM=sn.docs.map(d=>({id:d.id,...d.data()}));avisaNovos(CM);draw()},e=>{console.error(e);toast("Não foi possível ler as comissões agora")})}
+async function sair(){try{const {H,au}=window.PA.fb;await H.signOut(au)}catch(e){}location.href="index.html"}
+</script><script src="conta.js"></script><script>
+(async()=>{
+ try{
+  const _h=location.hostname,CFG={apiKey:"AIzaSyCXq4-VbJUwypuC6H5jzw5cri5N4fqo-sw",authDomain:/\.vercel\.app$/.test(_h)?location.host:"delivery-67d14.firebaseapp.com",projectId:"delivery-67d14",storageBucket:"delivery-67d14.firebasestorage.app",messagingSenderId:"684086028448",appId:"1:684086028448:web:9e86061b8e29e947eac1c5"};
+  const B="https://www.gstatic.com/firebasejs/10.8.0/";
+  const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
+  const app=A.initializeApp(CFG,"pa-afiliado"),db=PA_db(F,app),au=H.getAuth(app);
+  USER=await PA_login(H,au);   /* Google: o painel vem da conta (e-mail) que entrou */
+  window.PA={fb:{F,db,au,H}};$("sair").style.display="";
+  const st=$("pa-st");st.textContent="● Online · sincronizado";st.style.color="#22a559";
+  const s=await F.getDoc(F.doc(db,"afiliados",USER.uid));
+  if(s.exists()){AF={id:USER.uid,...s.data()};MODO="painel";escuta()}else MODO="novo";
+  draw();
+ }catch(e){console.error(e);ERRO="Falha ao entrar ("+(e.code||e.message)+"). Verifique a internet e tente de novo.";draw()}
+})();
+if("serviceWorker"in navigator&&location.protocol!="file:")navigator.serviceWorker.register("sw.js").catch(function(){});
+</script></body></html>

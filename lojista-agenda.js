@@ -5,21 +5,28 @@ const ymd=x=>x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+Stri
 async function upImg(f,pasta){const S=await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");const st=S.getStorage(PA.fb.au.app);const r=S.ref(st,pasta+"-"+Date.now()+".jpg");await S.uploadBytes(r,f,{contentType:f.type});return S.getDownloadURL(r)}
 function imgDim(f){return new Promise((ok,er)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{ok({w:im.width,h:im.height});URL.revokeObjectURL(u)};im.onerror=()=>er(new Error("img"));im.src=u})}
 /* ---- Marca ---- */
+let MLOGO=null,MMSG=null,MBUSY=false;
+function marcaFile(inp){const f=inp.files&&inp.files[0];MLOGO=null;if(!f){MMSG=null;draw();return}
+ if(f.size>3*1024*1024||!/^image\//.test(f.type)){MMSG={ok:false,t:"Logo: use uma imagem de até 3 MB."};inp.value="";draw();return}
+ MLOGO=f;MMSG={ok:null,t:"Logo escolhido: "+f.name+" — toque em Salvar marca para enviar."};draw()}
 function marcaCard(){const b=window.MARCA_CFG||{};const cor=MARCA.hex(b.cor)?"#"+MARCA.hex(b.cor):"#d4141c";
- return `<div class="oc"><b>🎨 Marca da loja</b><div class="meta" style="margin:4px 0">Cor principal: o texto fica preto ou branco sozinho, para ler bem. Logo horizontal fica centralizado; vertical, à esquerda.</div><label class="l">Cor principal</label><input id="mcor" type="color" value="${cor}" style="width:100%;height:48px;border:0;background:none"><label class="l">Logo (imagem até 3 MB)</label><input id="mlogo" type="file" accept="image/*"><div class="meta">${b.logoUrl?"Logo atual: "+(b.logoOrient==="vertical"?"vertical (à esquerda)":"horizontal (centralizado)"):"Sem logo ainda."}</div><button class="cta" onclick="marcaSalva()">Salvar marca</button></div>`}
+ return `<div class="oc"><b>🎨 Marca da loja</b><div class="meta" style="margin:4px 0">Cor principal: o texto fica preto ou branco sozinho, para ler bem. Logo horizontal fica centralizado; vertical, à esquerda.</div><label class="l">Cor principal</label><input id="mcor" type="color" value="${cor}" style="width:100%;height:48px;border:0;background:none"><label class="l">Logo (imagem até 3 MB)</label><input id="mlogo" type="file" accept="image/*" onchange="marcaFile(this)"><div class="meta">${MLOGO?"Logo escolhido: "+MARCA.esc(MLOGO.name):(b.logoUrl?"Logo atual: "+(b.logoOrient==="vertical"?"vertical (à esquerda)":"horizontal (centralizado)"):"Sem logo ainda.")}</div>${MMSG?`<div class="meta" style="margin-top:6px;font-weight:800;color:${MMSG.ok===true?"var(--ok)":MMSG.ok===false?"var(--rd)":"var(--mu)"}">${MARCA.esc(MMSG.t)}</div>`:""}<button class="cta" ${MBUSY?"disabled":""} onclick="marcaSalva()">${MBUSY?"Salvando…":"Salvar marca"}</button></div>`}
 async function marcaSalva(){
- const cor=MARCA.hex($("mcor").value);if(!cor){toast("Cor inválida");return}
- const b={...(window.MARCA_CFG||{}),cor:"#"+cor};const f=$("mlogo").files[0];
+ if(MBUSY)return;if(window.PA&&PA.equipe){toast("Só o ADM da loja altera a marca");return}
+ const cor=MARCA.hex($("mcor").value);if(!cor){MMSG={ok:false,t:"Cor inválida."};draw();return}
+ const b={...(window.MARCA_CFG||{}),cor:"#"+cor},f=MLOGO;MBUSY=true;MMSG={ok:null,t:f?"Enviando logo…":"Salvando…"};draw();
  try{
-  if(f){if(f.size>3*1024*1024||!/^image\//.test(f.type)){toast("Logo: imagem de até 3 MB");return}
-   toast("Enviando logo…");const d=await imgDim(f);b.logoUrl=await upImg(f,"lojas/"+SLUG+"/logo");b.logoOrient=d.w>=d.h?"horizontal":"vertical"}
-  await PA.setLojaCfg(SLUG,{brand:b});toast("Marca salva")}
- catch(e){console.error(e);toast("Não foi possível salvar a marca")}}
+  if(f){const d=await imgDim(f);b.logoUrl=await upImg(f,"lojas/"+bkSlug()+"/logo");b.logoOrient=d.w>=d.h?"horizontal":"vertical"}
+  await PA.setLojaCfg(bkSlug(),{brand:b});const srv=await PA.lojaServidor(bkSlug());
+  if(!srv||!srv.brand||srv.brand.cor!==b.cor||(f&&srv.brand.logoUrl!==b.logoUrl))throw new Error("O servidor não confirmou a gravação.");
+  window.MARCA_CFG=srv.brand;MARCA.aplica(srv.brand);MLOGO=null;MMSG={ok:true,t:"✔ Marca salva e confirmada pelo servidor."}}
+ catch(e){console.error(e);MMSG={ok:false,t:"❌ Não foi possível salvar a marca ("+(e&&(e.code||e.message)||"erro")+"). A logo continua escolhida: tente de novo."}}
+ MBUSY=false;draw()}
 /* ---- Agenda ---- */
 const AG={srv:null,book:null,ld:false};
 async function agLoad(){if(AG.ld)return;AG.ld=true;const F=PA.fb.F,db=PA.fb.db;
- try{const s=await F.getDocs(F.query(F.collection(db,"servicos"),F.where("loja","==",SLUG)));AG.srv=s.docs.map(d=>({id:d.id,...d.data()}));
-  const b=await F.getDocs(F.query(F.collection(db,"agendamentos"),F.where("loja","==",SLUG)));AG.book=b.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>((x.data||"")+(x.hora||"")).localeCompare((y.data||"")+(y.hora||"")))}
+ try{const s=await F.getDocs(F.query(F.collection(db,"servicos"),F.where("loja","==",bkSlug())));AG.srv=s.docs.map(d=>({id:d.id,...d.data()}));
+  const b=await F.getDocs(F.query(F.collection(db,"agendamentos"),F.where("loja","==",bkSlug())));AG.book=b.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>((x.data||"")+(x.hora||"")).localeCompare((y.data||"")+(y.hora||"")))}
  catch(e){console.error(e);AG.srv=AG.srv||[];AG.book=AG.book||[];toast("Não foi possível carregar a agenda")}
  AG.ld=false;draw()}
 function agendaTab(){
@@ -50,13 +57,13 @@ async function agSalvaCfg(){
   const ini=$("aini").value||"09:00",fim=$("afim").value||"18:00",intervalo=Math.max(5,Math.min(240,Number($("aint").value)||30));
   if(ini>=fim){toast("O horário final deve ser depois do inicial");return}
   let fotoUrl=(window.AGC||{}).fotoUrl||"";const f=$("afoto").files[0];
-  if(f){if(f.size>3*1024*1024||!/^image\//.test(f.type)){toast("Foto: imagem de até 3 MB");return}toast("Enviando foto…");fotoUrl=await upImg(f,"lojas/"+SLUG+"/foto")}
-  await PA.setLojaCfg(SLUG,{agenda:{pgto,pix,ini,fim,intervalo,bio:($("abio").value||"").slice(0,400),fotoUrl},asaasWalletId:$("awid").value.trim()});
+  if(f){if(f.size>3*1024*1024||!/^image\//.test(f.type)){toast("Foto: imagem de até 3 MB");return}toast("Enviando foto…");fotoUrl=await upImg(f,"lojas/"+bkSlug()+"/foto")}
+  await PA.setLojaCfg(bkSlug(),{agenda:{pgto,pix,ini,fim,intervalo,bio:($("abio").value||"").slice(0,400),fotoUrl},asaasWalletId:$("awid").value.trim()});
   toast("Agenda salva")}
  catch(e){console.error(e);toast("Não foi possível salvar a agenda")}}
 async function srvAdd(){const nome=($("snome").value||"").trim(),min=Math.round(Number($("smin").value)),preco=num($("spreco").value);
  if(nome.length<2){toast("Informe o nome do serviço");return}if(!(min>=5&&min<=600)){toast("Duração entre 5 e 600 minutos");return}if(!(preco>=0)){toast("Preço inválido");return}
- try{const F=PA.fb.F,db=PA.fb.db;const ref=F.doc(F.collection(db,"servicos"));await F.setDoc(ref,{loja:SLUG,nome,min,preco,criadoEm:Date.now()});AG.srv.push({id:ref.id,loja:SLUG,nome,min,preco});draw();toast("Serviço adicionado")}
+ try{const F=PA.fb.F,db=PA.fb.db;const ref=F.doc(F.collection(db,"servicos"));await F.setDoc(ref,{loja:bkSlug(),nome,min,preco,criadoEm:Date.now()});AG.srv.push({id:ref.id,loja:bkSlug(),nome,min,preco});draw();toast("Serviço adicionado")}
  catch(e){console.error(e);toast("Não foi possível salvar o serviço")}}
 async function srvDel(id){try{await PA.fb.F.deleteDoc(PA.fb.F.doc(PA.fb.db,"servicos",id));AG.srv=AG.srv.filter(s=>s.id!==id);draw()}catch(e){console.error(e);toast("Não foi possível remover")}}
 async function agOk(id){try{await PA.fb.F.setDoc(PA.fb.F.doc(PA.fb.db,"agendamentos",id),{status:"confirmado",confirmadoEm:Date.now()},{merge:true});const b=AG.book.find(x=>x.id===id);if(b)b.status="confirmado";draw();toast("Pix confirmado")}catch(e){console.error(e);toast("Não foi possível confirmar")}}

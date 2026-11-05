@@ -35,12 +35,15 @@ input,select{width:100%;margin-top:6px;padding:11px;border-radius:10px;border:1p
 const $=i=>document.getElementById(i),toast=m=>{const t=$("t");t.textContent=m;t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",2200)};
 const R$=n=>"R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2});
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let nEv=0,txBt="",nLeads=0,tab="adm",mod=null,det=null,busca="",D=null,erro="",tD=0;
+let nEv=0,txBt="",nLeads=0,tab="adm",mod=null,det=null,busca="",D=null,erro="",tD=0,repAba="pend",repF="",afSel=null,vincSlug=null,lastMK="";
 const TABS=[["adm","👑 ADMs"],["fat","💰 Faturamento"],["trv","🔓 Travas"],["bkp","💾 Backup"],["msg","📨 Mensagens"],["cfg","⚙️ Configurações"]];
 window.PA_onEventos=n=>{nEv=n;draw()};window.PA_onLeads=n=>{nLeads=n;draw()};window.PA_onBt=t=>{txBt=t;draw()};
 function go(k){const a=window.PA_criadorAcoes;if(!a){toast("Aguarde a conexão e o login do Criador");return}a[k]()}
 async function carregar(){if(!window.PA_criadorDados)return;try{D=await PA_criadorDados();erro="";tD=Date.now()}catch(e){console.error(e);erro="Não foi possível ler os dados agora."}draw()}
-window.PA_onCriadorPronto=()=>{carregar()};
+window.PA_onCriadorPronto=()=>{carregar().then(()=>{window.PA_criadorLive&&PA_criadorLive()})};
+window.PA_onPedidos=l=>{if(!D)return;D.pedidos=l;if(tab==="fat")draw("k")};
+window.PA_onLojas=l=>{if(!D)return;D.lojas=l;if(tab==="fat")draw("k")};
+window.PA_onComissoes=l=>{if(!D)return;D.comissoes=l;draw()};window.PA_onAfiliados=l=>{if(!D)return;D.afiliados=l;draw()};
 const PL=()=>window.PA_PLANOS||{};
 const dia0=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
 const lojista=l=>D.contas.find(c=>c.papel==="lojista"&&c.loja&&c.loja.slug===l.slug);
@@ -59,12 +62,18 @@ function adm(){if(!D)return carr();
  return `<div class="card"><b style="font-size:20px">Visão do sistema</b>${row("ADMs (contas com poder de ADM)",A.length)}${row("Lojas (total · suspensas)",LJ.length+" · "+LJ.filter(x=>x.suspensa).length)}${row("Lojas com plano vencido",LJ.filter(vencida).length)}${row("Pedidos hoje (todas as lojas)",ped)}</div>
  <button class="summ" onclick="mod='motos';draw()"><div class="lbl">Total de Motoboys no Sistema</div><div class="num">${M.length}</div><div class="more">Toque para ver a lista ›</div></button>
  <div class="card"><b>Por tipo de conta</b>${row("Lojas",LC.length)}${row("ADMs",A.length)}${row("Entregadores",M.length)}</div>`}
+const pctDe=l=>{const t=window.PA_COMISSAO_PCT||{};const v=t[l.plano||"iniciante"];return typeof v==="number"?v:7};
+function comissaoLojas(){const tot={};D.pedidos.forEach(p=>{if(entregue(p))tot[p.loja]=(tot[p.loja]||0)+(Number(p.tt)||0)});
+ return D.lojas.map(l=>{const v=tot[l.slug]||0,pc=pctDe(l);return {l,v,pc,c:Math.round(v*pc)/100,ini:(l.plano||"iniciante")==="iniciante"}}).sort((a,b)=>b.c-a.c)}
+function comissaoHtml(){const L=comissaoLojas(),T=L.reduce((a,o)=>a+o.c,0);
+ return `<div class="card"><b style="font-size:20px">🏷️ Comissão do Criador por loja</b><div class="lbl">Acumulado sobre tudo que cada loja já vendeu (pedidos entregues/retirados), com a % do plano da loja. Atualiza sozinho a cada venda. Não é o valor recebido pela loja.</div><div class="row" style="margin-top:8px"><span>Total acumulado (todas as lojas)</span><b class="ok">${R$(T)}</b></div></div>
+ ${L.map(o=>`<div class="card" style="${o.ini?"border:2px solid var(--gd);background:rgba(201,151,0,.10)":""}"><div class="row"><b>${esc(o.l.nome||o.l.slug)}</b><span class="tag">${esc((PL()[o.l.plano||"iniciante"]||{}).n||"")}</span></div>${row("Total vendido",R$(o.v))}${row("% do Criador",o.pc.toLocaleString("pt-BR")+"%")}<div class="row"><span>${o.ini?"⭐ ":""}Comissão acumulada</span><b class="${o.ini?"":"ok"}" style="font-size:${o.ini?"22":"17"}px;${o.ini?"color:var(--gd)":""}">${R$(o.c)}</b></div></div>`).join("")||`<div class="meta">Nenhuma loja.</div>`}`}
 function fat(){if(!D)return carr();
  const pend=D.contas.filter(c=>c.pagto&&c.pagto.st==="analise"),P=PL(),t30=Date.now()-30*864e5;
  const ent=D.pedidos.filter(p=>entregue(p)&&p.criadoEm>=t30),vol=ent.reduce((t,p)=>t+(Number(p.tt)||0),0);
  const mens=D.lojas.reduce((t,l)=>{const p=P[l.plano||"iniciante"]||{p:0,d:30};return t+p.p*30/p.d},0);
  const now=Date.now(),ven7=D.lojas.filter(l=>{const v=vencDe(l);return v&&v>=now&&v<=now+7*864e5}).length;
- return `<div class="card"><b style="font-size:20px">💠 Pix de mensalidades</b><div class="lbl">A confirmação do recebimento continua em “Contas e pagamentos”.</div></div>
+ return repasseCard()+comissaoHtml()+`<div class="card"><b style="font-size:20px">💠 Pix de mensalidades</b><div class="lbl">A confirmação do recebimento continua em “Contas e pagamentos”.</div></div>
  <h2>Aguardando sua confirmação (${pend.length})</h2>
  ${pend.map(c=>`<div class="card al"><div class="row"><b>${esc(c.nome||c.email)}</b><span class="tag">Em análise</span></div><div class="meta">${esc(c.papel)}${c.loja?" · "+esc(c.loja.nome):""} · ${esc(((c.papel==="adm"?window.PA_ADMP:P)||{})[(c.pagto&&c.pagto.plano)||"iniciante"]?.n||"")} ${c.pagto&&c.pagto.valor?"· "+R$(c.pagto.valor):""}</div></div>`).join("")||"<div class='meta'>Nenhum Pix em análise.</div>"}
  ${pend.length?`<button class="cta g" onclick="go('contas')">Confirmar em Contas e pagamentos</button>`:""}
@@ -78,6 +87,7 @@ function msg(){return `<div class="card"><b style="font-size:20px">📨 Caixa de
 function cfg(){const P=PL(),AP=window.PA_ADMP||{},m=/\((\d+)\)/.exec(txBt||""),nc=m?+m[1]:0,u=(window.PA&&PA.user)||{};
  return `<div class="card"><b style="font-size:20px">💳 Contas e pagamentos${nc?` (${nc} aguardando)`:""}</b><div class="meta">Confirmar Pix recebidos, vencimentos, liberar ou travar lojas e ADMs.</div><button class="cta" onclick="go('contas')">Abrir</button></div>
 <div class="card"><b style="font-size:20px">🏪 Lojas e dados${nEv?` (${nEv} nova${nEv>1?"s":""})`:""}</b><div class="meta">Lojas criadas pelos ADMs, excluir loja, zerar vendas, lucros e carteira e Reset Total (estado de fábrica, com 3 confirmações).</div><button class="cta" onclick="go('lojas')">Abrir</button></div>
+<div class="card"><b style="font-size:20px">🤝 Programa de Afiliados</b><div class="meta">Afiliados se cadastram sozinhos (Sou Afiliado + Google). Aqui você vê cada um, ajusta a % (regra oficial 60/40), a situação e o histórico de comissões.</div><button class="cta" onclick="mod='afi';draw()">Abrir</button></div>
 <div class="card"><b style="font-size:20px">🔗 Links de pagamento</b><div class="meta">Cadastre os links e ligue ou desligue o redirecionamento no checkout.</div><button class="cta" onclick="go('pag')">Abrir</button></div>
 <div class="card"><b style="font-size:20px">🧩 Módulos e preço por loja</b><div class="meta">Liga e desliga Gestão, Loja Virtual e Agendamento de cada loja. O total muda conforme você liga os módulos.</div><button class="cta" onclick="go('mod')">Abrir</button></div>
 <div class="card"><b style="font-size:20px">📩 Leads do site${nLeads?` (${nLeads} novo${nLeads>1?"s":""})`:""}</b><div class="meta">Pedidos de site personalizado e APK feitos pelo formulário do site.</div><button class="cta" onclick="go('leads')">Abrir</button></div>
@@ -91,21 +101,65 @@ function lojas(){const q=busca.toLowerCase(),l=D.lojas.filter(x=>((x.nome||x.slu
  ${l.map(x=>{const s=stl(x);return `<button class="item" onclick="det='${esc(x.slug)}';draw()"><div class="row"><b>${esc(x.nome||x.slug)}</b><span class="tag ${s[1]}">${s[0]}</span></div><div class="meta">${hojeDe(x)} pedido(s) hoje · plano ${esc((PL()[x.plano||"iniciante"]||{}).n||"")}</div></button>`}).join("")||`<div class="meta">Nenhuma loja encontrada.</div>`}`}
 function detalhe(x){const s=stl(x),c=lojista(x)||{},v=vencDe(x);
  return `<div class="card">${row("Responsável",esc(c.nome||c.email||"—"))}${row("Situação",`<span class="${s[1]}">${s[0]}</span>`)}${row("Plano",esc((PL()[x.plano||"iniciante"]||{}).n||"")+(v?" · vence "+dt(v):""))}${row("Pedidos hoje",hojeDe(x))}</div>
+ ${indicadorLoja(x)}
  <button class="cta ${x.suspensa?"g":"o"}" onclick="suspender('${esc(x.slug)}')">${x.suspensa?"Reativar loja":"Suspender loja"}</button>
  <button class="cta b" onclick="go('contas')">Vencimento e pagamento: Contas e pagamentos</button>
  <div class="meta" style="margin-top:10px">Excluir loja e dados: Configurações → Lojas e dados.</div>`}
 async function suspender(slug){const x=D.lojas.find(l=>l.slug===slug);if(!x)return;const nv=!x.suspensa;if(!confirm((nv?"Suspender ":"Reativar ")+(x.nome||slug)+"?"))return;
  try{await PA_criadorSuspender(slug,nv);x.suspensa=nv;draw();toast(nv?"Loja suspensa":"Loja reativada")}catch(e){console.error(e);toast("Não foi possível alterar agora")}}
-function modal(){let t="",b="",voltar=false;
+function modal(){const mm=modalAfi();if(mm)return mm;let t="",b="",voltar=false;
  if(mod==="motos"){t="Motoboys no sistema";b=D.contas.filter(c=>c.papel==="motoboy").map(c=>`<div class="card"><b>${esc(c.nome||c.email)}</b><div class="meta">${esc(c.email||"")}</div></div>`).join("")||`<div class="meta">Nenhum motoboy cadastrado.</div>`}
  else if(mod==="fat"){t="Faturamento por loja (30 dias)";const t30=Date.now()-30*864e5;b=D.lojas.map(l=>{const ps=D.pedidos.filter(p=>p.loja===l.slug&&entregue(p)&&p.criadoEm>=t30),f=ps.reduce((a,p)=>a+(Number(p.tt)||0),0);return {l,ps,f}}).sort((a,b)=>b.f-a.f).map(o=>`<div class="card"><div class="row"><b>${esc(o.l.nome||o.l.slug)}</b><b>${R$(o.f)}</b></div><div class="meta">${o.ps.length} pedidos · comissão ${R$(o.f*.07)} · plano ${esc((PL()[o.l.plano||"iniciante"]||{}).n||"")}</div></div>`).join("")||`<div class="meta">Nenhuma loja.</div>`}
  else if(det){const x=D.lojas.find(y=>y.slug===det);if(!x){det=null;return ""}t=x.nome||x.slug;voltar=true;b=detalhe(x)}
  else{t="Lojas do sistema";b=lojas()}
  return `<div class="modal" onclick="if(event.target===this){mod=null;det=null;draw()}"><div class="mbox"><div class="mhead">${voltar?`<button onclick="det=null;draw()">‹ Voltar</button>`:`<span></span>`}<b>${esc(t)}</b><button onclick="mod=null;det=null;draw()">✕</button></div>${b}</div></div>`}
+
+/* ===== v5.9.7 · #008 Programa de Afiliados (repasses, baixa manual, indicadores, vínculo da loja) ===== */
+const AFS=()=>(D&&D.afiliados)||[],CMS=()=>(D&&D.comissoes)||[],afDe=id=>AFS().find(a=>a.id===id);
+const pendentes=()=>CMS().filter(c=>c.st!=="paga").sort((a,b)=>(a.prazoEm||0)-(b.prazoEm||0));
+const prazoTxt=c=>{const h=Math.round(((c.prazoEm||0)-Date.now())/36e5);return h>=0?"⏳ pagar em até "+h+" h (até "+dt(c.prazoEm)+")":"⏰ ATRASADO há "+(-h)+" h (prazo era "+dt(c.prazoEm)+")"};
+const linkRef=a=>location.origin+"/?ref="+encodeURIComponent(a.cod||"");
+function repasseCard(){const P=pendentes(),now=Date.now(),atr=P.filter(c=>(c.prazoEm||0)<now),tot=P.reduce((t,c)=>t+(Number(c.valor)||0),0),mes=CMS().filter(c=>c.st==="paga"&&(c.baixaEm||0)>=now-30*864e5).reduce((t,c)=>t+(Number(c.valor)||0),0);
+ return `<div class="card ${atr.length?"al":""}" id="rep-card"><b style="font-size:20px">🤝 Repasses a indicadores</b><div class="lbl">Regra oficial 60% afiliado / 40% Criador, recorrente: a cada pagamento de loja indicada que você confirma, o afiliado recebe a parte dele por Pix em até 48 h.</div><div class="grid" style="margin-top:10px">${tile(P.length,"Repasses pendentes")}${tile(R$(tot),"A pagar")}${tile(atr.length,"Atrasados (+48 h)")}${tile(R$(mes),"Pagos (30 dias)")}</div><button class="cta" onclick="mod='rep';repAba='pend';draw()">Abrir repasses${P.length?" ("+P.length+")":""}</button></div>`}
+function indicadorLoja(x){const a=afDe(x.afiliadoId);
+ return `<div class="card"><b>🤝 Indicador</b>${row("Quem indicou",a?esc(a.nome)+" · "+esc(a.cod||"")+" · "+a.pct+"%"+(x.afiliadoVia==="link"?" · pelo link":x.afiliadoVia==="codigo"?" · por código":""):(x.afiliadoId?"(indicador removido)":(x.semIndicador?"Venda direta (sem indicador)":"— sem vínculo")))}<button class="sec" onclick="vincSlug='${esc(x.slug)}';mod='vinc';draw()">${x.afiliadoId||x.semIndicador?"Trocar indicador":"Definir indicador"}</button></div>`}
+const nomeLoja=slug=>{const l=(D.lojas||[]).find(x=>x.slug===slug);return l?(l.nome||l.slug):slug};
+function cardRepasse(c){const a=afDe(c.afiliadoId)||{},atr=(c.prazoEm||0)<Date.now();
+ return `<div class="card ${atr?"al":""}"><div class="row"><b>${esc(c.afiliadoNome||a.nome||"Indicador")}</b><span class="tag ${atr?"bad":"ok"}">${R$(c.valor)}</span></div><div class="meta">Loja: ${esc(c.lojaNome||nomeLoja(c.loja))} · pagamento ${R$(c.valorPago)} × ${c.pct}% (afiliado) · fica com você ${R$(c.valorCriador!=null?c.valorCriador:Number(c.valorPago||0)-Number(c.valor||0))} · confirmado em ${dt(c.confirmadoEm)}</div><div class="meta ${atr?"bad":""}" style="font-weight:800">${prazoTxt(c)}</div><div class="meta">Pix do indicador: <b>${esc(a.pix||"(sem chave)")}</b>${a.whats?" · WhatsApp "+esc(a.whats):""}</div><button class="sec" data-id="${esc(c.id)}" onclick="copiaPix(this.dataset.id)">📋 Copiar chave Pix</button><button class="cta g" data-id="${esc(c.id)}" onclick="darBaixa(this.dataset.id)">✅ Dar baixa (já paguei por Pix)</button></div>`}
+function cardHist(c){return `<div class="card"><div class="row"><b>${esc(c.afiliadoNome||"Indicador")}</b><span class="tag ${c.st==="paga"?"ok":"bad"}">${c.st==="paga"?"✅ Paga":"⏳ A pagar"} · ${R$(c.valor)}</span></div><div class="meta">Loja: ${esc(c.lojaNome||nomeLoja(c.loja))} · pagamento ${R$(c.valorPago)} × ${c.pct}% · confirmado em ${dt(c.confirmadoEm)}</div>${c.st==="paga"?`<div class="meta">Baixa em ${dt(c.baixaEm)} por ${esc(c.baixaPor||"")}${c.obs?" · "+esc(c.obs):""}</div><button class="sec" data-id="${esc(c.id)}" onclick="desfazBaixa(this.dataset.id)">↩️ Desfazer baixa</button>`:`<div class="meta">${prazoTxt(c)}</div>`}</div>`}
+function copiaPix(id){const c=CMS().find(x=>x.id===id),a=c&&afDe(c.afiliadoId);if(!a||!a.pix){toast("Indicador sem chave Pix");return}PA_copia(a.pix);toast("Chave Pix copiada · valor "+R$(c.valor))}
+async function darBaixa(id){const c=CMS().find(x=>x.id===id);if(!c)return;const obs=prompt("Dar baixa de "+R$(c.valor)+" para "+(c.afiliadoNome||"o indicador")+" (Pix já enviado).\nComprovante ou observação (opcional):","");if(obs===null)return;
+ try{await PA_afi.baixa(id,obs);c.st="paga";c.baixaEm=Date.now();c.baixaPor=(window.PA&&PA.user&&PA.user.email)||"criador";c.obs=obs;draw();toast("✅ Baixa registrada")}catch(e){console.error(e);toast("Não foi possível dar baixa agora")}}
+async function desfazBaixa(id){const c=CMS().find(x=>x.id===id);if(!c||!confirm("Desfazer a baixa de "+R$(c.valor)+"? O repasse volta para pendente."))return;
+ try{await PA_afi.desfazer(id);c.st="pendente";delete c.baixaEm;delete c.baixaPor;delete c.obs;draw();toast("Baixa desfeita")}catch(e){console.error(e);toast("Não foi possível desfazer agora")}}
+async function salvaAfi(){const g=i=>($(i)||{}).value||"",a={id:afSel,cod:(afDe(afSel)||{}).cod,nome:g("ed_nome"),whats:g("ed_whats"),pix:g("ed_pix"),pct:g("ed_pct").replace(",","."),ativo:g("ed_ativo")!=="0"};
+ try{await PA_afi.salvar(a);toast("Afiliado salvo");await carregar()}catch(e){console.error(e);alert(e.message||"Não foi possível salvar.")}}
+async function vinculaLoja(id){const x=D.lojas.find(l=>l.slug===vincSlug);if(!x)return;const af=id?afDe(id):null;
+ try{await PA_afi.vincular(vincSlug,af);if(af){x.afiliadoId=af.id;x.afiliadoCodigo=af.cod;x.semIndicador=false}else{delete x.afiliadoId;delete x.afiliadoCodigo;x.semIndicador=true}mod=null;draw();toast(af?"Indicador vinculado: "+af.nome:"Loja marcada como venda direta")}catch(e){console.error(e);toast("Não foi possível vincular agora")}}
+function modalAfi(){let t="",b="",back="";
+ if(mod==="rep"){t="Repasses a indicadores";const P=pendentes(),H=CMS().filter(c=>!repF||c.afiliadoId===repF).sort((a,b)=>(b.confirmadoEm||0)-(a.confirmadoEm||0));
+  b=`<div class="grid" style="margin-bottom:8px"><button class="${repAba==="pend"?"cta":"sec"}" onclick="repAba='pend';draw()">Pendentes (${P.length})</button><button class="${repAba==="hist"?"cta":"sec"}" onclick="repAba='hist';draw()">Histórico (${CMS().length})</button></div>`
+   +(repAba==="pend"?(P.map(cardRepasse).join("")||`<div class="meta">Nenhum repasse pendente. Quando você confirmar o pagamento de uma loja indicada, a comissão aparece aqui.</div>`)
+   :`<select id="repf" onchange="repF=this.value;draw()"><option value="">Todos os indicadores</option>${AFS().map(a=>`<option value="${esc(a.id)}" ${repF===a.id?"selected":""}>${esc(a.nome)}</option>`).join("")}</select>${H.map(cardHist).join("")||`<div class="meta" style="margin-top:8px">Nenhuma comissão registrada.</div>`}`)}
+ else if(mod==="afi"){t="Programa de Afiliados";b=`<div class="card"><b>Regra oficial: 60% para o afiliado · 40% para o Criador</b><div class="meta" style="margin-top:4px">O afiliado se cadastra sozinho: no site toca em <b>Sou Afiliado</b>, entra com o Google e preenche nome, telefone e Pix. Ele gera o link <b>?ref=AFI-…</b>; quem criar a loja por esse link fica vinculado automaticamente.</div></div>`+(AFS().map(a=>{const n=D.lojas.filter(l=>l.afiliadoId===a.id).length,pd=CMS().filter(c=>c.afiliadoId===a.id&&c.st!=="paga").reduce((s,c)=>s+(Number(c.valor)||0),0);return `<button class="item" data-id="${esc(a.id)}" onclick="afSel=this.dataset.id;mod='afiDet';draw()"><div class="row"><b>${esc(a.nome)}</b><span class="tag ${a.ativo===false?"bad":"ok"}">${a.ativo===false?"Inativo":a.pct+"%"}</span></div><div class="meta">${esc(a.cod||"")} · ${esc(a.email||"")} · ${n} loja(s) · a pagar ${R$(pd)}</div></button>`}).join("")||`<div class="meta" style="margin-top:8px">Nenhum afiliado cadastrado ainda. Quando alguém entrar em "Sou Afiliado", aparece aqui.</div>`)}
+ else if(mod==="afiDet"){const a=afDe(afSel);if(!a){mod="afi";return modalAfi()}t=a.nome;back="mod='afi'";
+  const L=D.lojas.filter(l=>l.afiliadoId===a.id),H=CMS().filter(c=>c.afiliadoId===a.id).sort((x,y)=>(y.confirmadoEm||0)-(x.confirmadoEm||0)),pd=H.filter(c=>c.st!=="paga").reduce((s,c)=>s+(Number(c.valor)||0),0),pg=H.filter(c=>c.st==="paga").reduce((s,c)=>s+(Number(c.valor)||0),0);
+  b=`<div class="card"><div class="grid">${tile(R$(pd),"A pagar")}${tile(R$(pg),"Já pago")}</div><div class="meta" style="margin-top:8px">E-mail Google: <b>${esc(a.email||"")}</b></div><div class="meta">ID do link (?ref=): <b>${esc(a.cod||"")}</b></div><div class="meta" style="word-break:break-all">${esc(linkRef(a))}</div><button class="sec" onclick="PA_copia('${esc(linkRef(a))}');toast('Link copiado')">📋 Copiar link de indicação</button></div>
+  <div class="card"><label class="lbl">Nome</label><input id="ed_nome" maxlength="80" value="${esc(a.nome)}"><label class="lbl">WhatsApp</label><input id="ed_whats" inputmode="tel" maxlength="20" value="${esc(a.whats||"")}"><label class="lbl">Chave Pix</label><input id="ed_pix" maxlength="120" value="${esc(a.pix||"")}"><label class="lbl">Comissão do afiliado (%) · regra oficial 60</label><input id="ed_pct" inputmode="decimal" value="${esc(a.pct)}"><label class="lbl">Situação</label><select id="ed_ativo"><option value="1" ${a.ativo===false?"":"selected"}>Ativo</option><option value="0" ${a.ativo===false?"selected":""}>Inativo (não gera nova comissão)</option></select><button class="cta" onclick="salvaAfi()">Salvar afiliado</button></div>
+  <div class="card"><b>🏪 Lojas indicadas (${L.length})</b>${L.map(l=>`<div class="row"><span>${esc(l.nome||l.slug)}</span><span class="tag ${stl(l)[1]}">${stl(l)[0]}</span></div>`).join("")||`<div class="meta">Nenhuma loja vinculada ainda.</div>`}</div>
+  <h2>Histórico de comissões (${H.length})</h2>${H.map(cardHist).join("")||`<div class="meta">Nenhuma comissão registrada.</div>`}`}
+ else if(mod==="vinc"){const x=D.lojas.find(l=>l.slug===vincSlug);if(!x){mod=null;return ""}t="Indicador de "+(x.nome||x.slug);back="mod=null";
+  b=`<div class="meta" style="margin-bottom:6px">Escolha quem indicou esta loja. A comissão passa a valer nos próximos pagamentos confirmados.</div>`+AFS().filter(a=>a.ativo!==false).map(a=>`<button class="item" data-id="${esc(a.id)}" onclick="vinculaLoja(this.dataset.id)"><div class="row"><b>${esc(a.nome)}${x.afiliadoId===a.id?" ✔":""}</b><span class="tag">${a.pct}%</span></div><div class="meta">${esc(a.cod||"")}</div></button>`).join("")+`<button class="item" onclick="vinculaLoja('')"><b>Sem indicador (venda direta)${!x.afiliadoId&&x.semIndicador?" ✔":""}</b></button>`}
+ else return "";
+ return `<div class="modal" onclick="if(event.target===this){mod=null;det=null;draw()}"><div class="mbox"><div class="mhead">${back?`<button onclick="${back};draw()">‹ Voltar</button>`:`<span></span>`}<b>${esc(t)}</b><button onclick="mod=null;det=null;draw()">✕</button></div>${b}</div></div>`}
 function draw(keep){
+ const mk=mod+"|"+det+"|"+afSel+"|"+vincSlug,mv={},ae=document.activeElement,aid=ae&&ae.id&&ae.closest&&ae.closest("#modal")?ae.id:"",sel=aid&&ae.selectionStart!=null?[ae.selectionStart,ae.selectionEnd]:null;
+ document.querySelectorAll("#modal input,#modal select,#modal textarea").forEach(e=>{if(e.id)mv[e.id]=e.type==="checkbox"?e.checked:e.value});
  $("tabs").innerHTML=TABS.map(([k,l])=>`<button class="${tab==k?"on":""}" onclick="tab='${k}';draw();if(Date.now()-tD>20000)carregar()">${l}</button>`).join("");
  $("v").innerHTML=({adm,fat,trv,bkp,msg,cfg})[tab]();
  $("modal").innerHTML=(mod&&D)?modal():"";
+ if(mk===lastMK){Object.keys(mv).forEach(k=>{const e=document.getElementById(k);if(e&&e.closest("#modal")){if(e.type==="checkbox")e.checked=mv[k];else if(e.tagName==="SELECT"||mv[k]!=="")e.value=mv[k]}});if(aid){const e=document.getElementById(aid);if(e){e.focus();try{e.setSelectionRange(sel[0],sel[1])}catch(_){}}}}
+ lastMK=mk;
  if(keep===true){const e=$("bq");if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}}}
 draw();
 </script><script>
@@ -131,7 +185,7 @@ if(window.PA_MOCK){window.PA_MOCK(PA);return}
 (async()=>{try{
  const B="https://www.gstatic.com/firebasejs/10.8.0/";
  const [A,F0,H]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-firestore.js"),import(B+"firebase-auth.js")]);const F=PA_sync5(F0);
- const app=A.initializeApp(CFG),db=PA_db(F,app),au=H.getAuth(app);
+ window.PA_SESSAO="criador";const app=A.initializeApp(CFG,"pa-criador"),db=PA_db(F,app),au=H.getAuth(app);
  await PA_login(H,au);
  PA.uid=au.currentUser.uid;PA.user=au.currentUser;await PA_conta(F,db,H,au);
  PA.nextId=PA_nextId(F,db);

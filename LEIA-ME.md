@@ -1,3 +1,93 @@
+# PedeAí Brasil · v5.9.8 (correção do #008 Afiliados + landing)
+
+## Publicar (nesta ordem)
+1. **Rodar antes** os testes de regras (não rodaram aqui, sem rede): `cd firebase/teste-rules && npm install && npm test`. Só publique se passarem.
+2. **Regras do Firestore** (`firebase/firestore.rules`): `afiliados` agora é por **uid do Google** (o afiliado cria o próprio cadastro com 60% fixo); `afiliadoCodigos` (ID do link); `comissoes`; a loja nasce com indicador validado (link/código) ou venda direta; autoindicação bloqueada. **Saiu** `afiliadoAcessos` (acesso por chave). Republicar.
+3. Subir a pasta `app/` na Vercel (`index.html` nova, `indicador.html` nova, `sw.js` = pedeai-v5.9.8).
+4. Firebase → Authentication → Google ligado e o domínio do site em "Domínios autorizados" (o login do afiliado usa o Google).
+
+## O que mudou da v5.9.7 para a v5.9.8
+1. **Comissão 60% afiliado / 40% Criador**: padrão e regra fixos. O afiliado se cadastra com 60% (o servidor recusa outro valor); só o Criador altera. Cada comissão guarda a parte do afiliado e a do Criador (ex.: pagamento de R$ 199,90 → R$ 119,94 e R$ 79,96). O aviso na confirmação do pagamento e a lista de repasses mostram as duas partes.
+2. **Login do afiliado com Google**: `indicador.html` não abre mais por código/link com chave. Botão **Sou Afiliado** no site → Entrar com Google → o painel vem da conta (e-mail). No 1º acesso pede Nome, Telefone e Pix. Depois: link de indicação, a receber/recebido, lojas indicadas, histórico, aviso de pagamento confirmado, editar dados.
+3. **Rastreamento automático**: o afiliado tem o link `?ref=AFI-XXXXXX`. O site e os apps guardam o `ref` por 90 dias no aparelho e os botões de instalar levam o `ref` junto. Ao criar a loja, o ADM **não digita nada**: a loja é vinculada sozinha. O campo de código continua como plano B; sem link nem código a loja entra como venda direta; o ADM pode marcar "Sem indicador". O ADM não consegue indicar a própria loja.
+4. **Landing (AIDA)** em `index.html`: Atenção (dor do iFood: 12% ou 23% + 3,2%), Interesse (comparação em R$ para R$ 10.000/mês), Desejo (benefícios, plano único R$ 199,90 e afiliados 60%), Ação (instalar, WhatsApp). Taxas do iFood de fontes públicas (nov/2026, podem mudar; a página avisa).
+
+- **Porta de entrada do afiliado (ajuste final da v5.9.8):** botão **Sou Afiliado** visível no topo do site (fora do menu ☰, que no celular fica fechado), no menu, na seção do plano, na seção dos 60% e no rodapé; e botão **🤝 Indique e Ganhe** na barra dos apps **Lojista (só o dono, não o funcionário)** e **Motoboy**, que abre o login Google do afiliado. Testes: t39 (cliente por link de afiliado, sem comissão da venda) e t40 (botões).
+
+## Confirme
+- O plano está **R$ 199,90** (é o valor do sistema), não R$ 199,00.
+- Não encontrei o texto do "Dossiê Estratégico": a copy da landing é minha, a partir dos seus pontos. Se tiver o texto oficial, mande.
+- Removi da landing os números e depoimentos de exemplo ("[+X] lojas") e os planos antigos de R$ 49/99/129.
+- O Criador não cadastra mais afiliado à mão nem gera link com chave; ele vê, ajusta % e situação.
+
+## Atenção
+- Pix ao afiliado continua **manual** (você paga e dá baixa). Aviso com o app **fechado** (push) não foi feito.
+- O `ref` é por aparelho: se o ADM abrir o link num aparelho e criar a loja em outro, o vínculo não vai junto (use o código como plano B).
+- Não testado em aparelho real nem no emulador de regras. t11, t16 e t17 não abrem o login neste ambiente (também na v5.9.6 original).
+
+---
+
+# PedeAí Brasil · v5.9.7 (Parte 3 de 3: anotações #007 e #008)
+
+## Publicar (nesta ordem)
+1. **Rodar antes** os testes de regras (não rodaram aqui, sem rede): `cd firebase/teste-rules && npm install && npm test`. Só publique se passarem.
+2. **Regras do Firestore** (`firebase/firestore.rules`): novas `afiliados`, `afiliadoCodigos`, `afiliadoAcessos`, `comissoes`; a loja agora nasce com indicador validado; gerente e ADM não trocam o indicador. Republicar.
+3. Subir a pasta `app/` na Vercel (novos: `indicador.html`, `manifest-indicador.json`, `icon-indicador-*.png`; `sw.js` = pedeai-v5.9.7).
+4. Firebase → Authentication: **Anônimo** continua ligado (o painel do indicador entra pelo link, sem login).
+
+## O que mudou
+- **#007 · Painel do ADM da loja** (só `lojista.html`, `rh.js` e a barra do Gerente em `conta.js`): aba Gestão separada em 4 cartões com cabeçalho e atalhos fixos no topo: 🏪 Dados da Loja · 💠 PIX e Marca (chave Pix, prazo do Pix, cor e logo) · 👥 Equipe e Funcionários · ⚙️ Configurações Operacionais (entrega, tempo, módulos, relatórios). Equipe: lista com nome, função e status (Ativo/Pendente), busca, filtro, "Ver mais" e rolagem; permissões abrem por pessoa; o modal "Gerenciar equipe" também ganhou busca, rolagem e paginação. Botões: removida a aba Equipe e o atalho "👥 Equipe" da barra (ficaram duplicados com a Gestão), unido o cartão duplicado de entrega, rótulo "Salvar prazo do Pix", toque com vibração e pulso. Funcionário continua vendo a Gestão como antes. Criador e superadmin intactos.
+- **Correção encontrada na #006**: "Salvar chave Pix" e "Salvar marca" falhavam com `SLUG is not defined` (a variável era local a outro bloco). Agora usam `bkSlug()`; testado (Pix e cor gravam e o servidor confirma).
+- **#008 · Programa de Afiliados**: (1) o Criador cadastra indicadores (nome, WhatsApp, chave Pix, % de comissão, código AFI-XXXXXX, link do painel) em Configurações → Programa de Afiliados; (2) o ADM, ao criar a loja, informa o código do indicador **ou** marca "Sem indicador (venda direta)" (obrigatório; validado no servidor); o Criador pode trocar o vínculo no detalhe da loja; (3) quando o Criador confirma o pagamento de uma loja indicada nasce uma comissão (valor pago × %), recorrente (uma por pagamento, sem duplicar) com prazo de Pix de 48 h; "+30 dias manual" não gera comissão; (4) Faturamento mostra o cartão Repasses a indicadores (pendentes, a pagar, atrasados, pagos) → lista com chave Pix, prazo, **botão Dar baixa** (e Desfazer baixa) e histórico por indicador; (5) painel do indicador (`indicador.html?a=…&k=…`, sem login): aviso de pagamento confirmado (com vibração/notificação com o app aberto), a receber/recebido, lojas indicadas e histórico; "Gerar novo link" revoga o antigo; o Criador também pode avisar pelo WhatsApp na hora da confirmação.
+
+## Decisões suas (assumi isto, confirme)
+- **% da comissão do indicador**: o pedido não informou. Padrão sugerido no cadastro = 10% por indicador (editável por pessoa, sobre o valor de cada pagamento confirmado).
+- Lojas antigas ficam "sem vínculo" até o Criador definir o indicador.
+
+## Atenção
+- Pix ao indicador é **manual** (você paga e dá baixa); não há pagamento automático.
+- Aviso ao indicador com o app **fechado** (push) não foi feito; só com o painel aberto ou por WhatsApp.
+- Não testado em aparelho real nem no emulador de regras. Os testes t11, t16 e t17 não abrem a tela de login neste ambiente (também na v5.9.6 original), então ficam sem verificação.
+
+---
+
+# PedeAí Brasil · v5.9.6 (Parte 2 de 3: anotações #004, #005 e #006)
+
+## Publicar (nesta ordem)
+1. **Regras do Firestore** (`firebase/firestore.rules`): novas `lojaSegredos` e `cozinhaAcessos`, Cozinha por link lê/atualiza só os pedidos da própria loja, e `equipeAtiva` passa a exigir e-mail verificado. Republicar.
+2. Firebase → Authentication → Método de login: ativar **Anônimo** (já usado pelo Cliente) e **E-mail/senha**.
+3. Subir a pasta `app/` na Vercel (inclui `api/push.js` e `sw.js`).
+4. Push em segundo plano: colar a chave Web Push em `PA_VAPID` (conta.js) e manter `FIREBASE_SERVICE_ACCOUNT` na Vercel (como na v5.9.0).
+
+## O que mudou
+- **#004 · Login por perfil**: Loja (APK) entra com Google **ou e-mail + senha** (conta nova exige confirmar o e-mail); Cliente e **Cozinha sem login**; Garçom e Motoboy com Google. Todo link carrega o ID da loja: Cliente `?loja=`, Garçom `?loja=`, Motoboy `?convite=…&loja=`, Cozinha `?loja=…&k=chave`. O gerente gera o link da Cozinha em Equipe (🔄 Novo link da Cozinha revoga o antigo). A chave fica em `lojaSegredos/{loja}` (só o dono lê).
+- **#005 · Notificações**: pedido novo → só a Loja; pedido em preparo → Cozinha (e cliente); marcou PRONTO → Garçom (pedido de salão) + Loja ao mesmo tempo (e cliente/motoboy como antes); entregue/cancelado → só a Loja. Com o app aberto: aviso interno, toast e badge do ícone. Tocar na notificação abre a tela do pedido (`?pedido=ID`: aba certa, cartão destacado).
+- **#006 · PIX e logo**: só o ADM da loja (gerente/dono) vê e edita; removidos de Garçom, Cozinha e equipe. Correção: o logo escolhido se perdia quando a tela era redesenhada antes de tocar em Salvar; agora fica guardado. O salvar espera o servidor e confere gravando-lendo de volta; erro aparece na tela. O app do cliente já escuta a loja ao vivo.
+
+## Atenção
+- Quem usa a Cozinha com login Google precisa abrir o novo link (com chave).
+- Sem VAPID configurado o push em segundo plano continua desligado (avisos internos funcionam).
+- Não testado em aparelho real nem no emulador de regras.
+
+---
+
+# PedeAí Brasil · v5.9.5 (Parte 1 de 3: anotações #001, #002 e #003)
+
+## Publicar (nesta ordem)
+1. **Regras do Firestore** (`firebase/firestore.rules`): motoboy não altera mais a corrida depois de `finalMoto:true` (finalização irreversível). Republicar.
+2. Subir a pasta `app/` na Vercel.
+
+## O que mudou
+- **#001 · Criador**: aba 💰 Faturamento mostra, por loja, total vendido (pedidos entregues/retirados, acumulado), % do Criador conforme o plano e comissão acumulada. Plano Iniciante em destaque (dourado). Atualiza ao vivo (onSnapshot de pedidos e lojas). A % padrão é 7% em todos os planos (a mesma estimativa que o painel já usava); para mudar por plano, gravar `comissaoCriador:{iniciante:7,mensal:..}` em `meta/config`.
+- **#002 · Motoboy**: foto do produto obrigatória; Fluxo A (código) e Fluxo B (cliente tocou “Recebi meu pedido”: detectado sozinho; motoboy tira foto da tela finalizada + foto do produto). Duas confirmações em tela; cancelar/voltar mantém a entrega aberta; depois da 2ª, grava `finalMoto`, `fotoProduto`, `fotoTelaCliente` no pedido (irreversível, também nas regras). A Loja vê as fotos no card do pedido (📎 Comprovações). O antigo botão “fotografar tela e enviar à loja para confirmar” foi substituído.
+- **#003 · Sessão**: cada app usa sua própria sessão do Firebase (`pa-lojista`, `pa-garcom`, `pa-cozinha`, `pa-motoboy`, `pa-adm`, `pa-criador`, `pa-cliente`), então entrar num perfil não troca a conta de outro. Sessão guarda e-mail + ID da loja (`pa_sessao_*`, `pa_loja_*`); só o logout encerra. Links do Garçom e da Cozinha agora levam `?loja=ID`, guardado no aparelho para o atalho instalado abrir na loja certa.
+
+## Atenção
+- Quem já estava logado precisa entrar **uma vez** de novo (a sessão mudou de lugar).
+- Não testado em aparelho real nem com as regras no emulador (sem rede no build).
+
+---
+
 # PedeAí Brasil · v5.9.4 (correção do cardápio no Garçom e na Cozinha)
 
 ## Publicar
